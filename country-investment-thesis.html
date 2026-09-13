@@ -710,6 +710,7 @@ function rowKeys(eco) {
 async function boot() {
   S.author = safeGet('author') || '';
   $('btn-author').textContent = S.author ? S.author : 'Set your name';
+  if (SNAPSHOT_AT) { $('btn-folder').style.display = 'none'; $('btn-snapshot').style.display = 'none'; $('btn-author').style.display = 'none'; }
   $('btn-folder').addEventListener('click', connectFolder);
   $('btn-snapshot').addEventListener('click', exportSnapshot);
   $('btn-author').addEventListener('click', askAuthor);
