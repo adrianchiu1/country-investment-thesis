@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Country Investment Thesis</title>
+<style>
+  :root {
+    --bg: #F3F5F7;
+    --panel: #FFFFFF;
+    --ink: #1B2430;
+    --muted: #5B6673;
+    --rule: #D8DEE5;
+    --rule-soft: #E9EDF1;
+    --accent: #2F5D8A;
+    --accent-soft: #E4EDF6;
+    --up: #1F7A5A;
+    --up-soft: #DDF1E8;
+    --down: #B23A2E;
+    --down-soft: #F7DFDB;
+    --edit: #B7791F;
+    --edit-soft: #FBF1DC;
+    --band: #1F3A5F;
+    --band-ink: #F3F5F7;
+    --serif: Georgia, Cambria, "Times New Roman", serif;
+    --font: "Segoe UI", "Segoe UI Variable Text", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  button { font: inherit; color: inherit; }
+  textarea, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- top band: title + economy tabs ---------- */
+  .band { background: var(--band); color: var(--band-ink); }
+  .band-inner {
+    max-width: 1440px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: stretch; gap: 32px;
+  }
+  .brand {
+    font-family: var(--serif); font-weight: 400; font-size: 18px; letter-spacing: 0;
+    padding: 14px 0; white-space: nowrap; align-self: center;
+  }
+  .brand small { display: block; font-weight: 400; font-size: 12px; color: #B9C6D6; letter-spacing: 0; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; }
+  .tab {
+    background: none; border: 0; padding: 18px 14px 14px; cursor: pointer;
+    color: #C7CFD8; border-bottom: 3px solid transparent; white-space: nowrap;
+    font-size: 15px;
+  }
+  .tab:hover { color: #fff; }
+  .tab[aria-selected="true"] { color: #fff; border-bottom-color: #F3F5F7; font-weight: 600; }
+  .tab .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--edit); margin-left: 6px; vertical-align: middle; }
+  .band-tools { margin-left: auto; align-self: center; display: flex; gap: 8px; align-items: center; }
+  .band-tools button, .band-tools .status {
+    background: transparent; border: 1px solid #4A6690; color: #C7CFD8;
+    padding: 5px 10px; border-radius: 4px; font-size: 12.5px; cursor: pointer;
+  }
+  .band-tools button:hover { border-color: #7FB2E5; color: #fff; }
+  .band-tools .status { cursor: default; }
+  .band-tools .status.ok { border-color: #6FB59A; color: #C9EEDC; }
+  .band-tools .status.warn { border-color: #D9A94E; color: #F6DFAC; }
+
+  /* ---------- second row: section switcher + actions ---------- */
+  .toolbar {
+    background: var(--panel); border-bottom: 1px solid var(--rule);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .toolbar-inner {
+    max-width: 1440px; margin: 0 auto; padding: 10px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .seg button {
+    background: var(--panel); border: 0; padding: 7px 14px; cursor: pointer; color: var(--muted);
+    border-right: 1px solid var(--rule);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .meta { color: var(--muted); font-size: 12.5px; }
+  .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .btn {
+    border: 1px solid var(--rule); background: var(--panel); padding: 7px 14px; border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #26507A; color: #fff; }
+  .btn.warn { background: var(--edit); border-color: var(--edit); color: #fff; }
+  .btn.warn:hover { background: #9C6617; color: #fff; }
+  .btn.quiet { border-color: transparent; color: var(--muted); }
+  .btn.quiet:hover { border-color: var(--rule); color: var(--ink); }
+  .btn.small { padding: 3px 9px; font-size: 12.5px; }
+  .btn.danger:hover { border-color: var(--down); color: var(--down); }
+
+  body.editing .toolbar { border-bottom: 3px solid var(--edit); }
+  .edit-banner {
+    display: none; background: var(--edit-soft); color: #6E4A10; padding: 6px 24px; font-size: 12.5px;
+    border-bottom: 1px solid #EBD9B4;
+  }
+  body.editing .edit-banner { display: block; }
+  .edit-banner-inner { max-width: 1440px; margin: 0 auto; }
+
+  /* ---------- main ---------- */
+  main { max-width: 1440px; margin: 0 auto; padding: 20px 24px 80px; }
+  .narrow { max-width: 980px; }
+  .notice {
+    background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--accent);
+    padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;
+  }
+  .notice.error { border-left-color: var(--down); }
+  .notice.warn { border-left-color: var(--edit); }
+  .notice h3 { margin: 0 0 4px; font-size: 15px; }
+  .notice p { margin: 4px 0; }
+  .notice ul { margin: 6px 0 0; padding-left: 20px; }
+  .empty { color: var(--muted); font-style: italic; }
+
+  /* ---------- drivers: nested folds ---------- */
+  details { border-top: 1px solid var(--rule); }
+  details.driver { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 14px; }
+  details.driver > summary { font-family: var(--serif); font-size: 19px; font-weight: 400; padding: 12px 16px; }
+  summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: ""; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+    transform: rotate(-45deg); transition: transform 120ms; flex: none; margin: 0 4px 2px 0;
+  }
+  details[open] > summary::before { transform: rotate(45deg); margin-bottom: 4px; }
+  summary .count { color: var(--muted); font-weight: 400; font-size: 12.5px; margin-left: 4px; }
+  summary .spacer { flex: 1; }
+
+  .rich ul { margin: 4px 0; padding-left: 20px; }
+  .rich li { margin: 2px 0; }
+  .rich p { margin: 4px 0; }
+  .rich strong { font-weight: 600; }
+
+  /* ---------- edit widgets ---------- */
+  .field { margin: 6px 0 10px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .field input[type=text], .field textarea {
+    width: 100%; border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; background: #FFFDF8;
+  }
+  .field textarea { min-height: 72px; resize: vertical; line-height: 1.45; }
+  .field input:focus, .field textarea:focus { border-color: var(--edit); outline: none; box-shadow: 0 0 0 2px var(--edit-soft); }
+  .hint { font-size: 12px; color: var(--muted); }
+  .row-actions { display: flex; gap: 8px; margin: 6px 0 10px; flex-wrap: wrap; }
+  .invalid { border-color: var(--down) !important; background: #FFF6F4 !important; }
+
+  /* ---------- scenarios ---------- */
+  .scen-cat { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 14px; }
+  .scen-cat > summary { font-family: var(--serif); font-size: 19px; font-weight: 400; padding: 12px 16px; }
+  table.scen { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  table.scen th, table.scen td { border-top: 1px solid var(--rule-soft); padding: 10px 12px; vertical-align: top; text-align: left; }
+  table.scen thead th { background: #F8FAFC; color: var(--muted); font-weight: 600; font-size: 12.5px; border-top: 0; }
+  table.scen th.issue-col { width: 22%; }
+  table.scen td.title { font-weight: 600; }
+  table.scen td.title .n { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  table.scen td .field { margin: 0; }
+  table.scen td textarea { min-height: 90px; }
+  th.upside { color: var(--up); } th.downside { color: var(--down); }
+  .scen-foot { padding: 8px 16px 12px; border-top: 1px solid var(--rule-soft); }
+
+  /* ---------- implications matrix ---------- */
+  .matrix-wrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 900px; }
+  table.matrix th, table.matrix td { border-bottom: 1px solid var(--rule-soft); padding: 8px 10px; }
+  table.matrix thead th { background: #F8FAFC; font-weight: 600; font-size: 12.5px; color: var(--muted); text-align: center; }
+  table.matrix thead tr.groups th { border-bottom: 1px solid var(--rule); color: var(--ink); font-size: 13px; padding-top: 12px; }
+  table.matrix thead th.rowhead { text-align: left; width: 300px; }
+  table.matrix thead th.eq { border-left: 1px solid var(--rule); }
+  table.matrix td.eq { border-left: 1px solid var(--rule-soft); }
+  table.matrix tr.group td { background: #F8FAFC; font-weight: 600; cursor: pointer; padding: 10px; }
+  table.matrix tr.group td::before {
+    content: ""; display: inline-block; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg); margin: 0 10px 3px 2px; transition: transform 120ms;
+  }
+  table.matrix tr.group.closed td::before { transform: rotate(-45deg); margin-bottom: 1px; }
+  table.matrix tr.leaf td.rowhead { padding-left: 30px; }
+  table.matrix tr.leaf td.rowhead .path { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  table.matrix td.cell { text-align: center; width: 96px; font-size: 18px; line-height: 1; }
+  button.cellbtn {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px dashed var(--rule); background: transparent; cursor: pointer;
+    font-weight: 700; font-size: 16px; line-height: 1;
+  }
+  button.cellbtn:hover { border-color: var(--edit); }
+  button.cellbtn.up { color: var(--up); background: var(--up-soft); border-style: solid; border-color: var(--up-soft); }
+  button.cellbtn.down { color: var(--down); background: var(--down-soft); border-style: solid; border-color: var(--down-soft); }
+
+
+  /* ---------- page layout: outline spine + content ---------- */
+  .layout { display: grid; grid-template-columns: 260px minmax(0, 860px); gap: 36px; align-items: start; }
+  .layout.full { grid-template-columns: minmax(0, 1fr); }
+  .eco-head { margin: 0 0 18px; }
+  .eco-head h1 { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+  .eco-head p { margin: 4px 0 0; color: var(--muted); }
+  .outline { position: sticky; top: 62px; max-height: calc(100vh - 80px); overflow-y: auto; padding-right: 6px; font-size: 13px; }
+  .outline-tools { display: flex; gap: 12px; margin: 6px 0 12px 2px; }
+  .outline-tools button { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-size: 12.5px; }
+  .outline-tools button:hover { text-decoration: underline; }
+  .outline ol { list-style: none; margin: 0; padding: 0; }
+  .outline ol ol { margin-left: 9px; padding-left: 13px; border-left: 1px solid var(--rule); }
+  .outline li { margin: 0; }
+  .ol-btn { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 4px 8px; border-radius: 4px; cursor: pointer; color: var(--muted); line-height: 1.35; }
+  .ol-btn:hover { background: var(--panel); color: var(--ink); }
+  .ol-btn.l1 { font-family: var(--serif); font-size: 15px; color: var(--ink); padding: 8px 8px 4px; }
+  .ol-btn.l2 { font-weight: 600; color: var(--ink); }
+  .ol-btn.l3 { padding-left: 8px; }
+  .ol-btn .n { display: inline-block; min-width: 16px; color: #9AA5B1; }
+  .ol-btn .cnt { color: #9AA5B1; font-weight: 400; margin-left: 4px; }
+  .ol-btn.active { background: var(--accent-soft); color: var(--accent); }
+  .ol-btn.l1.active { background: none; color: var(--accent); }
+  details, tr.scen-row { scroll-margin-top: 70px; }
+  .demo-note { background: var(--edit-soft); border: 1px solid #EBD9B4; color: #6E4A10; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 16px; }
+  .demo-note a { color: inherit; }
+  @media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } .outline { display: none; } }
+
+  /* ---------- svg arrows ---------- */
+  .arrow svg, .cellbtn svg { width: 16px; height: 16px; display: block; margin: 0 auto; }
+  .arrow { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; }
+  .arrow.up { color: var(--up); background: var(--up-soft); }
+  .arrow.down { color: var(--down); background: var(--down-soft); }
+  .arrow.none { color: #C4CCD5; }
+  button.cellbtn { display: inline-flex; align-items: center; justify-content: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center; color: var(--muted); font-size: 12.5px; margin: 12px 2px 0; }
+  .legend span.item { display: inline-flex; align-items: center; gap: 8px; }
+  .legend .arrow { width: 24px; height: 24px; }
+  .legend .arrow svg { width: 13px; height: 13px; }
+
+
+  /* ---------- subsection tabs inside a driver card ---------- */
+  .stabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--rule); }
+  .stab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px 9px; margin-bottom: -1px; cursor: pointer; color: var(--muted); font-weight: 600; }
+  .stab:hover { color: var(--ink); }
+  .stab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .stab .cnt { font-weight: 400; color: #9AA5B1; margin-left: 4px; }
+  .stab.add { font-weight: 400; color: var(--edit); }
+  .spanel { padding: 6px 16px 10px; scroll-margin-top: 70px; }
+  .spanel[hidden] { display: none; }
+  .spanel-head { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
+  .spanel-head .field, .spanel-head .spacer { flex: 1; margin: 0; }
+  details.issue { margin: 0; border-top: 1px solid var(--rule-soft); }
+  details.issue:first-of-type { border-top: 0; }
+  details.issue > summary { padding: 9px 0; font-weight: 600; }
+  .issue-body { padding: 0 0 14px 19px; max-width: 76ch; }
+  /* outline folding */
+  .ol-row { display: flex; align-items: center; }
+  .ol-row .ol-btn { flex: 1; }
+  .ol-tog { flex: none; width: 18px; height: 22px; background: none; border: 0; padding: 0; cursor: pointer; color: #9AA5B1; display: flex; align-items: center; justify-content: center; }
+  .ol-tog::before { content: ""; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 120ms; margin-bottom: 2px; }
+  .ol-node.closed > .ol-row .ol-tog::before { transform: rotate(-45deg); margin-bottom: 0; }
+  .ol-node.closed > ol { display: none; }
+  .ol-tog.blank { visibility: hidden; }
+  .outline ol ol { margin-left: 8px; padding-left: 8px; }
+
+  /* ---------- CSS: dialogs ---------- */
+  dialog { border: 1px solid var(--rule); border-radius: 8px; padding: 20px 22px; max-width: 520px; box-shadow: 0 12px 40px rgba(27,36,48,0.18); }
+  dialog::backdrop { background: rgba(27,36,48,0.35); }
+  dialog h3 { margin: 0 0 8px; }
+  dialog p { margin: 6px 0; }
+  dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  dialog input[type=text] { width: 100%; border: 1px solid var(--rule); border-radius: 4px; padding: 7px 9px; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--band); color: #fff; padding: 9px 16px; border-radius: 6px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity 150ms; z-index: 20;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 720px) {
+    .band-inner { flex-wrap: wrap; gap: 8px; }
+    .brand { padding-bottom: 0; }
+    .band-tools { margin-left: 0; padding-bottom: 10px; }
+    table.scen { table-layout: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="brand" id="brand">Country Investment Thesis<small id="brand-sub">Structural house views by economy</small></div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Economies"></nav>
+    <div class="band-tools">
+      <span class="status" id="folder-status">Not connected</span>
+      <button type="button" id="btn-folder">Connect folder</button>
+      <button type="button" id="btn-author" title="Name recorded in the change log">Set your name</button>
+    </div>
+  </div>
+</header>
+
+<div class="edit-banner"><div class="edit-banner-inner" id="edit-banner-text">You are editing. Nobody else can edit this economy until you save or cancel.</div></div>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="seg" id="sections" role="tablist" aria-label="Sections">
+      <button type="button" data-section="drivers" role="tab">Drivers</button>
+      <button type="button" data-section="scenarios" role="tab">Scenarios &amp; signposts</button>
+      <button type="button" data-section="implications" role="tab">Investment implications</button>
+    </div>
+    <span class="meta" id="meta"></span>
+    <div class="actions" id="actions"></div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<dialog id="dlg">
+  <div id="dlg-body"></div>
+  <div class="dlg-actions" id="dlg-actions"></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================================================================
+   Country Investment Thesis — single-file front-end
+   Storage: YAML files in the folder that contains this HTML.
+   Requires Edge/Chrome (File System Access API). Falls back to
+   open-file / download when the API is unavailable.
+   ==================================================================== */
+'use strict';
+
+/* ---------------- constants ---------------- */
+const DEFAULT_ECONOMIES = [
+  { id: 'united-states', name: 'United States' },
+  { id: 'china', name: 'China' },
+  { id: 'eurozone', name: 'Eurozone' },
+  { id: 'japan', name: 'Japan' },
+  { id: 'united-kingdom', name: 'United Kingdom' },
+  { id: 'india', name: 'India' },
+  { id: 'brazil', name: 'Brazil' },
+];
+const DRIVER_TEMPLATE = [
+  { id: 'regime', name: 'Regime', subsections: [['trend-growth', 'Trend growth'], ['trend-inflation', 'Trend inflation']] },
+  { id: 'policy', name: 'Policy', subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal']] },
+  { id: 'imbalances', name: 'Imbalances', subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Credit']] },
+  { id: 'geopolitics', name: 'Geopolitics', subsections: [['domestic', 'Domestic'], ['international', 'International']] },
+];
+const SCENARIO_TEMPLATE = [['growth', 'Growth'], ['inflation', 'Inflation'], ['policy', 'Policy']];
+const SCENARIO_COLS = ['baseline', 'upside', 'downside'];
+const FACTORS = [
+  { id: 'sales_growth', name: 'Sales growth', group: 'equity' },
+  { id: 'margin_growth', name: 'Margin growth', group: 'equity' },
+  { id: 'valuation', name: 'Valuation', group: 'equity' },
+  { id: 'dividend_yield', name: 'Dividend yield', group: 'equity' },
+  { id: 'cash_rate', name: 'Cash rate', group: 'bonds' },
+  { id: 'inflation_expectation', name: 'Inflation expectation', group: 'bonds' },
+  { id: 'term_premium', name: 'Term premium', group: 'bonds' },
+  { id: 'liquidity', name: 'Liquidity', group: 'bonds' },
+];
+const ARROW = {
+  up: '<svg viewBox="0 0 16 16" aria-label="up" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13.5V2.5M3.5 7l4.5-4.5L12.5 7"/></svg>',
+  down: '<svg viewBox="0 0 16 16" aria-label="down" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v11M3.5 9l4.5 4.5L12.5 9"/></svg>',
+  none: '<svg viewBox="0 0 16 16" aria-label="neutral" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/></svg>',
+};
+const CELL_CYCLE = { '': 'up', 'up': 'down', 'down': '' };
+const LOCK_RENEW_MS = 5 * 60 * 1000;
+
+/* ====================================================================
+   Minimal YAML reader/writer.
+   Supports the subset this tool writes: block mappings, block sequences,
+   literal block scalars (| and |-), double-quoted strings (JSON escapes),
+   single-quoted strings, plain scalars, null/true/false/numbers, [] and {}.
+   Comments (# at line start) and blank lines are ignored outside literals.
+   ==================================================================== */
+const YAML = (() => {
+  function parse(text) {
+    const raw = text.replace(/\r\n?/g, '\n').split('\n');
+    const lines = raw.map((s, i) => ({ raw: s, indent: s.search(/\S|$/), text: s.trim(), n: i }));
+    const docs = [];
+    let i = 0;
+    while (i < lines.length) {
+      // skip blanks / comments / separators
+      while (i < lines.length && (lines[i].text === '' || lines[i].text.startsWith('#') || lines[i].text === '---')) i++;
+      if (i >= lines.length) break;
+      const [val, next] = parseBlock(lines, i, lines[i].indent);
+      docs.push(val);
+      i = next;
+      while (i < lines.length && lines[i].text !== '---') i++; // anything left before a separator is ignored
+    }
+    return docs.length <= 1 ? (docs[0] === undefined ? null : docs[0]) : docs;
+  }
+  function isSkippable(l) { return l.text === '' || l.text.startsWith('#'); }
+  function keyMatch(text) {
+    // key: value  |  "quoted key": value
+    const m = text.match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^:#\-\[\]{}"'][^:]*?):(?:\s+(.*)|$)/);
+    if (!m) return null;
+    return { key: scalar(m[1].trim()), rest: (m[2] || '').trim() };
+  }
+  function parseBlock(lines, i, indent) {
+    const l = lines[i];
+    if (l.text.startsWith('- ') || l.text === '-') return parseSeq(lines, i, indent);
+    if (keyMatch(l.text)) return parseMap(lines, i, indent);
+    // bare scalar block
+    return [scalar(l.text), i + 1];
+  }
+  function parseMap(lines, i, indent) {
+    const obj = {};
+    while (i < lines.length) {
+      const l = lines[i];
+      if (isSkippable(l)) { i++; continue; }
+      if (l.text === '---') break;
+      if (l.indent < indent) break;
+      if (l.indent > indent) throw new Error('YAML: unexpected indent at line ' + (l.n + 1));
+      const km = keyMatch(l.text);
+      if (!km) throw new Error('YAML: expected "key:" at line ' + (l.n + 1) + ': ' + l.text);
+      if (km.rest === '|' || km.rest === '|-' || km.rest === '|+') {
+        const [s, next] = parseLiteral(lines, i + 1, indent, km.rest);
+        obj[km.key] = s; i = next;
+      } else if (km.rest === '') {
+        let j = i + 1;
+        while (j < lines.length && isSkippable(lines[j])) j++;
+        if (j < lines.length && lines[j].text !== '---' && (lines[j].indent > indent || (lines[j].indent === indent && lines[j].text.startsWith('- ')))) {
+          const [v, next] = parseBlock(lines, j, lines[j].indent);
+          obj[km.key] = v; i = next;
+        } else { obj[km.key] = null; i = j; }
+      } else {
+        obj[km.key] = scalar(km.rest); i++;
+      }
+    }
+    return [obj, i];
+  }
+  function parseSeq(lines, i, indent) {
+    const arr = [];
+    while (i < lines.length) {
+      const l = lines[i];
+      if (isSkippable(l)) { i++; continue; }
+      if (l.text === '---') break;
+      if (l.indent < indent) break;
+      if (l.indent > indent) throw new Error('YAML: unexpected indent at line ' + (l.n + 1));
+      if (!(l.text.startsWith('- ') || l.text === '-')) break;
+      const rest = l.text.slice(1).trim();
+      if (rest === '') {
+        let j = i + 1;
+        while (j < lines.length && isSkippable(lines[j])) j++;
+        if (j < lines.length && lines[j].indent > indent) { const [v, next] = parseBlock(lines, j, lines[j].indent); arr.push(v); i = next; }
+        else { arr.push(null); i = j; }
+      } else if (rest === '|' || rest === '|-') {
+        const [s, next] = parseLiteral(lines, i + 1, indent, rest); arr.push(s); i = next;
+      } else if (keyMatch(rest)) {
+        // mapping whose first key sits on the dash line: re-indent that line and parse a map
+        l.indent = l.raw.indexOf(rest); l.text = rest;
+        const [v, next] = parseMap(lines, i, l.indent); arr.push(v); i = next;
+      } else { arr.push(scalar(rest)); i++; }
+    }
+    return [arr, i];
+  }
+  function parseLiteral(lines, i, parentIndent, marker) {
+    const out = [];
+    let blockIndent = -1;
+    while (i < lines.length) {
+      const l = lines[i];
+      if (l.text === '') { out.push(''); i++; continue; }
+      if (blockIndent < 0) { if (l.indent <= parentIndent) break; blockIndent = l.indent; }
+      if (l.indent < blockIndent) break;
+      out.push(l.raw.slice(blockIndent)); i++;
+    }
+    while (out.length && out[out.length - 1] === '') out.pop();
+    let s = out.join('\n');
+    if (marker === '|' || marker === '|+') s += '\n';
+    return [s, i];
+  }
+  function scalar(t) {
+    if (t === '' || t === '~' || t === 'null') return null;
+    if (t === 'true') return true;
+    if (t === 'false') return false;
+    if (t === '[]') return [];
+    if (t === '{}') return {};
+    if (t[0] === '"') { try { return JSON.parse(t); } catch (e) { return t.slice(1, -1); } }
+    if (t[0] === "'") return t.slice(1, -1).replace(/''/g, "'");
+    if (/^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(t)) return Number(t);
+    return t;
+  }
+
+  /* ---- writer ---- */
+  const PLAIN = /^[A-Za-z0-9_][A-Za-z0-9_\-\/. ,()%+]*$/;
+  function needsQuote(s) {
+    if (s === '' || !PLAIN.test(s) || s !== s.trim()) return true;
+    if (/^(true|false|null|~|yes|no|on|off)$/i.test(s)) return true;
+    if (/^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return true;
+    if (s.includes(': ') || s.includes(' #') || s.endsWith(':')) return true;
+    return false;
+  }
+  function str(s) { return needsQuote(s) ? JSON.stringify(s) : s; }
+  function dump(v, indent = 0) { return dumpNode(v, indent, false).replace(/^\n/, '').replace(/\n+$/, '') + '\n'; }
+  function dumpNode(v, indent, inSeq) {
+    const pad = ' '.repeat(indent);
+    if (v === null || v === undefined) return 'null\n';
+    if (typeof v === 'boolean' || typeof v === 'number') return String(v) + '\n';
+    if (typeof v === 'string') {
+      if (v.includes('\n')) return '|-\n' + v.split('\n').map(l => l === '' ? '' : pad + '  ' + l).join('\n') + '\n';
+      return str(v) + '\n';
+    }
+    if (Array.isArray(v)) {
+      if (v.length === 0) return '[]\n';
+      let out = inSeq ? '' : '\n';
+      for (const item of v) {
+        if (item && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length) {
+          const body = dumpMap(item, indent + 2);
+          out += pad + '- ' + body.slice(indent + 2);
+        } else if (Array.isArray(item) && item.length) {
+          out += pad + '-' + dumpNode(item, indent + 2, false);
+        } else {
+          out += pad + '- ' + dumpNode(item, indent + 2, true);
+        }
+      }
+      return out;
+    }
+    if (typeof v === 'object') {
+      if (Object.keys(v).length === 0) return '{}\n';
+      return '\n' + dumpMap(v, indent);
+    }
+    return str(String(v)) + '\n';
+  }
+  function dumpMap(obj, indent) {
+    const pad = ' '.repeat(indent);
+    let out = '';
+    for (const [k, v] of Object.entries(obj)) {
+      const key = str(String(k));
+      const isBlock = (v && typeof v === 'object' && (Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0)) || (typeof v === 'string' && v.includes('\n'));
+      if (typeof v === 'string' && v.includes('\n')) out += pad + key + ': ' + dumpNode(v, indent, false);
+      else if (isBlock) out += pad + key + ':' + dumpNode(v, indent + 2, false);
+      else out += pad + key + ': ' + dumpNode(v, indent, false);
+    }
+    return out;
+  }
+  return { parse, dump };
+})();
+
+/* ====================================================================
+   Storage: folder handle via File System Access API
+   ==================================================================== */
+const Store = (() => {
+  let dir = null;
+  let fallback = false;
+  const hasFS = typeof window.showDirectoryPicker === 'function';
+
+  async function idb(op, val) {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('economy-views', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('kv');
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => {
+        const tx = req.result.transaction('kv', 'readwrite');
+        const st = tx.objectStore('kv');
+        const r = op === 'get' ? st.get('dir') : st.put(val, 'dir');
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      };
+    });
+  }
+  async function reconnect() {
+    if (!hasFS) return false;
+    try {
+      const h = await idb('get');
+      if (!h) return false;
+      const perm = await h.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') { dir = h; return true; }
+      return 'prompt';
+    } catch (e) { return false; }
+  }
+  async function requestSaved() {
+    const h = await idb('get');
+    if (!h) return false;
+    const perm = await h.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') { dir = h; return true; }
+    return false;
+  }
+  async function pick() {
+    dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    try { await idb('put', dir); } catch (e) { /* non-fatal */ }
+    return true;
+  }
+  async function resolve(path, create) {
+    const parts = path.split('/').filter(Boolean);
+    let d = dir;
+    for (let i = 0; i < parts.length - 1; i++) d = await d.getDirectoryHandle(parts[i], { create: !!create });
+    return [d, parts[parts.length - 1]];
+  }
+  async function readText(path) {
+    try {
+      const [d, name] = await resolve(path, false);
+      const fh = await d.getFileHandle(name);
+      const f = await fh.getFile();
+      return await f.text();
+    } catch (e) {
+      if (e && e.name === 'NotFoundError') return null;
+      throw e;
+    }
+  }
+  async function writeText(path, text) {
+    const [d, name] = await resolve(path, true);
+    const fh = await d.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(text);
+    await w.close();
+  }
+  async function appendText(path, text) {
+    const [d, name] = await resolve(path, true);
+    const fh = await d.getFileHandle(name, { create: true });
+    const f = await fh.getFile();
+    const w = await fh.createWritable({ keepExistingData: true });
+    await w.write({ type: 'write', position: f.size, data: text });
+    await w.close();
+  }
+  async function remove(path) {
+    try { const [d, name] = await resolve(path, false); await d.removeEntry(name); } catch (e) { /* already gone */ }
+  }
+  return {
+    hasFS, reconnect, requestSaved, pick, readText, writeText, appendText, remove,
+    get connected() { return !!dir; },
+    get name() { return dir ? dir.name : ''; },
+    get fallback() { return fallback; }, set fallback(v) { fallback = v; },
+  };
+})();
+/* Built-in sample content, shown until a folder is connected */
+const DEMO_YAML = {"united-states": "# Country Investment Thesis \u2014 United States\n# Illustrative filler content. Edit through country-investment-thesis.html so changes are logged.\n\nid: united-states\nname: United States\nversion: 1\nupdated_at: \"2026-09-12T10:00:00+08:00\"\nupdated_by: seed\ndrivers:\n  - id: regime\n    name: Regime\n    subsections:\n      - id: trend-growth\n        name: Trend growth\n        issues:\n          - id: iss-us-tg1\n            title: Productivity vs labour supply\n            text: |-\n              - Trend growth held up by a productivity impulse from AI-related capex, partly offset by slower labour-force growth as immigration tightens\n              - Working assumption: potential growth close to 2%, with the productivity contribution the main swing factor\n              - Watch: hours worked, non-residential investment, and whether capex translates into measured output\n          - id: iss-us-tg2\n            title: Capex cycle durability\n            text: |-\n              - Data-centre and power investment is the largest single support to fixed investment; the question is whether it is a level shift or a boom-bust\n              - Financing has moved from cash flow to debt and private credit, which raises the odds of an abrupt slowdown if returns disappoint\n      - id: trend-inflation\n        name: Trend inflation\n        issues:\n          - id: iss-us-ti1\n            title: Tariff pass-through and services stickiness\n            text: |-\n              - Goods inflation is running above its pre-2020 norm as tariffs pass through with a lag; services inflation is drifting down slowly on shelter and wages\n              - Trend inflation likely settles in the high 2s rather than at 2%, which matters for the neutral policy rate\n  - id: policy\n    name: Policy\n    subsections:\n      - id: monetary\n        name: Monetary\n        issues:\n          - id: iss-us-mo1\n            title: Fed reaction function and independence\n            text: |-\n              - Committee has been cutting gradually toward a neutral rate it estimates in the 3s; the bar for a return to hikes is high\n              - Political pressure on the Fed is a live issue; markets price some erosion of independence in a steeper curve and higher term premium\n              - Watch: dissents, the dot plot dispersion, and the language on balance-sheet policy\n          - id: iss-us-mo2\n            title: Balance sheet and reserve scarcity\n            text: |-\n              - Reserves are approaching levels where money-market funding pressure reappears around tax dates and quarter ends\n              - Expect the Fed to shift from runoff to reserve-management purchases; a quiet form of easing that supports front-end liquidity\n      - id: fiscal\n        name: Fiscal\n        issues:\n          - id: iss-us-fi1\n            title: Structural deficit and issuance mix\n            text: |-\n              - Deficit stuck near 6% of GDP at full employment; interest costs are the fastest growing line\n              - Treasury is leaning on bills to limit duration supply, which caps term premium for now but raises rollover risk\n              - Tariff revenue is meaningful but not enough to change the trajectory\n  - id: imbalances\n    name: Imbalances\n    subsections:\n      - id: domestic\n        name: Domestic\n        issues:\n          - id: iss-us-do1\n            title: Household balance sheets are bifurcated\n            text: |-\n              - Top-income households carry consumption on equity wealth; lower-income cohorts show rising delinquencies on cards and autos\n              - Aggregate consumption looks fine until asset prices wobble; this is the main channel from markets to the real economy\n      - id: external\n        name: External\n        issues:\n          - id: iss-us-ex1\n            title: Current account and the dollar\n            text: |-\n              - Deficit narrowing modestly as tariffs compress imports, but the financing side matters more: foreign demand for Treasuries is slower and more price sensitive\n              - Dollar has lost its reflexive safe-haven bid on US-specific shocks\n      - id: credit\n        name: Credit\n        issues:\n          - id: iss-us-cr1\n            title: Private credit and AI-linked leverage\n            text: |-\n              - Private credit has absorbed a large share of leveraged lending and now of AI infrastructure finance; opacity is the concern rather than aggregate size\n              - Bank exposure is indirect (lending to funds), so stress would show first in redemption gates and mark-downs, not bank capital\n  - id: geopolitics\n    name: Geopolitics\n    subsections:\n      - id: domestic\n        name: Domestic\n        issues:\n          - id: iss-us-gd1\n            title: Midterm cycle and policy volatility\n            text: |-\n              - November midterms raise the odds of a divided Congress and a shift from legislation to executive action\n              - Tariff and regulatory policy can change quickly by executive order, so policy uncertainty stays elevated regardless of the outcome\n      - id: international\n        name: International\n        issues:\n          - id: iss-us-gi1\n            title: Trade regime with China and allies\n            text: |-\n              - The tariff framework looks semi-permanent; the marginal news is about exemptions and sectoral deals rather than headline rates\n              - Export controls on advanced chips remain the sharpest tool and the one most likely to trigger retaliation via critical minerals\nscenarios:\n  - id: growth\n    name: Growth\n    issues:\n      - id: iss-us-sg1\n        title: Consumer resilience\n        baseline: |-\n          - Real consumption grows 1.5-2% as real incomes hold and wealth effects stay supportive\n        upside: |-\n          - Productivity gains lift real wages; consumption re-accelerates above 2.5% without re-igniting inflation\n        downside: |-\n          - Equity correction plus tariff-driven price rises squeeze real incomes; consumption stalls and unemployment rises past 5%\n      - id: iss-us-sg2\n        title: Capex cycle\n        baseline: |-\n          - AI-related investment grows but decelerates; contributes 0.3-0.5pp to GDP growth\n        upside: |-\n          - Investment broadens beyond hyperscalers into power, industrials and software adoption across sectors\n        downside: |-\n          - Returns disappoint, financing tightens, and data-centre orders are cut; investment subtracts from growth by mid-2027\n  - id: inflation\n    name: Inflation\n    issues:\n      - id: iss-us-si1\n        title: Core PCE path\n        baseline: |-\n          - Core PCE drifts to 2.5-2.8% as tariff effects fade and shelter decelerates\n        upside: |-\n          - Faster shelter disinflation and productivity bring core PCE to 2.2% by end-2027\n        downside: |-\n          - Second-round effects from tariffs and a weaker dollar keep core PCE above 3%; expectations start to unanchor\n  - id: policy\n    name: Policy\n    issues:\n      - id: iss-us-sp1\n        title: Fed path\n        baseline: |-\n          - Two to three further cuts to a 3.25-3.5% terminal rate, then an extended hold\n        upside: |-\n          - Disinflation allows cuts toward 3% with the curve steepening in an orderly fashion\n        downside: |-\n          - Either sticky inflation forces a hold near 4%, or a growth shock forces rapid cuts below 2.5%; both are bad for risk assets\nimplications:\n  drivers/regime/trend-growth:\n    sales_growth: up\n    margin_growth: up\n    cash_rate: up\n  drivers/regime/trend-inflation:\n    margin_growth: down\n    inflation_expectation: up\n    cash_rate: up\n  drivers/policy/monetary:\n    valuation: up\n    cash_rate: down\n    term_premium: up\n    liquidity: up\n  drivers/policy/fiscal:\n    sales_growth: up\n    term_premium: up\n    liquidity: down\n  drivers/imbalances/domestic:\n    sales_growth: down\n    dividend_yield: up\n  drivers/imbalances/external:\n    term_premium: up\n    valuation: down\n  drivers/imbalances/credit:\n    liquidity: down\n    valuation: down\n  drivers/geopolitics/domestic:\n    valuation: down\n    term_premium: up\n  drivers/geopolitics/international:\n    margin_growth: down\n    inflation_expectation: up\n  scenarios/growth:\n    sales_growth: up\n    margin_growth: up\n    valuation: up\n  scenarios/inflation:\n    inflation_expectation: up\n    cash_rate: up\n    valuation: down\n  scenarios/policy:\n    cash_rate: down\n    term_premium: up\n    liquidity: up\n", "eurozone": "# Country Investment Thesis \u2014 Eurozone\n# Illustrative filler content. Edit through country-investment-thesis.html so changes are logged.\n\nid: eurozone\nname: Eurozone\nversion: 1\nupdated_at: \"2026-09-12T10:00:00+08:00\"\nupdated_by: seed\ndrivers:\n  - id: regime\n    name: Regime\n    subsections:\n      - id: trend-growth\n        name: Trend growth\n        issues:\n          - id: iss-ez-tg1\n            title: Low potential, fiscal impulse from Germany\n            text: |-\n              - Potential growth around 1%, held down by demographics and weak productivity; the German infrastructure and defence programme is the first real upward force in a decade\n              - Impulse is back-loaded and partly leaks into imports; we assume it adds 0.3-0.5pp to euro-area growth at peak in 2027\n          - id: iss-ez-tg2\n            title: Energy cost disadvantage\n            text: |-\n              - Industrial electricity and gas prices remain well above US levels; energy-intensive manufacturing keeps shrinking as a share of output\n              - This is a permanent level effect on competitiveness, not a cyclical drag\n      - id: trend-inflation\n        name: Trend inflation\n        issues:\n          - id: iss-ez-ti1\n            title: Back to 2%, with services the residual\n            text: |-\n              - Headline and core have converged on target; services inflation is the last component above 3% and is decelerating with wage growth\n              - Chinese export prices and a firm euro are a persistent disinflationary force on goods\n  - id: policy\n    name: Policy\n    subsections:\n      - id: monetary\n        name: Monetary\n        issues:\n          - id: iss-ez-mo1\n            title: ECB at neutral, with an easing bias\n            text: |-\n              - Deposit rate at 2% is the Council's own estimate of neutral; the debate is whether trade and currency shocks justify going below\n              - Balance-sheet runoff continues in the background; the TPI backstop is what keeps peripheral spreads well behaved\n              - Watch: the euro above 1.20, negotiated wages, and the French spread\n      - id: fiscal\n        name: Fiscal\n        issues:\n          - id: iss-ez-fi1\n            title: Two-speed fiscal stance\n            text: |-\n              - Germany has fiscal room and is using it; France and Italy face consolidation under the revised rules with weak political capacity to deliver\n              - Defence spending at 3-3.5% of GDP across members is now the common denominator, financed by debt in most cases\n  - id: imbalances\n    name: Imbalances\n    subsections:\n      - id: domestic\n        name: Domestic\n        issues:\n          - id: iss-ez-do1\n            title: Household saving rate stays high\n            text: |-\n              - Saving rate several points above pre-2020 levels; real income gains have not translated into consumption\n              - Downside risk if precautionary saving persists, upside if confidence turns and the stock of savings is drawn down\n      - id: external\n        name: External\n        issues:\n          - id: iss-ez-ex1\n            title: Current account surplus and the euro\n            text: |-\n              - Surplus near 3% of GDP, increasingly recycled into domestic assets as US allocations are trimmed; supportive for the euro and for euro-area bond demand\n      - id: credit\n        name: Credit\n        issues:\n          - id: iss-ez-cr1\n            title: Bank lending recovering slowly\n            text: |-\n              - Loan growth to firms and households is positive but modest; banks are well capitalised and the constraint is demand, not supply\n              - Commercial real estate remains the main pocket of stress, concentrated in Germany\n  - id: geopolitics\n    name: Geopolitics\n    subsections:\n      - id: domestic\n        name: Domestic\n        issues:\n          - id: iss-ez-gd1\n            title: French political fragility\n            text: |-\n              - Minority governments and repeated budget standoffs keep the OAT-Bund spread wide; a snap election is a recurring tail\n              - Contagion to Italy has been limited so far because Italian fundamentals have improved\n      - id: international\n        name: International\n        issues:\n          - id: iss-ez-gi1\n            title: Trade with the US and dependence on China\n            text: |-\n              - The EU-US tariff deal removes the worst case but leaves a permanent 15% tariff on most exports; autos and machinery adjust by relocating capacity\n              - Exposure to Chinese competition in autos and capital goods is the larger medium-term threat\n              - Ukraine ceasefire scenarios matter for energy prices and reconstruction demand\nscenarios:\n  - id: growth\n    name: Growth\n    issues:\n      - id: iss-ez-sg1\n        title: Fiscal impulse transmission\n        baseline: |-\n          - Growth 1-1.3% in 2027 as German spending ramps and consumption recovers modestly\n        upside: |-\n          - Saving rate falls and German capex crowds in private investment; growth near 2%\n        downside: |-\n          - US tariffs bite harder, Chinese competition intensifies, French politics tighten financial conditions; growth below 0.5%\n  - id: inflation\n    name: Inflation\n    issues:\n      - id: iss-ez-si1\n        title: Undershooting risk\n        baseline: |-\n          - Headline inflation 1.8-2.1% with services cooling and goods flat\n        upside: |-\n          - Fiscal stimulus and defence procurement push core back toward 2.5%\n        downside: |-\n          - Strong euro and Chinese goods deflation push headline below 1.5%; the ECB restarts asset purchases\n  - id: policy\n    name: Policy\n    issues:\n      - id: iss-ez-sp1\n        title: ECB path\n        baseline: |-\n          - Deposit rate stays at 2% through 2027; balance-sheet runoff continues\n        upside: |-\n          - Growth surprise allows the ECB to hold and lets the curve steepen on better nominal growth\n        downside: |-\n          - Cuts to 1.5% or lower and reactivation of purchases; TPI used if French spreads widen sharply\nimplications:\n  drivers/regime/trend-growth:\n    sales_growth: up\n    cash_rate: up\n  drivers/regime/trend-inflation:\n    inflation_expectation: down\n    cash_rate: down\n  drivers/policy/monetary:\n    valuation: up\n    cash_rate: down\n    liquidity: up\n  drivers/policy/fiscal:\n    sales_growth: up\n    term_premium: up\n  drivers/imbalances/domestic:\n    sales_growth: down\n  drivers/imbalances/external:\n    valuation: up\n    term_premium: down\n  drivers/imbalances/credit:\n    liquidity: down\n  drivers/geopolitics/domestic:\n    term_premium: up\n    valuation: down\n  drivers/geopolitics/international:\n    margin_growth: down\n    sales_growth: down\n  scenarios/growth:\n    sales_growth: up\n    margin_growth: up\n  scenarios/inflation:\n    inflation_expectation: down\n    cash_rate: down\n  scenarios/policy:\n    cash_rate: down\n    liquidity: up\n    valuation: up\n"};
+
+/* ====================================================================
+   App state
+   ==================================================================== */
+const S = {
+  config: { title: 'Country Investment Thesis', lock_minutes: 30, economies: DEFAULT_ECONOMIES },
+  data: {},          // id -> economy object (as on disk)
+  loadedText: {},    // id -> raw text loaded (for version checks)
+  current: null,     // economy id
+  section: 'drivers',
+  draft: null,       // working copy while editing
+  lockTimer: null,
+  author: '',
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = (p) => p + '-' + Math.random().toString(36).slice(2, 8);
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'item';
+const nowIso = () => {
+  const d = new Date(), tz = -d.getTimezoneOffset(), sign = tz >= 0 ? '+' : '-';
+  const p = (n) => String(Math.abs(n)).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + sign + p(Math.floor(Math.abs(tz) / 60)) + ':' + p(Math.abs(tz) % 60);
+};
+const fmtTime = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+
+/* Render bullet text: lines starting with "- " become list items, two-space indent nests. **bold** supported. */
+function renderRich(text) {
+  if (!text || !text.trim()) return '<p class="empty">Nothing entered yet.</p>';
+  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const out = [];
+  let level = 0, liOpen = false;
+  const closeLi = () => { if (liOpen) { out.push('</li>'); liOpen = false; } };
+  const closeTo = (lvl) => { closeLi(); while (level > lvl) { out.push('</ul>'); level--; if (level > 0) { liOpen = true; closeLi(); } } };
+  for (const line of text.split('\n')) {
+    const m = line.match(/^(\s*)-\s+(.*)$/);
+    if (m) {
+      const lvl = Math.min(Math.floor(m[1].length / 2) + 1, level + 1);
+      if (lvl > level) { out.push('<ul>'); level++; }
+      else closeTo(lvl);
+      out.push('<li>' + inline(m[2])); liOpen = true;
+    } else if (line.trim() !== '') { closeTo(0); out.push('<p>' + inline(line) + '</p>'); }
+  }
+  closeTo(0);
+  return '<div class="rich">' + out.join('') + '</div>';
+}
+
+/* ---------------- data scaffolding ---------------- */
+function emptyEconomy(eco) {
+  return {
+    id: eco.id, name: eco.name, version: 0, updated_at: null, updated_by: null,
+    drivers: DRIVER_TEMPLATE.map(d => ({ id: d.id, name: d.name, subsections: d.subsections.map(([id, name]) => ({ id, name, issues: [] })) })),
+    scenarios: SCENARIO_TEMPLATE.map(([id, name]) => ({ id, name, issues: [] })),
+    implications: {},
+  };
+}
+function normalise(eco, raw) {
+  const base = emptyEconomy(eco);
+  if (!raw || typeof raw !== 'object') return base;
+  const out = { ...base, ...raw };
+  out.id = eco.id; out.name = eco.name;
+  out.version = Number(out.version) || 0;
+  out.drivers = Array.isArray(out.drivers) && out.drivers.length ? out.drivers : base.drivers;
+  for (const d of out.drivers) { d.subsections = d.subsections || []; for (const s of d.subsections) { s.issues = s.issues || []; for (const i of s.issues) { i.title = i.title || ''; i.text = i.text || ''; } } }
+  out.scenarios = Array.isArray(out.scenarios) && out.scenarios.length ? out.scenarios : base.scenarios;
+  for (const c of out.scenarios) { c.issues = c.issues || []; for (const i of c.issues) { i.title = i.title || ''; for (const k of SCENARIO_COLS) i[k] = i[k] || ''; } }
+  out.implications = (out.implications && typeof out.implications === 'object' && !Array.isArray(out.implications)) ? out.implications : {};
+  return out;
+}
+function rowKeys(eco) {
+  const rows = [];
+  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name });
+  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name });
+  return rows;
+}
+
+/* ====================================================================
+   Boot
+   ==================================================================== */
+async function boot() {
+  S.author = safeGet('author') || '';
+  $('btn-author').textContent = S.author ? S.author : 'Set your name';
+  $('btn-folder').addEventListener('click', connectFolder);
+  $('btn-author').addEventListener('click', askAuthor);
+  $('sections').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { S.section = b.dataset.section; render(); } });
+  window.addEventListener('beforeunload', (e) => { if (S.draft) { e.preventDefault(); e.returnValue = ''; } });
+
+  S.current = S.config.economies[0].id;
+  if (!Store.hasFS) {
+    Store.fallback = true; loadDemo();
+    setStatus('warn', 'Preview: sample content');
+    $('btn-folder').textContent = 'Open YAML files';
+    render(); return;
+  }
+  const r = await Store.reconnect();
+  if (r === true) await loadAll();
+  else { loadDemo(); setStatus('warn', 'Preview: sample content'); if (r === 'prompt') $('btn-folder').textContent = 'Reconnect folder'; }
+  render();
+}
+function loadDemo() {
+  S.demo = true;
+  for (const eco of S.config.economies) { let raw = null; if (DEMO_YAML[eco.id]) { try { raw = YAML.parse(DEMO_YAML[eco.id]); } catch (e) { /* ignore */ } } S.data[eco.id] = normalise(eco, raw); S.loadedText[eco.id] = ''; }
+}
+function safeGet(k) { try { return localStorage.getItem('economy-views:' + k); } catch (e) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem('economy-views:' + k, v); } catch (e) { /* ignore */ } }
+function setStatus(kind, text) { const s = $('folder-status'); s.className = 'status ' + kind; s.textContent = text; }
+
+async function connectFolder() {
+  if (Store.fallback) return fallbackOpen();
+  if (Store.connected) { if (S.draft) { toast('Save or cancel your edits before reloading'); return; } await loadAll(); render(); toast('Reloaded from folder'); return; }
+  try {
+    if ($('btn-folder').textContent === 'Reconnect folder') { if (!(await Store.requestSaved())) await Store.pick(); }
+    else await Store.pick();
+    await loadAll(); render();
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    dialog('Could not open the folder', '<p>' + esc(e.message || e) + '</p><p>If this page was opened from a <code>file://</code> path and the folder picker is blocked, use "Open YAML files" instead.</p>', [['Close']]);
+  }
+}
+async function loadAll() {
+  let cfgText = null;
+  try { cfgText = await Store.readText('config.yaml'); } catch (e) { /* optional */ }
+  if (cfgText) {
+    try { const cfg = YAML.parse(cfgText); if (cfg && Array.isArray(cfg.economies) && cfg.economies.length) S.config = { ...S.config, ...cfg }; }
+    catch (e) { toast('config.yaml could not be read; using defaults'); }
+  }
+  if (!S.config.economies.find(e => e.id === S.current)) S.current = S.config.economies[0].id;
+  for (const eco of S.config.economies) await loadEconomy(eco);
+  S.demo = false;
+  setStatus('ok', 'Connected: ' + Store.name);
+  $('btn-folder').textContent = 'Reload';
+  $('brand').firstChild.textContent = S.config.title || 'Country Investment Thesis';
+  document.title = S.config.title || 'Country Investment Thesis';
+}
+async function loadEconomy(eco) {
+  const text = await Store.readText(`data/${eco.id}.yaml`);
+  let raw = null;
+  if (text && text.trim()) { try { raw = YAML.parse(text); } catch (e) { toast(`${eco.name}: data file could not be parsed — ${e.message}`); } }
+  S.data[eco.id] = normalise(eco, raw);
+  S.loadedText[eco.id] = text || '';
+}
+
+/* ---------------- fallback (no File System Access API) ---------------- */
+function fallbackOpen() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.multiple = true; inp.accept = '.yaml,.yml';
+  inp.onchange = async () => {
+    for (const f of inp.files) {
+      const text = await f.text();
+      const id = f.name.replace(/\.ya?ml$/, '');
+      if (id === 'config') { try { S.config = { ...S.config, ...YAML.parse(text) }; } catch (e) { toast('config.yaml unreadable'); } continue; }
+      const eco = S.config.economies.find(e => e.id === id);
+      if (!eco) { toast('Skipped ' + f.name + ': not a known economy'); continue; }
+      try { S.data[id] = normalise(eco, YAML.parse(text)); S.loadedText[id] = text; } catch (e) { toast(f.name + ': ' + e.message); }
+    }
+    S.demo = false;
+    setStatus('warn', 'Files opened manually');
+    render();
+  };
+  inp.click();
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/yaml' }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ====================================================================
+   Rendering
+   ==================================================================== */
+function render() {
+  document.body.classList.toggle('editing', !!S.draft);
+  renderTabs();
+  renderToolbar();
+  const ecoMeta = S.config.economies.find(e => e.id === S.current);
+  const eco = S.draft || S.data[S.current] || emptyEconomy(ecoMeta);
+  const main = $('main');
+  if (!Store.connected && !Object.keys(S.data).length) { main.innerHTML = connectNotice(); return; }
+  const note = S.demo ? `<div class="demo-note">Preview with built-in sample content. Open this page from the synced OneDrive folder in Edge or Chrome and click <strong>Connect folder</strong> to load the team's files.</div>` : '';
+  const sub = { drivers: 'Structural drivers of the medium-term outlook', scenarios: 'Baseline, upside and downside by signpost group', implications: 'How drivers and signposts map to the building blocks of equity and bond returns' }[S.section];
+  const head = `<header class="eco-head"><h1>${esc(eco.name)}</h1><p>${sub}</p></header>`;
+  if (S.section === 'implications') {
+    main.innerHTML = note + `<div class="layout full"><div>${head}${renderImplications(eco)}</div></div>`;
+  } else {
+    const body = S.section === 'drivers' ? renderDrivers(eco) : renderScenarios(eco);
+    main.innerHTML = note + `<div class="layout"><nav class="outline" aria-label="Outline">${renderOutline(eco)}</nav><div>${head}${body}</div></div>`;
+  }
+  wireMain(eco);
+  wireOutline();
+}
+S.olOpen = S.olOpen || new Set();
+function renderOutline(eco) {
+  const tools = `<div class="outline-tools"><button type="button" data-fold="open">Expand all</button><button type="button" data-fold="close">Collapse all</button></div>`;
+  const node = (lvl, id, label, children, extra = '') =>
+    `<li class="ol-node${children && !S.olOpen.has(id) ? ' closed' : ''}"><div class="ol-row"><button type="button" class="ol-tog${children ? '' : ' blank'}" data-tog="${id}" aria-label="Fold"></button><button type="button" class="ol-btn ${lvl}" data-jump="${id}">${esc(label)}${extra}</button></div>${children ? '<ol>' + children + '</ol>' : ''}</li>`;
+  if (S.section === 'drivers') {
+    return tools + '<ol>' + eco.drivers.map((d, di) => node('l1', `d-${di}`, d.name,
+      d.subsections.map((s, si) => node('l2', `d-${di}-${si}`, s.name,
+        s.issues.map((i, ii) => node('l3', `d-${di}-${si}-${ii}`, i.title || 'Untitled', '')).join(''),
+        `<span class="cnt">${s.issues.length}</span>`)).join(''))).join('') + '</ol>';
+  }
+  return tools + '<ol>' + eco.scenarios.map((c, ci) => node('l1', `c-${ci}`, c.name,
+    c.issues.map((i, ii) => node('l3', `c-${ci}-${ii}`, i.title || 'Untitled', '')).join(''),
+    `<span class="cnt">${c.issues.length}</span>`)).join('') + '</ol>';
+}
+function jumpTo(id) {
+  const parts = id.split('-');
+  if (parts[0] === 'd' && parts.length >= 3) selectTab(+parts[1], +parts[2]);
+  const el = document.getElementById(id); if (!el) return;
+  let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+  el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  setActive(id);
+}
+function wireOutline() {
+  const nav = $('main').querySelector('.outline');
+  if (!nav) return;
+  nav.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => jumpTo(b.dataset.jump)));
+  nav.querySelectorAll('[data-tog]').forEach(b => b.addEventListener('click', () => {
+    const li = b.closest('.ol-node'); li.classList.toggle('closed');
+    if (li.classList.contains('closed')) S.olOpen.delete(b.dataset.tog); else S.olOpen.add(b.dataset.tog);
+  }));
+  nav.querySelectorAll('[data-fold]').forEach(b => b.addEventListener('click', () => {
+    const open = b.dataset.fold === 'open';
+    $('main').querySelectorAll('details.issue, details.scen-cat').forEach(d => d.open = open);
+    nav.querySelectorAll('.ol-node').forEach(li => { if (li.querySelector('ol')) { li.classList.toggle('closed', !open); const id = li.querySelector('[data-tog]').dataset.tog; if (open) S.olOpen.add(id); else S.olOpen.delete(id); } });
+  }));
+  const targets = [...nav.querySelectorAll('[data-jump]')].map(b => b.dataset.jump);
+  const spy = () => {
+    let best = null;
+    for (const id of targets) { const el = document.getElementById(id); if (!el || el.offsetParent === null) continue; if (el.getBoundingClientRect().top <= 80) best = id; else break; }
+    if (best) setActive(best);
+  };
+  window.onscroll = () => { if (S._spy) return; S._spy = true; requestAnimationFrame(() => { S._spy = false; spy(); }); };
+  spy();
+}
+function setActive(id) {
+  const nav = $('main').querySelector('.outline'); if (!nav) return;
+  nav.querySelectorAll('.ol-btn').forEach(b => b.classList.toggle('active', b.dataset.jump === id));
+}
+function connectNotice() {
+  if (Store.fallback) return `<div class="notice warn"><h3>This browser cannot write to the folder</h3>
+    <p>Use Microsoft Edge or Google Chrome for full read/write access. Here you can open the YAML files manually with "Open YAML files"; saving will download updated files for you to copy into the <code>data/</code> folder.</p></div>`;
+  return `<div class="notice"><h3>Connect the folder to start</h3>
+    <p>Click <strong>Connect folder</strong> (top right) and choose the folder that contains this page — the one with <code>config.yaml</code> and the <code>data</code> subfolder. The browser asks for this once per session; it is how a local page is allowed to read and write files.</p></div>`;
+}
+function renderTabs() {
+  $('tabs').innerHTML = S.config.economies.map(e =>
+    `<button type="button" class="tab" role="tab" data-id="${esc(e.id)}" aria-selected="${e.id === S.current}">${esc(e.name)}${S.draft && e.id === S.current ? '<span class="dot" title="Editing"></span>' : ''}</button>`).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => switchEconomy(b.dataset.id)));
+}
+function switchEconomy(id) {
+  if (id === S.current) return;
+  if (S.draft) { toast('Save or cancel your edits before switching economy'); return; }
+  S.current = id; render();
+}
+function renderToolbar() {
+  $('sections').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.section === S.section));
+  const eco = S.data[S.current];
+  $('meta').textContent = eco && eco.updated_at ? `Last saved ${fmtTime(eco.updated_at)}${eco.updated_by ? ' by ' + eco.updated_by : ''} (v${eco.version})` : (eco ? 'Not yet saved' : '');
+  const a = $('actions');
+  if (S.draft) {
+    a.innerHTML = `<button type="button" class="btn quiet" id="btn-cancel">Cancel</button><button type="button" class="btn warn" id="btn-save">Save changes</button>`;
+    $('btn-save').addEventListener('click', saveDraft);
+    $('btn-cancel').addEventListener('click', cancelDraft);
+    $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
+  } else {
+    const can = Store.connected || Store.fallback;
+    a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}>Edit</button>`;
+    $('btn-edit').addEventListener('click', startEdit);
+  }
+}
+
+/* ==== JS: drivers — card per driver, tab per subsection ==== */
+S.subTab = S.subTab || {};
+function activeSub(d) {
+  if (!d.subsections.length) return -1;
+  const want = S.subTab[S.current + '/' + d.id];
+  const i = d.subsections.findIndex(s => s.id === want);
+  return i >= 0 ? i : 0;
+}
+function renderDrivers(eco) {
+  const ed = !!S.draft;
+  return eco.drivers.map((d, di) => {
+    const n = d.subsections.reduce((t, s) => t + s.issues.length, 0);
+    const act = activeSub(d);
+    return `<details class="driver" id="d-${di}" open>
+      <summary>${esc(d.name)}<span class="count">${n} issue${n === 1 ? '' : 's'}</span></summary>
+      <div class="stabs" role="tablist">
+        ${d.subsections.map((s, si) => `<button type="button" class="stab" role="tab" data-d="${di}" data-s="${si}" aria-selected="${si === act}"><span class="lbl">${esc(s.name)}</span><span class="cnt">${s.issues.length}</span></button>`).join('')}
+        ${ed ? `<button type="button" class="stab add" data-act="add-sub" data-d="${di}">+ Subsection</button>` : ''}
+      </div>
+      ${d.subsections.map((s, si) => renderSubPanel(d, s, di, si, ed, si === act)).join('')}
+    </details>`;
+  }).join('');
+}
+function renderSubPanel(d, s, di, si, ed, active) {
+  const optional = !DRIVER_TEMPLATE.find(t => t.id === d.id)?.subsections.some(([id]) => id === s.id);
+  return `<div class="spanel" id="d-${di}-${si}" data-d="${di}" data-s="${si}"${active ? '' : ' hidden'}>
+    ${ed ? `<div class="spanel-head">${optional ? `<div class="field"><input type="text" data-act="sub-name" data-d="${di}" data-s="${si}" value="${esc(s.name)}" placeholder="Subsection name"></div>` : `<span class="spacer"></span>`}<button type="button" class="btn small quiet" data-act="move-sub" data-dir="-1" data-d="${di}" data-s="${si}" title="Move this tab left">← Move left</button><button type="button" class="btn small quiet" data-act="move-sub" data-dir="1" data-d="${di}" data-s="${si}" title="Move this tab right">Move right →</button>${optional ? `<button type="button" class="btn small quiet danger" data-act="del-sub" data-d="${di}" data-s="${si}">Remove subsection</button>` : ''}</div>` : ''}
+    ${s.issues.length ? s.issues.map((i, ii) => renderIssue(i, di, si, ii, ed)).join('') : (ed ? '' : '<p class="empty" style="margin:10px 0">No issues yet.</p>')}
+    ${ed ? `<div class="row-actions" style="margin-top:10px"><button type="button" class="btn small" data-act="add-issue" data-d="${di}" data-s="${si}">Add issue</button></div>` : ''}
+  </div>`;
+}
+function renderIssue(i, di, si, ii, ed) {
+  if (!ed) return `<details class="issue" id="d-${di}-${si}-${ii}" open><summary><span class="t">${esc(i.title) || '<span class="empty">Untitled</span>'}</span></summary><div class="issue-body">${renderRich(i.text)}</div></details>`;
+  return `<details class="issue" id="d-${di}-${si}-${ii}" open>
+    <summary><span class="t">${esc(i.title) || 'Untitled'}</span><span class="spacer"></span>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="-1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move up">↑</button>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move down">↓</button>
+      <button type="button" class="btn small quiet danger" data-act="del-issue" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()">Remove</button></summary>
+    <div class="issue-body">
+      <div class="field"><label>Issue title</label><input type="text" data-bind="title" data-d="${di}" data-s="${si}" data-i="${ii}" value="${esc(i.title)}" placeholder="Short name for the issue"></div>
+      <div class="field"><label>View (one bullet per line, start each with "- "; indent two spaces for sub-bullets; **bold** allowed)</label><textarea data-bind="text" data-d="${di}" data-s="${si}" data-i="${ii}">${esc(i.text)}</textarea></div>
+    </div>
+  </details>`;
+}
+function selectTab(di, si) {
+  const card = document.getElementById(`d-${di}`); if (!card) return;
+  card.querySelectorAll('.stab[data-s]').forEach(b => b.setAttribute('aria-selected', +b.dataset.s === si));
+  card.querySelectorAll('.spanel').forEach(p => p.hidden = +p.dataset.s !== si);
+  const eco = S.draft || S.data[S.current]; const d = eco.drivers[di]; const s = d && d.subsections[si];
+  if (s) S.subTab[S.current + '/' + d.id] = s.id;
+}
+
+/* ==== JS: scenarios ==== */
+function renderScenarios(eco) {
+  const ed = !!S.draft;
+  return eco.scenarios.map((c, ci) => {
+    const optional = !SCENARIO_TEMPLATE.some(([id]) => id === c.id);
+    return `<details class="scen-cat" id="c-${ci}" open>
+      <summary>${ed && optional ? `<input type="text" data-act="cat-name" data-c="${ci}" value="${esc(c.name)}" style="font:inherit;border:1px solid var(--rule);border-radius:4px;padding:2px 6px" onclick="event.stopPropagation()">` : esc(c.name)}<span class="count">${c.issues.length} signpost${c.issues.length === 1 ? '' : 's'}</span>
+        ${ed && optional ? `<span class="spacer"></span><button type="button" class="btn small quiet danger" data-act="del-cat" data-c="${ci}" onclick="event.stopPropagation()">Remove category</button>` : ''}</summary>
+      <table class="scen">
+        <thead><tr><th class="issue-col">Signpost</th><th>Baseline</th><th class="upside">Upside</th><th class="downside">Downside</th></tr></thead>
+        <tbody>
+        ${c.issues.length ? c.issues.map((i, ii) => renderScenIssue(i, ci, ii, ed)).join('') : (ed ? '' : '<tr><td colspan="4" class="empty">No signposts yet.</td></tr>')}
+        </tbody>
+      </table>
+      ${ed ? `<div class="scen-foot row-actions"><button type="button" class="btn small" data-act="add-scen" data-c="${ci}">Add signpost to ${esc(c.name)}</button></div>` : ''}
+    </details>`;
+  }).join('') + (ed ? `<div class="row-actions"><button type="button" class="btn" data-act="add-cat">Add category</button></div>` : '');
+}
+function renderScenIssue(i, ci, ii, ed) {
+  if (!ed) return `<tr class="scen-row" id="c-${ci}-${ii}"><td class="title">${esc(i.title) || '<span class="empty">Untitled</span>'}</td>${SCENARIO_COLS.map(k => `<td>${renderRich(i[k])}</td>`).join('')}</tr>`;
+  return `<tr class="scen-row" id="c-${ci}-${ii}"><td class="title">
+      <div class="field"><input type="text" data-sbind="title" data-c="${ci}" data-i="${ii}" value="${esc(i.title)}" placeholder="Signpost"></div>
+      <div class="row-actions"><button type="button" class="btn small quiet" data-act="move-scen" data-dir="-1" data-c="${ci}" data-i="${ii}" title="Move up">↑</button><button type="button" class="btn small quiet" data-act="move-scen" data-dir="1" data-c="${ci}" data-i="${ii}" title="Move down">↓</button><button type="button" class="btn small quiet danger" data-act="del-scen" data-c="${ci}" data-i="${ii}">Remove</button></div>
+    </td>${SCENARIO_COLS.map(k => `<td><div class="field"><textarea data-sbind="${k}" data-c="${ci}" data-i="${ii}" placeholder="Required">${esc(i[k])}</textarea></div></td>`).join('')}</tr>`;
+}
+
+/* ---------- implications ---------- */
+function renderImplications(eco) {
+  const ed = !!S.draft;
+  const rows = rowKeys(eco);
+  const groups = [];
+  for (const r of rows) { let g = groups.find(x => x.name === r.group); if (!g) { g = { name: r.group, rows: [] }; groups.push(g); } g.rows.push(r); }
+  const eq = FACTORS.filter(f => f.group === 'equity'), bd = FACTORS.filter(f => f.group === 'bonds');
+  const cellHtml = (key, f) => {
+    const v = (eco.implications[key] || {})[f.id] || '';
+    const glyph = ARROW[v || 'none'];
+    if (!ed) return `<td class="cell${f.id === 'sales_growth' || f.id === 'cash_rate' ? ' eq' : ''}"><span class="arrow ${v || 'none'}">${glyph}</span></td>`;
+    return `<td class="cell${f.id === 'sales_growth' || f.id === 'cash_rate' ? ' eq' : ''}"><button type="button" class="cellbtn ${v}" data-act="cycle" data-key="${esc(key)}" data-f="${f.id}" title="Click to cycle: neutral, up, down">${v ? glyph : ''}</button></td>`;
+  };
+  return `<div class="matrix-wrap"><table class="matrix">
+    <thead>
+      <tr class="groups"><th class="rowhead" rowspan="2">Driver / signpost group</th><th colspan="${eq.length}" class="eq">Equity return building blocks</th><th colspan="${bd.length}" class="eq">Bond return building blocks</th></tr>
+      <tr>${FACTORS.map(f => `<th${f.id === 'sales_growth' || f.id === 'cash_rate' ? ' class="eq"' : ''}>${esc(f.name)}</th>`).join('')}</tr>
+    </thead>
+    <tbody>
+    ${groups.map((g, gi) => `<tr class="group" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}</td></tr>` +
+      g.rows.map(r => `<tr class="leaf" data-g="${gi}"><td class="rowhead">${esc(r.name)}<span class="path">${esc(r.key)}</span></td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
+    </tbody></table></div>
+    <div class="legend"><span class="item"><span class="arrow up">${ARROW.up}</span>Upside to the factor</span><span class="item"><span class="arrow down">${ARROW.down}</span>Downside to the factor</span><span class="item"><span class="arrow none">${ARROW.none}</span>Neutral / not relevant</span>${ed ? '<span class="item">Click a cell to cycle through the three states.</span>' : ''}</div>`;
+}
+
+/* ---------- wiring ---------- */
+function wireMain(eco) {
+  const main = $('main');
+  main.querySelectorAll('tr.group').forEach(tr => tr.addEventListener('click', () => {
+    tr.classList.toggle('closed');
+    main.querySelectorAll(`tr.leaf[data-g="${tr.dataset.g}"]`).forEach(l => l.style.display = tr.classList.contains('closed') ? 'none' : '');
+  }));
+  main.querySelectorAll('.stab[data-s]').forEach(b => b.addEventListener('click', () => selectTab(+b.dataset.d, +b.dataset.s)));
+  if (!S.draft) { main.onclick = null; return; }
+  const D = S.draft;
+  main.querySelectorAll('[data-bind]').forEach(el => el.addEventListener('input', () => {
+    const i = D.drivers[+el.dataset.d].subsections[+el.dataset.s].issues[+el.dataset.i];
+    i[el.dataset.bind] = el.value;
+    if (el.dataset.bind === 'title') el.closest('details').querySelector('summary .t').textContent = el.value || 'Untitled';
+    if (el.tagName === 'TEXTAREA') autoGrow(el);
+  }));
+  main.querySelectorAll('[data-sbind]').forEach(el => el.addEventListener('input', () => {
+    D.scenarios[+el.dataset.c].issues[+el.dataset.i][el.dataset.sbind] = el.value;
+    el.classList.remove('invalid');
+    if (el.tagName === 'TEXTAREA') autoGrow(el);
+  }));
+  main.querySelectorAll('[data-act="sub-name"]').forEach(el => el.addEventListener('input', () => {
+    D.drivers[+el.dataset.d].subsections[+el.dataset.s].name = el.value;
+    const lbl = main.querySelector(`.stab[data-d="${el.dataset.d}"][data-s="${el.dataset.s}"] .lbl`); if (lbl) lbl.textContent = el.value || 'Untitled';
+  }));
+  main.querySelectorAll('[data-act="cat-name"]').forEach(el => el.addEventListener('input', () => { D.scenarios[+el.dataset.c].name = el.value; }));
+  main.querySelectorAll('textarea').forEach(autoGrow);
+  main.onclick = (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act, d = +b.dataset.d, s = +b.dataset.s, i = +b.dataset.i, c = +b.dataset.c;
+    if (a === 'add-issue') { D.drivers[d].subsections[s].issues.push({ id: uid('iss'), title: '', text: '' }); render(); focusLast('[data-bind="title"]'); }
+    else if (a === 'del-issue') { confirmDlg('Remove this issue?', () => { D.drivers[d].subsections[s].issues.splice(i, 1); render(); }); }
+    else if (a === 'move-issue') { const arr = D.drivers[d].subsections[s].issues, j = i + (+b.dataset.dir); if (j >= 0 && j < arr.length) { [arr[i], arr[j]] = [arr[j], arr[i]]; render(); } }
+    else if (a === 'add-sub') { promptDlg('New subsection under ' + D.drivers[d].name, 'Subsection name', (name) => { const id = slug(name) + '-' + Math.random().toString(36).slice(2, 6); D.drivers[d].subsections.push({ id, name, issues: [] }); S.subTab[S.current + '/' + D.drivers[d].id] = id; render(); }); }
+    else if (a === 'move-sub') { const arr = D.drivers[d].subsections, j = s + (+b.dataset.dir); if (j >= 0 && j < arr.length) { [arr[s], arr[j]] = [arr[j], arr[s]]; S.subTab[S.current + '/' + D.drivers[d].id] = arr[j].id; render(); } }
+    else if (a === 'del-sub') { confirmDlg('Remove this subsection and all its issues?', () => { const sub = D.drivers[d].subsections.splice(s, 1)[0]; delete D.implications[`drivers/${D.drivers[d].id}/${sub.id}`]; delete S.subTab[S.current + '/' + D.drivers[d].id]; render(); }); }
+    else if (a === 'add-scen') { D.scenarios[c].issues.push({ id: uid('iss'), title: '', baseline: '', upside: '', downside: '' }); render(); focusLast('[data-sbind="title"]'); }
+    else if (a === 'del-scen') { confirmDlg('Remove this signpost?', () => { D.scenarios[c].issues.splice(i, 1); render(); }); }
+    else if (a === 'move-scen') { const arr = D.scenarios[c].issues, j = i + (+b.dataset.dir); if (j >= 0 && j < arr.length) { [arr[i], arr[j]] = [arr[j], arr[i]]; render(); } }
+    else if (a === 'add-cat') { promptDlg('New scenario category', 'Category name', (name) => { D.scenarios.push({ id: slug(name) + '-' + Math.random().toString(36).slice(2, 6), name, issues: [] }); render(); }); }
+    else if (a === 'del-cat') { confirmDlg('Remove this category and all its signposts?', () => { const cat = D.scenarios.splice(c, 1)[0]; delete D.implications[`scenarios/${cat.id}`]; render(); }); }
+    else if (a === 'cycle') {
+      const key = b.dataset.key, f = b.dataset.f;
+      const cur = (D.implications[key] || {})[f] || '';
+      const nxt = CELL_CYCLE[cur];
+      D.implications[key] = D.implications[key] || {};
+      if (nxt) D.implications[key][f] = nxt; else delete D.implications[key][f];
+      if (!Object.keys(D.implications[key]).length) delete D.implications[key];
+      b.className = 'cellbtn ' + nxt; b.innerHTML = nxt ? ARROW[nxt] : '';
+    }
+  };
+}
+function autoGrow(el) { el.style.height = 'auto'; el.style.height = Math.max(72, el.scrollHeight + 2) + 'px'; }
+function focusLast(sel) { const els = $('main').querySelectorAll(sel); if (els.length) els[els.length - 1].focus(); }
+
+/* ---------- dialogs ---------- */
+function dialog(title, bodyHtml, buttons) {
+  const dlg = $('dlg');
+  $('dlg-body').innerHTML = '<h3>' + esc(title) + '</h3>' + bodyHtml;
+  $('dlg-actions').innerHTML = buttons.map(([label, cls], i) => `<button type="button" class="btn ${cls || ''}" data-i="${i}">${esc(label)}</button>`).join('');
+  return new Promise((resolve) => {
+    $('dlg-actions').querySelectorAll('button').forEach(b => b.onclick = () => { dlg.close(); resolve(+b.dataset.i); });
+    dlg.oncancel = () => resolve(-1);
+    dlg.showModal();
+  });
+}
+async function confirmDlg(msg, fn) { if (await dialog(msg, '', [['Cancel', 'quiet'], ['Remove', 'primary']]) === 1) fn(); }
+async function promptDlg(title, label, fn) {
+  const p = dialog(title, `<div class="field"><label>${esc(label)}</label><input type="text" id="dlg-input"></div>`, [['Cancel', 'quiet'], ['Add', 'primary']]);
+  const inp = $('dlg-input'); inp.focus();
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('dlg-actions').querySelector('[data-i="1"]').click(); });
+  if (await p === 1 && inp.value.trim()) fn(inp.value.trim());
+}
+async function askAuthor() {
+  const p = dialog('Your name', `<p>Recorded in the change log against every save you make.</p><div class="field"><input type="text" id="dlg-input" value="${esc(S.author)}"></div>`, [['Cancel', 'quiet'], ['Save', 'primary']]);
+  const inp = $('dlg-input'); inp.focus(); inp.select();
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('dlg-actions').querySelector('[data-i="1"]').click(); });
+  if (await p === 1) { S.author = inp.value.trim(); safeSet('author', S.author); $('btn-author').textContent = S.author || 'Set your name'; }
+  return !!S.author;
+}
+
+/* ====================================================================
+   Editing: lock, save, cancel
+   ==================================================================== */
+const lockPath = (id) => `locks/${id}.lock.yaml`;
+async function readLock(id) {
+  if (!Store.connected) return null;
+  try { const t = await Store.readText(lockPath(id)); return t ? YAML.parse(t) : null; } catch (e) { return null; }
+}
+async function writeLock(id) {
+  if (!Store.connected) return;
+  const mins = Number(S.config.lock_minutes) || 30;
+  const lock = { economy: id, by: S.author || 'unknown', since: S.lockSince || nowIso(), renewed: nowIso(), expires: new Date(Date.now() + mins * 60000).toISOString(), client: S.clientId };
+  S.lockSince = lock.since;
+  await Store.writeText(lockPath(id), YAML.dump(lock));
+}
+async function startEdit() {
+  if (!S.author && !(await askAuthor())) { toast('Set your name first so the change log can record it'); return; }
+  const id = S.current;
+  const lock = await readLock(id);
+  if (lock && lock.client !== S.clientId && lock.expires && new Date(lock.expires) > new Date()) {
+    const r = await dialog(`${S.data[id].name} is being edited`, `<p><strong>${esc(lock.by)}</strong> started editing at ${esc(fmtTime(lock.since))}. Their lock expires ${esc(fmtTime(lock.expires))} unless renewed.</p><p>Taking over means both of you could save; the second save will be refused as a conflict.</p>`, [['Cancel', 'quiet'], ['Take over anyway', 'warn']]);
+    if (r !== 1) return;
+  }
+  S.clientId = S.clientId || uid('client');
+  S.lockSince = null;
+  try { await writeLock(id); } catch (e) { toast('Could not write the lock file: ' + e.message); }
+  S.lockTimer = setInterval(() => writeLock(id).catch(() => {}), LOCK_RENEW_MS);
+  S.draft = clone(S.data[id]);
+  render();
+}
+async function releaseLock(id) {
+  clearInterval(S.lockTimer); S.lockTimer = null; S.lockSince = null;
+  if (Store.connected) await Store.remove(lockPath(id));
+}
+async function cancelDraft() {
+  const dirty = JSON.stringify(S.draft) !== JSON.stringify(S.data[S.current]);
+  if (dirty && await dialog('Discard your changes?', '', [['Keep editing', 'quiet'], ['Discard', 'primary']]) !== 1) return;
+  await releaseLock(S.current);
+  S.draft = null; render();
+}
+function validate(D) {
+  const problems = [];
+  D.drivers.forEach((d, di) => d.subsections.forEach((s, si) => { if (!s.name.trim()) problems.push(`A subsection under ${d.name} has no name`); s.issues.forEach((i, ii) => { if (!i.title.trim()) problems.push(`${d.name} › ${s.name}: issue ${ii + 1} has no title`); }); }));
+  D.scenarios.forEach((c, ci) => { if (!c.name.trim()) problems.push('A scenario category has no name'); c.issues.forEach((i, ii) => {
+    if (!i.title.trim()) problems.push(`${c.name}: signpost ${ii + 1} has no title`);
+    for (const k of SCENARIO_COLS) if (!i[k].trim()) { problems.push(`${c.name} › ${i.title || 'signpost ' + (ii + 1)}: ${k} is empty (all three scenarios are required)`); markInvalid(ci, ii, k); }
+  }); });
+  return problems;
+}
+function markInvalid(c, i, k) { const el = $('main').querySelector(`textarea[data-sbind="${k}"][data-c="${c}"][data-i="${i}"]`); if (el) el.classList.add('invalid'); }
+
+/* Flatten an economy into path -> value, used for diffing */
+function flatten(eco) {
+  const m = {};
+  for (const d of eco.drivers) d.subsections.forEach((s, sn) => {
+    m[`drivers/${d.id}/${s.id}/name`] = s.name;
+    m[`drivers/${d.id}/${s.id}/order`] = sn + 1;
+    s.issues.forEach((i, n) => { m[`drivers/${d.id}/${s.id}/${i.id}/title`] = i.title; m[`drivers/${d.id}/${s.id}/${i.id}/text`] = i.text; m[`drivers/${d.id}/${s.id}/${i.id}/order`] = n + 1; });
+  });
+  eco.scenarios.forEach((c, cn) => {
+    m[`scenarios/${c.id}/name`] = c.name;
+    m[`scenarios/${c.id}/order`] = cn + 1;
+    c.issues.forEach((i, n) => { m[`scenarios/${c.id}/${i.id}/title`] = i.title; for (const k of SCENARIO_COLS) m[`scenarios/${c.id}/${i.id}/${k}`] = i[k]; m[`scenarios/${c.id}/${i.id}/order`] = n + 1; });
+  });
+  for (const [key, cells] of Object.entries(eco.implications || {})) for (const [f, v] of Object.entries(cells)) if (v) m[`implications/${key}/${f}`] = v;
+  return m;
+}
+function diff(before, after) {
+  const a = flatten(before), b = flatten(after), out = [];
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)]).values()) {
+    const ov = a[k] ?? null, nv = b[k] ?? null;
+    if (JSON.stringify(ov) !== JSON.stringify(nv)) out.push({ path: k, old: ov, new: nv });
+  }
+  return out.sort((x, y) => x.path < y.path ? -1 : 1);
+}
+function tidy(D) {
+  for (const d of D.drivers) for (const s of d.subsections) { s.name = s.name.trim(); for (const i of s.issues) { i.title = i.title.trim(); i.text = i.text.replace(/\s+$/g, ''); } }
+  for (const c of D.scenarios) { c.name = c.name.trim(); for (const i of c.issues) { i.title = i.title.trim(); for (const k of SCENARIO_COLS) i[k] = i[k].replace(/\s+$/g, ''); } }
+  const keys = new Set(rowKeys(D).map(r => r.key));
+  for (const k of Object.keys(D.implications)) if (!keys.has(k)) delete D.implications[k];
+}
+async function saveDraft() {
+  const id = S.current, D = S.draft;
+  tidy(D);
+  const problems = validate(D);
+  if (problems.length) { dialog('Fix these before saving', '<ul>' + problems.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul>', [['Close']]); return; }
+  const changes = diff(S.data[id], D);
+  if (!changes.length) { toast('No changes to save'); await releaseLock(id); S.draft = null; render(); return; }
+
+  // conflict check: re-read the file and compare version numbers
+  if (Store.connected) {
+    const onDisk = await Store.readText(`data/${id}.yaml`);
+    if (onDisk && onDisk !== S.loadedText[id]) {
+      let v = null; try { v = YAML.parse(onDisk); } catch (e) { /* ignore */ }
+      if (!v || Number(v.version) !== S.data[id].version) {
+        dialog('Someone saved this economy while you were editing', `<p>The file on disk is now v${esc(v && v.version)} (saved ${esc(fmtTime(v && v.updated_at))} by ${esc(v && v.updated_by)}), but you started from v${S.data[id].version}. Your changes were not written.</p><p>Copy anything you need out of the page, then click <strong>Reload</strong> and re-apply your edits.</p>`, [['Close']]);
+        return;
+      }
+    }
+  }
+  const prev = S.data[id];
+  D.version = (prev.version || 0) + 1;
+  D.updated_at = nowIso();
+  D.updated_by = S.author || 'unknown';
+  const header = `# Country Investment Thesis — ${D.name}\n# Written by country-investment-thesis.html. Edit through the page so changes are logged.\n\n`;
+  const dataText = header + YAML.dump({ id: D.id, name: D.name, version: D.version, updated_at: D.updated_at, updated_by: D.updated_by, drivers: D.drivers, scenarios: D.scenarios, implications: D.implications });
+  const entry = { at: D.updated_at, by: D.updated_by, economy: id, version: D.version, from_version: prev.version || 0, change_count: changes.length, changes };
+  const logText = '---\n' + YAML.dump(entry);
+
+  try {
+    if (Store.connected) {
+      await Store.writeText(`data/${id}.yaml`, dataText);
+      await Store.appendText(`log/${id}.log.yaml`, logText);
+    } else if (S.demo) {
+      toast('Saved to this preview only — no folder is connected');
+    } else {
+      download(`${id}.yaml`, dataText);
+      download(`${id}.log-entry-v${D.version}.yaml`, logText);
+      toast('Downloaded the updated YAML and a log entry; copy them into data/ and log/');
+    }
+  } catch (e) { dialog('Save failed', '<p>' + esc(e.message || e) + '</p><p>Your edits are still on the page. Check the folder connection and try again.</p>', [['Close']]); return; }
+
+  await releaseLock(id);
+  S.data[id] = D; S.loadedText[id] = dataText; S.draft = null;
+  render();
+  toast(`Saved ${D.name} v${D.version} (${changes.length} change${changes.length === 1 ? '' : 's'})`);
+}
+
+boot();
+</script>
+</body>
+</html>

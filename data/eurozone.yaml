@@ -1,0 +1,170 @@
+# Country Investment Thesis — Eurozone
+# Illustrative filler content. Edit through country-investment-thesis.html so changes are logged.
+
+id: eurozone
+name: Eurozone
+version: 1
+updated_at: "2026-09-12T10:00:00+08:00"
+updated_by: seed
+drivers:
+  - id: regime
+    name: Regime
+    subsections:
+      - id: trend-growth
+        name: Trend growth
+        issues:
+          - id: iss-ez-tg1
+            title: Low potential, fiscal impulse from Germany
+            text: |-
+              - Potential growth around 1%, held down by demographics and weak productivity; the German infrastructure and defence programme is the first real upward force in a decade
+              - Impulse is back-loaded and partly leaks into imports; we assume it adds 0.3-0.5pp to euro-area growth at peak in 2027
+          - id: iss-ez-tg2
+            title: Energy cost disadvantage
+            text: |-
+              - Industrial electricity and gas prices remain well above US levels; energy-intensive manufacturing keeps shrinking as a share of output
+              - This is a permanent level effect on competitiveness, not a cyclical drag
+      - id: trend-inflation
+        name: Trend inflation
+        issues:
+          - id: iss-ez-ti1
+            title: Back to 2%, with services the residual
+            text: |-
+              - Headline and core have converged on target; services inflation is the last component above 3% and is decelerating with wage growth
+              - Chinese export prices and a firm euro are a persistent disinflationary force on goods
+  - id: policy
+    name: Policy
+    subsections:
+      - id: monetary
+        name: Monetary
+        issues:
+          - id: iss-ez-mo1
+            title: ECB at neutral, with an easing bias
+            text: |-
+              - Deposit rate at 2% is the Council's own estimate of neutral; the debate is whether trade and currency shocks justify going below
+              - Balance-sheet runoff continues in the background; the TPI backstop is what keeps peripheral spreads well behaved
+              - Watch: the euro above 1.20, negotiated wages, and the French spread
+      - id: fiscal
+        name: Fiscal
+        issues:
+          - id: iss-ez-fi1
+            title: Two-speed fiscal stance
+            text: |-
+              - Germany has fiscal room and is using it; France and Italy face consolidation under the revised rules with weak political capacity to deliver
+              - Defence spending at 3-3.5% of GDP across members is now the common denominator, financed by debt in most cases
+  - id: imbalances
+    name: Imbalances
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues:
+          - id: iss-ez-do1
+            title: Household saving rate stays high
+            text: |-
+              - Saving rate several points above pre-2020 levels; real income gains have not translated into consumption
+              - Downside risk if precautionary saving persists, upside if confidence turns and the stock of savings is drawn down
+      - id: external
+        name: External
+        issues:
+          - id: iss-ez-ex1
+            title: Current account surplus and the euro
+            text: |-
+              - Surplus near 3% of GDP, increasingly recycled into domestic assets as US allocations are trimmed; supportive for the euro and for euro-area bond demand
+      - id: credit
+        name: Credit
+        issues:
+          - id: iss-ez-cr1
+            title: Bank lending recovering slowly
+            text: |-
+              - Loan growth to firms and households is positive but modest; banks are well capitalised and the constraint is demand, not supply
+              - Commercial real estate remains the main pocket of stress, concentrated in Germany
+  - id: geopolitics
+    name: Geopolitics
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues:
+          - id: iss-ez-gd1
+            title: French political fragility
+            text: |-
+              - Minority governments and repeated budget standoffs keep the OAT-Bund spread wide; a snap election is a recurring tail
+              - Contagion to Italy has been limited so far because Italian fundamentals have improved
+      - id: international
+        name: International
+        issues:
+          - id: iss-ez-gi1
+            title: Trade with the US and dependence on China
+            text: |-
+              - The EU-US tariff deal removes the worst case but leaves a permanent 15% tariff on most exports; autos and machinery adjust by relocating capacity
+              - Exposure to Chinese competition in autos and capital goods is the larger medium-term threat
+              - Ukraine ceasefire scenarios matter for energy prices and reconstruction demand
+scenarios:
+  - id: growth
+    name: Growth
+    issues:
+      - id: iss-ez-sg1
+        title: Fiscal impulse transmission
+        baseline: |-
+          - Growth 1-1.3% in 2027 as German spending ramps and consumption recovers modestly
+        upside: |-
+          - Saving rate falls and German capex crowds in private investment; growth near 2%
+        downside: |-
+          - US tariffs bite harder, Chinese competition intensifies, French politics tighten financial conditions; growth below 0.5%
+  - id: inflation
+    name: Inflation
+    issues:
+      - id: iss-ez-si1
+        title: Undershooting risk
+        baseline: |-
+          - Headline inflation 1.8-2.1% with services cooling and goods flat
+        upside: |-
+          - Fiscal stimulus and defence procurement push core back toward 2.5%
+        downside: |-
+          - Strong euro and Chinese goods deflation push headline below 1.5%; the ECB restarts asset purchases
+  - id: policy
+    name: Policy
+    issues:
+      - id: iss-ez-sp1
+        title: ECB path
+        baseline: |-
+          - Deposit rate stays at 2% through 2027; balance-sheet runoff continues
+        upside: |-
+          - Growth surprise allows the ECB to hold and lets the curve steepen on better nominal growth
+        downside: |-
+          - Cuts to 1.5% or lower and reactivation of purchases; TPI used if French spreads widen sharply
+implications:
+  drivers/regime/trend-growth:
+    sales_growth: up
+    cash_rate: up
+  drivers/regime/trend-inflation:
+    inflation_expectation: down
+    cash_rate: down
+  drivers/policy/monetary:
+    valuation: up
+    cash_rate: down
+    liquidity: up
+  drivers/policy/fiscal:
+    sales_growth: up
+    term_premium: up
+  drivers/imbalances/domestic:
+    sales_growth: down
+  drivers/imbalances/external:
+    valuation: up
+    term_premium: down
+  drivers/imbalances/credit:
+    liquidity: down
+  drivers/geopolitics/domestic:
+    term_premium: up
+    valuation: down
+  drivers/geopolitics/international:
+    margin_growth: down
+    sales_growth: down
+  scenarios/growth:
+    sales_growth: up
+    margin_growth: up
+  scenarios/inflation:
+    inflation_expectation: down
+    cash_rate: down
+  scenarios/policy:
+    cash_rate: down
+    liquidity: up
+    valuation: up

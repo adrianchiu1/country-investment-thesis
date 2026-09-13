@@ -1,0 +1,59 @@
+# Country Investment Thesis — Brazil
+# Edit through country-investment-thesis.html so changes are logged.
+
+id: brazil
+name: Brazil
+version: 1
+updated_at: "2026-09-12T10:00:00+08:00"
+updated_by: seed
+drivers:
+  - id: regime
+    name: Regime
+    subsections:
+      - id: trend-growth
+        name: Trend growth
+        issues: []
+      - id: trend-inflation
+        name: Trend inflation
+        issues: []
+  - id: policy
+    name: Policy
+    subsections:
+      - id: monetary
+        name: Monetary
+        issues: []
+      - id: fiscal
+        name: Fiscal
+        issues: []
+  - id: imbalances
+    name: Imbalances
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues: []
+      - id: external
+        name: External
+        issues: []
+      - id: credit
+        name: Credit
+        issues: []
+  - id: geopolitics
+    name: Geopolitics
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues: []
+      - id: international
+        name: International
+        issues: []
+scenarios:
+  - id: growth
+    name: Growth
+    issues: []
+  - id: inflation
+    name: Inflation
+    issues: []
+  - id: policy
+    name: Policy
+    issues: []
+implications: {}

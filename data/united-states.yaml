@@ -1,0 +1,193 @@
+# Country Investment Thesis — United States
+# Illustrative filler content. Edit through country-investment-thesis.html so changes are logged.
+
+id: united-states
+name: United States
+version: 1
+updated_at: "2026-09-12T10:00:00+08:00"
+updated_by: seed
+drivers:
+  - id: regime
+    name: Regime
+    subsections:
+      - id: trend-growth
+        name: Trend growth
+        issues:
+          - id: iss-us-tg1
+            title: Productivity vs labour supply
+            text: |-
+              - Trend growth held up by a productivity impulse from AI-related capex, partly offset by slower labour-force growth as immigration tightens
+              - Working assumption: potential growth close to 2%, with the productivity contribution the main swing factor
+              - Watch: hours worked, non-residential investment, and whether capex translates into measured output
+          - id: iss-us-tg2
+            title: Capex cycle durability
+            text: |-
+              - Data-centre and power investment is the largest single support to fixed investment; the question is whether it is a level shift or a boom-bust
+              - Financing has moved from cash flow to debt and private credit, which raises the odds of an abrupt slowdown if returns disappoint
+      - id: trend-inflation
+        name: Trend inflation
+        issues:
+          - id: iss-us-ti1
+            title: Tariff pass-through and services stickiness
+            text: |-
+              - Goods inflation is running above its pre-2020 norm as tariffs pass through with a lag; services inflation is drifting down slowly on shelter and wages
+              - Trend inflation likely settles in the high 2s rather than at 2%, which matters for the neutral policy rate
+  - id: policy
+    name: Policy
+    subsections:
+      - id: monetary
+        name: Monetary
+        issues:
+          - id: iss-us-mo1
+            title: Fed reaction function and independence
+            text: |-
+              - Committee has been cutting gradually toward a neutral rate it estimates in the 3s; the bar for a return to hikes is high
+              - Political pressure on the Fed is a live issue; markets price some erosion of independence in a steeper curve and higher term premium
+              - Watch: dissents, the dot plot dispersion, and the language on balance-sheet policy
+          - id: iss-us-mo2
+            title: Balance sheet and reserve scarcity
+            text: |-
+              - Reserves are approaching levels where money-market funding pressure reappears around tax dates and quarter ends
+              - Expect the Fed to shift from runoff to reserve-management purchases; a quiet form of easing that supports front-end liquidity
+      - id: fiscal
+        name: Fiscal
+        issues:
+          - id: iss-us-fi1
+            title: Structural deficit and issuance mix
+            text: |-
+              - Deficit stuck near 6% of GDP at full employment; interest costs are the fastest growing line
+              - Treasury is leaning on bills to limit duration supply, which caps term premium for now but raises rollover risk
+              - Tariff revenue is meaningful but not enough to change the trajectory
+  - id: imbalances
+    name: Imbalances
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues:
+          - id: iss-us-do1
+            title: Household balance sheets are bifurcated
+            text: |-
+              - Top-income households carry consumption on equity wealth; lower-income cohorts show rising delinquencies on cards and autos
+              - Aggregate consumption looks fine until asset prices wobble; this is the main channel from markets to the real economy
+      - id: external
+        name: External
+        issues:
+          - id: iss-us-ex1
+            title: Current account and the dollar
+            text: |-
+              - Deficit narrowing modestly as tariffs compress imports, but the financing side matters more: foreign demand for Treasuries is slower and more price sensitive
+              - Dollar has lost its reflexive safe-haven bid on US-specific shocks
+      - id: credit
+        name: Credit
+        issues:
+          - id: iss-us-cr1
+            title: Private credit and AI-linked leverage
+            text: |-
+              - Private credit has absorbed a large share of leveraged lending and now of AI infrastructure finance; opacity is the concern rather than aggregate size
+              - Bank exposure is indirect (lending to funds), so stress would show first in redemption gates and mark-downs, not bank capital
+  - id: geopolitics
+    name: Geopolitics
+    subsections:
+      - id: domestic
+        name: Domestic
+        issues:
+          - id: iss-us-gd1
+            title: Midterm cycle and policy volatility
+            text: |-
+              - November midterms raise the odds of a divided Congress and a shift from legislation to executive action
+              - Tariff and regulatory policy can change quickly by executive order, so policy uncertainty stays elevated regardless of the outcome
+      - id: international
+        name: International
+        issues:
+          - id: iss-us-gi1
+            title: Trade regime with China and allies
+            text: |-
+              - The tariff framework looks semi-permanent; the marginal news is about exemptions and sectoral deals rather than headline rates
+              - Export controls on advanced chips remain the sharpest tool and the one most likely to trigger retaliation via critical minerals
+scenarios:
+  - id: growth
+    name: Growth
+    issues:
+      - id: iss-us-sg1
+        title: Consumer resilience
+        baseline: |-
+          - Real consumption grows 1.5-2% as real incomes hold and wealth effects stay supportive
+        upside: |-
+          - Productivity gains lift real wages; consumption re-accelerates above 2.5% without re-igniting inflation
+        downside: |-
+          - Equity correction plus tariff-driven price rises squeeze real incomes; consumption stalls and unemployment rises past 5%
+      - id: iss-us-sg2
+        title: Capex cycle
+        baseline: |-
+          - AI-related investment grows but decelerates; contributes 0.3-0.5pp to GDP growth
+        upside: |-
+          - Investment broadens beyond hyperscalers into power, industrials and software adoption across sectors
+        downside: |-
+          - Returns disappoint, financing tightens, and data-centre orders are cut; investment subtracts from growth by mid-2027
+  - id: inflation
+    name: Inflation
+    issues:
+      - id: iss-us-si1
+        title: Core PCE path
+        baseline: |-
+          - Core PCE drifts to 2.5-2.8% as tariff effects fade and shelter decelerates
+        upside: |-
+          - Faster shelter disinflation and productivity bring core PCE to 2.2% by end-2027
+        downside: |-
+          - Second-round effects from tariffs and a weaker dollar keep core PCE above 3%; expectations start to unanchor
+  - id: policy
+    name: Policy
+    issues:
+      - id: iss-us-sp1
+        title: Fed path
+        baseline: |-
+          - Two to three further cuts to a 3.25-3.5% terminal rate, then an extended hold
+        upside: |-
+          - Disinflation allows cuts toward 3% with the curve steepening in an orderly fashion
+        downside: |-
+          - Either sticky inflation forces a hold near 4%, or a growth shock forces rapid cuts below 2.5%; both are bad for risk assets
+implications:
+  drivers/regime/trend-growth:
+    sales_growth: up
+    margin_growth: up
+    cash_rate: up
+  drivers/regime/trend-inflation:
+    margin_growth: down
+    inflation_expectation: up
+    cash_rate: up
+  drivers/policy/monetary:
+    valuation: up
+    cash_rate: down
+    term_premium: up
+    liquidity: up
+  drivers/policy/fiscal:
+    sales_growth: up
+    term_premium: up
+    liquidity: down
+  drivers/imbalances/domestic:
+    sales_growth: down
+    dividend_yield: up
+  drivers/imbalances/external:
+    term_premium: up
+    valuation: down
+  drivers/imbalances/credit:
+    liquidity: down
+    valuation: down
+  drivers/geopolitics/domestic:
+    valuation: down
+    term_premium: up
+  drivers/geopolitics/international:
+    margin_growth: down
+    inflation_expectation: up
+  scenarios/growth:
+    sales_growth: up
+    margin_growth: up
+    valuation: up
+  scenarios/inflation:
+    inflation_expectation: up
+    cash_rate: up
+    valuation: down
+  scenarios/policy:
+    cash_rate: down
+    term_premium: up
+    liquidity: up

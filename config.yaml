@@ -1,0 +1,21 @@
+# Country Investment Thesis — configuration
+# The HTML reads this on open. Add an economy here and create data/<id>.yaml
+# (an empty file is fine; the page will scaffold it on first save).
+
+title: Country Investment Thesis
+lock_minutes: 30
+economies:
+  - id: united-states
+    name: United States
+  - id: china
+    name: China
+  - id: eurozone
+    name: Eurozone
+  - id: japan
+    name: Japan
+  - id: united-kingdom
+    name: United Kingdom
+  - id: india
+    name: India
+  - id: brazil
+    name: Brazil
