@@ -783,6 +783,14 @@ async function exportSnapshot() {
       dialog('Could not export snapshot', `<p>Could not read <code>${esc(name)}</code> from the connected folder.</p>`, [['Close']]);
       return;
     }
+    const today = new Date(), pad = (n) => String(n).padStart(2, '0');
+    const defaultName = `${name.replace(/\.html$/, '')}-${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}.html`;
+    const outName = await promptSnapshotName(defaultName);
+    if (!outName) return;
+    if (outName.toLowerCase() === name.toLowerCase()) {
+      dialog('Could not export snapshot', '<p>That is the name of the live source file — choose a different name so it is not overwritten.</p>', [['Close']]);
+      return;
+    }
     const yamlById = {};
     for (const eco of S.config.economies) {
       const text = await Store.readText(`data/${eco.id}.yaml`);
@@ -800,12 +808,21 @@ async function exportSnapshot() {
       dialog('Could not export snapshot', '<p>Could not find the <code>SNAPSHOT_AT</code> constant in the source file.</p>', [['Close']]);
       return;
     }
-    const outName = name.replace(/\.html$/, '') + '-snapshot.html';
     await Store.writeText(outName, src);
     toast('Exported ' + outName);
   } catch (e) {
     dialog('Could not export snapshot', '<p>' + esc(e.message || e) + '</p>', [['Close']]);
   }
+}
+async function promptSnapshotName(defaultName) {
+  const p = dialog('Export snapshot', `<p>Saves a self-contained, read-only copy of the team's current views into this folder.</p><div class="field"><label>File name</label><input type="text" id="dlg-input" placeholder="${esc(defaultName)}"></div>`, [['Cancel', 'quiet'], ['Export', 'primary']]);
+  const inp = $('dlg-input'); inp.focus();
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('dlg-actions').querySelector('[data-i="1"]').click(); });
+  if (await p !== 1) return null;
+  let out = inp.value.trim() || defaultName;
+  out = out.split(/[\\/]+/).pop();
+  if (!/\.html$/i.test(out)) out += '.html';
+  return out;
 }
 
 /* ---------------- fallback (no File System Access API) ---------------- */
