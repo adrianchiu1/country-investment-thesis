@@ -1,0 +1,60 @@
+HOW TO UPDATE AN ECONOMY WITH ADA
+=================================
+
+Ada is the firm's chatbot in the browser. You give it a prompt and one economy
+file, work through changes with it, and bring its answer back into the page.
+One economy per conversation.
+
+Before you start you need two things from this folder (the synced Country
+Investment Thesis folder, the one with country-investment-thesis.html in it):
+
+  1. The prompt:  prompts\Ada prompt - update an economy.txt
+     Double-click it (it opens in Notepad), press Ctrl+A then Ctrl+C.
+
+  2. The economy file:  data\<economy>.yaml, for example data\eurozone.yaml
+     This is the file you will attach to Ada.
+
+Tip: open country-investment-thesis.html, select the economy, and click the
+"Ada prompt" button next to Import. It shows these steps and copies the prompt
+for you.
+
+STEPS
+-----
+
+  1. Open Ada in your browser and start a new conversation.
+
+  2. Paste the prompt (Ctrl+V) into the message box. Do not send yet.
+
+  3. Attach the economy file: click the attach (paperclip) button, go to this
+     folder, open "data" and choose the economy's .yaml file.
+     If Ada refuses .yaml attachments: open the .yaml file in Notepad, press
+     Ctrl+A then Ctrl+C, and paste it below the prompt in the same message.
+
+  4. Send. Ada will ask for your name if it does not know it, review the file,
+     and propose three changes on the Drivers page. Reply with the numbers
+     you want to work on (for example "1 and 3"), "all", "none", or name
+     something else on that page.
+
+  5. For each change Ada shows the current wording and the proposed wording
+     and asks "Do you approve this exact wording?". Reply "approve" only when
+     the wording is exactly what you want; otherwise say what to change.
+
+  6. When the page is done Ada offers three more proposals or moving on:
+     Drivers, then Signposts, then Investment implications.
+
+  7. At the end Ada shows the full list for a final approval and hands back
+     the whole file in a code block. Copy the code block into Notepad and save
+     it as <economy>.yaml (for example eurozone.yaml) somewhere convenient
+     such as Downloads. Do NOT save it into the data folder.
+
+  8. Open country-investment-thesis.html from this folder, select the
+     economy, click Import, choose the file you just saved, review the
+     changes and click "Apply import". The change log records everything,
+     including Ada's change note.
+
+  9. If Ada's change note lists matrix suggestions, click Edit and set the
+     arrows on the Investment implications page yourself.
+
+You can say "stop" or "checkpoint" to Ada at any time; it will explain the
+options. If you get stuck, the researcher does not need to fix anything in the
+files by hand: cancel the import and ask for help.
