@@ -32,27 +32,29 @@ STEPS
 
   4. Send. Ada asks for your name if it does not know it, then asks how you
      want to work:
-       - Review Mode: Ada reviews the file with you, three items at a
-         time, page by page (Drivers, Signposts, Implications). You pick
-         which to review.
-       - Collaborate Mode: you set the agenda. Ada works with you as a
-         junior macro strategist: frames the issue, challenges with
-         numbers, floats the decisions for you, refines wording with you.
-       - Summarise Mode: you attach or paste a document (your own note,
-         meeting notes, a report). Ada summarises it, extracts the key
-         points, and proposes changes grounded in those points only.
-     Reply "Review", "Collaborate" or "Summarise". You can switch later
-     by saying "switch to ...".
+       - Review Mode: Ada reviews the thesis with you, three items at a
+         time, page by page (Drivers, Signposts, Implications), asking
+         whether each still holds given the latest evidence and your
+         latest judgement. You pick which to review.
+       - Discuss Mode: you set the topic. Ada discusses it with you as a
+         friendly junior macro strategist: frames the issue, brings the
+         numbers and a view, floats the decisions for you, refines
+         wording with you.
+       - Incorporate Mode: you attach or paste a document (your own note,
+         meeting notes, a report). Ada extracts its key points and
+         incorporates them into the thesis, grounded in the document only.
+     Reply "Review", "Discuss" or "Incorporate". You can switch later by
+     saying "switch to ...".
 
   5. Whatever the mode, a change only enters the file after Ada shows the
      current wording and the proposed wording and you reply "approve".
      Say "approve" only when the wording is exactly what you want;
      otherwise say what to change.
 
-  6. In Review and Summarise Mode, Ada offers three more items or moving
-     on to the next page. In Collaborate Mode, Ada ends each topic by
-     asking whether to keep working on it, work on something else, or
-     suggest what to refine next.
+  6. In Review and Incorporate Mode, Ada offers three more items or moving
+     on to the next page. In Discuss Mode, Ada ends each topic by asking
+     whether to keep discussing it, discuss something else, or suggest
+     what to look at next.
 
   7. At the end Ada shows the full list for a final approval and hands back
      the whole file: as a downloadable <economy>.yaml where Ada can attach
