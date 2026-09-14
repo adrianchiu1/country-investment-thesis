@@ -739,23 +739,28 @@ function rowKeys(eco) {
 async function boot() {
   S.author = safeGet('author') || '';
   $('btn-author').textContent = S.author ? S.author : 'Set your name';
-  if (SNAPSHOT_AT) { $('btn-folder').style.display = 'none'; $('btn-snapshot').style.display = 'none'; $('btn-author').style.display = 'none'; }
+  $('sections').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { S.section = b.dataset.section; render(); } });
+  S.current = S.config.economies[0].id;
+  if (SNAPSHOT_AT) {
+    // A snapshot is a frozen, read-only copy: never touch the folder (the browser may still hold
+    // its permission from the live page) and show none of the connect/edit controls.
+    document.querySelector('.band-tools').style.display = 'none';
+    loadDemo(); render(); return;
+  }
   $('btn-folder').addEventListener('click', connectFolder);
   $('btn-snapshot').addEventListener('click', exportSnapshot);
   $('btn-author').addEventListener('click', askAuthor);
-  $('sections').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { S.section = b.dataset.section; render(); } });
   window.addEventListener('beforeunload', (e) => { if (S.draft) { e.preventDefault(); e.returnValue = ''; } });
 
-  S.current = S.config.economies[0].id;
   if (!Store.hasFS) {
     Store.fallback = true; loadDemo();
-    setStatus('warn', SNAPSHOT_AT ? 'Snapshot' : 'Preview: sample content');
+    setStatus('warn', 'Preview: sample content');
     $('btn-folder').textContent = 'Open YAML files';
     render(); return;
   }
   const r = await Store.reconnect();
   if (r === true) await loadAll();
-  else { loadDemo(); setStatus('warn', SNAPSHOT_AT ? 'Snapshot' : 'Preview: sample content'); if (r === 'prompt') $('btn-folder').textContent = 'Reconnect folder'; }
+  else { loadDemo(); setStatus('warn', 'Preview: sample content'); if (r === 'prompt') $('btn-folder').textContent = 'Reconnect folder'; }
   render();
 }
 function loadDemo() {
@@ -982,6 +987,7 @@ function renderToolbar() {
     $('btn-cancel').addEventListener('click', cancelDraft);
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
+    if (SNAPSHOT_AT) { a.innerHTML = ''; return; }
     const can = Store.connected || Store.fallback;
     a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}>Edit</button>`;
     $('btn-edit').addEventListener('click', startEdit);
