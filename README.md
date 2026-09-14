@@ -6,7 +6,7 @@ A single-file HTML front-end plus YAML files, kept in a SharePoint document libr
 
 ```
 economy-views/
-  country-investment-thesis.html      the tool (open with Edge or Chrome)
+  EDITOR-country-investment-thesis.html      the tool (open with Edge or Chrome); snapshots exported from it drop the EDITOR- prefix
   config.yaml             list of economies, lock timeout, title
   prompts/
     READ ME FIRST.txt                   how to update an economy with Ada, step by step
@@ -25,9 +25,11 @@ economy-views/
 ## Setup (once per team)
 
 1. Put this whole folder in the team's SharePoint library. Everyone syncs the library with OneDrive ("Add shortcut to OneDrive" or "Sync").
-2. Each person opens `country-investment-thesis.html` from the synced folder in File Explorer (double-click; it opens in the default browser — make that Edge or Chrome). Bookmark the resulting `file:///...` address, or right-click the file and "Pin to Quick access".
+2. Each person opens `EDITOR-country-investment-thesis.html` from the synced folder in File Explorer (double-click; it opens in the default browser — make that Edge or Chrome). Bookmark the resulting `file:///...` address, or right-click the file and "Pin to Quick access".
 3. First time: click **Connect folder** and choose this folder. The browser asks for permission once per session (one click on **Reconnect folder** on later visits). This is how a local page is allowed to read and write files; it cannot be skipped.
 4. Click **Set your name** so saves are attributed in the log.
+
+On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the Ada prompt, Import and Export snapshot. Click **Guide** (top right) to replay it any time.
 
 ## How a save works
 

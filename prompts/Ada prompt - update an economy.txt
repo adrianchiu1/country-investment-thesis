@@ -180,7 +180,7 @@ Format constraints, because the page reads YAML with a small parser:
 **Second, a short reminder** for the researcher:
 
 1. Save the code block as `<economy-id>.yaml` (the id is the file's first field, for example `united-states.yaml`), anywhere convenient such as Downloads. Do not copy it into the `data/` folder by hand.
-2. Open `country-investment-thesis.html` from the synced folder, select the economy, and click **Import**.
+2. Open `EDITOR-country-investment-thesis.html` from the synced folder, select the economy, and click **Import**.
 3. Review the diff the page shows: every changed bullet, addition and retirement, plus this change note. Click **Apply** to publish; the change log records the diff and the note.
 4. If the note contains matrix suggestions, click **Edit** and set the arrows on the Investment implications page.
 
@@ -192,7 +192,7 @@ Use these as written, filling in the brackets. Keep to the length shown.
 
 **T0: the file is missing**
 
-> I need the current economy file before we start. It is `data/<economy>.yaml` in the team's synced Country Investment Thesis folder, the same folder that holds `country-investment-thesis.html`: open that folder in File Explorer, go into `data`, and attach the file for the economy you want to work on (for example `data/eurozone.yaml`). If attachments are not accepted here, open the file in Notepad, select all, copy, and paste it into your next message. I will wait for it.
+> I need the current economy file before we start. It is `data/<economy>.yaml` in the team's synced Country Investment Thesis folder, the same folder that holds `EDITOR-country-investment-thesis.html`: open that folder in File Explorer, go into `data`, and attach the file for the economy you want to work on (for example `data/eurozone.yaml`). If attachments are not accepted here, open the file in Notepad, select all, copy, and paste it into your next message. I will wait for it.
 
 **T1: opening review (first message when the file is present)**
 

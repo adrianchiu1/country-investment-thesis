@@ -293,6 +293,20 @@
   dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   dialog input[type=text] { width: 100%; border: 1px solid var(--rule); border-radius: 4px; padding: 7px 9px; }
 
+  /* ---------- walkthrough ---------- */
+  #tour { position: fixed; inset: 0; z-index: 39; }
+  #tour[hidden] { display: none; }
+  .tour-dim { position: absolute; inset: 0; }
+  .tour-spot { position: absolute; z-index: 1; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(27,36,48,0.55); pointer-events: none; transition: top 120ms, left 120ms, width 120ms, height 120ms; }
+  .tour-card { position: absolute; z-index: 2; width: 360px; max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 12px 40px rgba(27,36,48,0.25); padding: 14px 16px; }
+  .tour-card .tour-step { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .tour-card h3 { margin: 4px 0 6px; font-size: 15px; }
+  .tour-card .tour-body { font-size: 13px; }
+  .tour-card .tour-body p { margin: 4px 0; }
+  .tour-card .tour-body .btn { margin-top: 6px; }
+  .tour-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .tour-actions .spacer { flex: 1; }
+
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     background: var(--band); color: #fff; padding: 9px 16px; border-radius: 6px; font-size: 13px;
@@ -319,6 +333,7 @@
       <button type="button" id="btn-folder">Connect folder</button>
       <button type="button" id="btn-snapshot" title="Regenerate the embedded preview from the live files" disabled>Export snapshot</button>
       <button type="button" id="btn-author" title="Name recorded in the change log">Set your name</button>
+      <button type="button" id="btn-tour" title="Show the walkthrough again">Guide</button>
     </div>
   </div>
 </header>
@@ -338,6 +353,17 @@
 </div>
 
 <main id="main"></main>
+
+<div id="tour" hidden>
+  <div class="tour-dim"></div>
+  <div class="tour-spot"></div>
+  <div class="tour-card" role="dialog" aria-labelledby="tour-title">
+    <div class="tour-step" id="tour-step"></div>
+    <h3 id="tour-title"></h3>
+    <div class="tour-body" id="tour-body"></div>
+    <div class="tour-actions"><button type="button" class="btn quiet" data-tour="skip">Skip</button><span class="spacer"></span><button type="button" class="btn quiet" data-tour="back">Back</button><button type="button" class="btn primary" data-tour="next">Next</button></div>
+  </div>
+</div>
 
 <dialog id="dlg">
   <div id="dlg-body"></div>
@@ -591,11 +617,13 @@ const Store = (() => {
       req.onupgradeneeded = () => req.result.createObjectStore('kv');
       req.onerror = () => reject(req.error);
       req.onsuccess = () => {
-        const tx = req.result.transaction('kv', 'readwrite');
-        const st = tx.objectStore('kv');
-        const r = op === 'get' ? st.get('dir') : st.put(val, 'dir');
-        r.onsuccess = () => resolve(r.result);
-        r.onerror = () => reject(r.error);
+        try {
+          const tx = req.result.transaction('kv', 'readwrite');
+          const st = tx.objectStore('kv');
+          const r = op === 'get' ? st.get('dir') : st.put(val, 'dir');
+          r.onsuccess = () => resolve(r.result);
+          r.onerror = () => reject(r.error);
+        } catch (e) { reject(e); } // e.g. a value that cannot be stored; never leave the caller hanging
       };
     });
   }
@@ -776,6 +804,7 @@ async function boot() {
   $('btn-folder').addEventListener('click', connectFolder);
   $('btn-snapshot').addEventListener('click', exportSnapshot);
   $('btn-author').addEventListener('click', askAuthor);
+  $('btn-tour').addEventListener('click', () => startTour());
   window.addEventListener('beforeunload', (e) => { if (S.draft) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('pagehide', () => { if (S.draft && Store.connected) Store.remove(lockPath(S.current)).catch(() => {}); }); // best effort: a closed window should not hold the lock for others
 
@@ -838,8 +867,8 @@ async function exportSnapshot() {
   try {
     let name = decodeURIComponent(location.pathname.split('/').pop());
     let src = await Store.readText(name);
-    if (src == null && name !== 'country-investment-thesis.html') {
-      name = 'country-investment-thesis.html';
+    if (src == null && name !== 'EDITOR-country-investment-thesis.html') {
+      name = 'EDITOR-country-investment-thesis.html';
       src = await Store.readText(name);
     }
     if (src == null) {
@@ -847,7 +876,7 @@ async function exportSnapshot() {
       return;
     }
     const today = new Date(), pad = (n) => String(n).padStart(2, '0');
-    const defaultName = `${name.replace(/\.html$/, '')}-${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}.html`;
+    const defaultName = `${name.replace(/^EDITOR-/i, '').replace(/\.html$/, '')}-${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}.html`;
     const outName = await promptSnapshotName(defaultName);
     if (!outName) return;
     if (outName.toLowerCase() === name.toLowerCase()) {
@@ -1513,7 +1542,7 @@ async function saveDraft() {
   D.version = (prev.version || 0) + 1;
   D.updated_at = nowIso();
   D.updated_by = S.author || 'unknown';
-  const header = `# Country Investment Thesis — ${D.name}\n# Written by country-investment-thesis.html. Edit through the page so changes are logged.\n\n`;
+  const header = `# Country Investment Thesis — ${D.name}\n# Written by EDITOR-country-investment-thesis.html. Edit through the page so changes are logged.\n\n`;
   const dataText = header + YAML.dump({ id: D.id, name: D.name, version: D.version, updated_at: D.updated_at, updated_by: D.updated_by, drivers: D.drivers, scenarios: D.scenarios, implications: D.implications });
   const entry = { at: D.updated_at, by: D.updated_by, economy: id, version: D.version, from_version: prev.version || 0 };
   if (S.review) { entry.source = 'import'; if (S.review.note) entry.note = S.review.note; }
@@ -1540,7 +1569,88 @@ async function saveDraft() {
   toast(`${imported ? 'Imported' : 'Saved'} ${D.name} v${D.version} (${changes.length} change${changes.length === 1 ? '' : 's'})`);
 }
 
-boot();
+/* ====================================================================
+   Walkthrough: dims the page, spotlights one control at a time.
+   Shown on the first visit, replayable with the Guide button.
+   ==================================================================== */
+function tourSteps() {
+  const fs = Store.hasFS, connected = Store.connected;
+  const steps = [
+    { target: '#sections', title: 'One economy, three views', body: `<p><strong>Drivers</strong> holds the structural view by issue. <strong>Scenarios &amp; signposts</strong> sets out baseline, upside and downside. <strong>Investment implications</strong> maps both onto equity and bond return building blocks.</p><p>Switch views here; the tabs above switch economy.</p>` },
+    connected
+      ? { target: '#btn-folder', title: 'Connected to the team folder', body: `<p>The page reads and writes the YAML files in the synced folder. <strong>Reload</strong> picks up other people's saves.</p>` }
+      : fs
+        ? { target: '#btn-folder', title: 'Connect the team folder', body: `<p>Click <strong>Connect folder</strong> and choose the synced folder that contains this page (the one with <code>config.yaml</code> and a <code>data</code> subfolder). The browser asks once per session; this is how a local page is allowed to read and write files.</p><p>Until the folder is connected you are looking at built-in sample content.</p>`, action: { label: 'Connect folder now', run: connectFolder } }
+        : { target: '#btn-folder', title: 'Open the YAML files', body: `<p>This browser cannot write to the folder. <strong>Open YAML files</strong> loads the files you pick; saving downloads updated files for you to copy into <code>data</code>. Edge or Chrome give the full experience.</p>`, action: { label: 'Open files now', run: connectFolder } },
+    { target: '#btn-author', title: S.author ? `Saving as ${S.author}` : 'Set your name', body: `<p>Every save and import is recorded in the change log under this name. ${S.author ? 'Change it here if needed.' : 'Set it before you edit.'}</p>`, action: S.author ? null : { label: 'Set name now', run: askAuthor } },
+    { target: '#tabs', title: 'Pick an economy', body: `<p>One file per economy. Two people can work on different economies at the same time; the same economy is locked while someone edits it.</p>` },
+    { target: '#btn-edit', title: 'Edit the views', body: `<p><strong>Edit</strong> locks the economy for others and lets you change titles and bullets, add, remove or reorder issues and signposts, and click matrix cells. <strong>Save changes</strong> writes the file with a log entry; <strong>Cancel</strong> discards.</p>` },
+    { target: '#btn-ada', title: 'Work with Ada', body: `<p><strong>Ada prompt</strong> shows the steps and copies the prompt. Paste it into a new Ada conversation with the economy's file attached. Ada proposes changes three at a time, page by page, and agrees the exact wording with you before handing the whole file back.</p>` },
+    { target: '#btn-import', title: "Bring Ada's file back", body: `<p><strong>Import</strong> takes the file Ada handed back and shows every change for review, bullet by bullet, with Ada's note. <strong>Apply import</strong> publishes it and logs it. Nothing is written until you apply.</p>` },
+    { target: '#btn-snapshot', title: 'Share a read-only copy', body: `<p><strong>Export snapshot</strong> writes a self-contained page with today's views baked in, for people who only need to read.</p><p>Replay this walkthrough any time with the <strong>Guide</strong> button.</p>` },
+  ];
+  return steps.filter(st => document.querySelector(st.target));
+}
+function startTour(i = 0) {
+  if (SNAPSHOT_AT) return;
+  if (S.draft) { toast('Finish or cancel your edits first, then click Guide'); return; }
+  S.tour = { i };
+  $('tour').hidden = false;
+  window.addEventListener('resize', tourReposition);
+  window.addEventListener('scroll', tourReposition, true);
+  document.addEventListener('keydown', tourKeys);
+  $('tour').querySelectorAll('[data-tour]').forEach(b => b.onclick = () => tourGo(b.dataset.tour));
+  tourShow();
+}
+function tourShow() {
+  const steps = tourSteps(), n = steps.length;
+  if (!n) return endTour();
+  const i = Math.min(S.tour.i, n - 1), st = steps[i];
+  S.tour.i = i; S.tour.target = st.target;
+  $('tour-step').textContent = `Step ${i + 1} of ${n}`;
+  $('tour-title').textContent = st.title;
+  $('tour-body').innerHTML = st.body + (st.action ? `<button type="button" class="btn small" id="tour-action">${esc(st.action.label)}</button>` : '');
+  if (st.action) $('tour-action').onclick = async () => { try { await st.action.run(); } catch (e) { /* the page reports it */ } tourShow(); };
+  const nx = $('tour').querySelector('[data-tour="next"]'), bk = $('tour').querySelector('[data-tour="back"]');
+  nx.textContent = i === n - 1 ? 'Done' : 'Next';
+  bk.disabled = i === 0;
+  const el = document.querySelector(st.target);
+  el.scrollIntoView({ block: 'nearest' });
+  tourReposition();
+  nx.focus();
+}
+function tourReposition() {
+  if (!S.tour) return;
+  const el = document.querySelector(S.tour.target); if (!el) return tourShow();
+  const r = el.getBoundingClientRect(), pad = 6, spot = $('tour').querySelector('.tour-spot'), card = $('tour').querySelector('.tour-card');
+  Object.assign(spot.style, { top: (r.top - pad) + 'px', left: (r.left - pad) + 'px', width: (r.width + 2 * pad) + 'px', height: (r.height + 2 * pad) + 'px' });
+  const cw = card.offsetWidth, ch = card.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  let top = r.bottom + 14; if (top + ch > vh - 12) top = Math.max(12, r.top - ch - 14);
+  let left = Math.min(Math.max(12, r.left), vw - cw - 12);
+  Object.assign(card.style, { top: top + 'px', left: left + 'px' });
+}
+function tourGo(what) {
+  if (what === 'skip') return endTour();
+  if (what === 'back') { S.tour.i = Math.max(0, S.tour.i - 1); return tourShow(); }
+  if (S.tour.i >= tourSteps().length - 1) return endTour();
+  S.tour.i++; tourShow();
+}
+function tourKeys(e) {
+  if (!S.tour || $('dlg').open) return;
+  if (e.key === 'Escape') { e.preventDefault(); endTour(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); tourGo('next'); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); tourGo('back'); }
+}
+function endTour() {
+  S.tour = null;
+  $('tour').hidden = true;
+  window.removeEventListener('resize', tourReposition);
+  window.removeEventListener('scroll', tourReposition, true);
+  document.removeEventListener('keydown', tourKeys);
+  safeSet('tour-done', '1');
+}
+
+boot().then(() => { if (!SNAPSHOT_AT && !safeGet('tour-done')) startTour(); });
 </script>
 </body>
 </html>
