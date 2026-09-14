@@ -728,8 +728,9 @@ function normalise(eco, raw) {
 }
 function rowKeys(eco) {
   const rows = [];
-  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name });
-  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name, items: c.issues.map(i => i.title.trim()).filter(Boolean) });
+  const titles = (issues) => issues.map(i => i.title.trim()).filter(Boolean);
+  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name, items: titles(s.issues) });
+  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name, items: titles(c.issues) });
   return rows;
 }
 
@@ -1073,8 +1074,8 @@ function renderScenIssue(i, ci, ii, ed) {
 }
 
 /* ---------- implications ---------- */
-/* Small text after a matrix row name: the signposts in that category, shortened to their first
-   two words each (driver rows carry nothing — the subsection name already is the bucket). */
+/* Small text after a matrix row name: the issues or signposts in that row, shortened to their
+   first two words each; full titles on hover. */
 function rowItems(r) {
   if (!r.items || !r.items.length) return '';
   const short = r.items.map(t => t.split(/\s+/).slice(0, 2).join(' '));
