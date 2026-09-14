@@ -100,6 +100,7 @@
   .btn.quiet:hover { border-color: var(--rule); color: var(--ink); }
   .btn.small { padding: 3px 9px; font-size: 12.5px; }
   .btn.danger:hover { border-color: var(--down); color: var(--down); }
+  .btn:disabled, .btn:disabled:hover { opacity: 0.45; cursor: not-allowed; }
 
   body.editing .toolbar { border-bottom: 3px solid var(--edit); }
   .edit-banner {
@@ -650,6 +651,7 @@ const S = {
   config: { title: 'Country Investment Thesis', lock_minutes: 30, economies: DEFAULT_ECONOMIES },
   data: {},          // id -> economy object (as on disk)
   loadedText: {},    // id -> raw text loaded (for version checks)
+  loadError: {},     // id -> parse error message when the data file could not be read
   current: null,     // economy id
   section: 'drivers',
   draft: null,       // working copy while editing
@@ -801,7 +803,8 @@ async function loadAll() {
 async function loadEconomy(eco) {
   const text = await Store.readText(`data/${eco.id}.yaml`);
   let raw = null;
-  if (text && text.trim()) { try { raw = YAML.parse(text); } catch (e) { toast(`${eco.name}: data file could not be parsed — ${e.message}`); } }
+  delete S.loadError[eco.id];
+  if (text && text.trim()) { try { raw = YAML.parse(text); } catch (e) { S.loadError[eco.id] = e.message; toast(`${eco.name}: data file could not be parsed`); } }
   S.data[eco.id] = normalise(eco, raw);
   S.loadedText[eco.id] = text || '';
 }
@@ -871,7 +874,9 @@ function fallbackOpen() {
       if (id === 'config') { try { const cfg = YAML.parse(text); if (cfg && Array.isArray(cfg.economies) && cfg.economies.length) S.config = { ...S.config, ...cfg }; } catch (e) { toast('config.yaml unreadable'); } continue; }
       const eco = S.config.economies.find(e => e.id === id);
       if (!eco) { toast('Skipped ' + f.name + ': not a known economy'); continue; }
-      try { S.data[id] = normalise(eco, YAML.parse(text)); S.loadedText[id] = text; } catch (e) { toast(f.name + ': ' + e.message); }
+      delete S.loadError[id];
+      try { S.data[id] = normalise(eco, YAML.parse(text)); } catch (e) { S.loadError[id] = e.message; S.data[id] = normalise(eco, null); toast(f.name + ' could not be parsed'); }
+      S.loadedText[id] = text;
     }
     S.demo = false;
     if (!S.config.economies.find(e => e.id === S.current)) S.current = S.config.economies[0].id;
@@ -899,6 +904,7 @@ function render() {
   const eco = S.draft || S.data[S.current] || emptyEconomy(ecoMeta);
   const main = $('main');
   if (!Store.connected && !Object.keys(S.data).length) { main.innerHTML = connectNotice(); return; }
+  if (S.loadError[S.current]) { main.innerHTML = loadErrorNotice(ecoMeta); return; }
   const note = S.demo ? (SNAPSHOT_AT ? `<div class="demo-note">Read-only snapshot of the team's views as of ${fmtTime(SNAPSHOT_AT)}.</div>` : `<div class="demo-note">Preview with built-in sample content. Open this page from the synced OneDrive folder in Edge or Chrome and click <strong>Connect folder</strong> to load the team's files.</div>`) : '';
   const sub = { drivers: 'Structural drivers of the medium-term outlook', scenarios: 'Baseline, upside and downside by signpost group', implications: 'How drivers and signposts map to the building blocks of equity and bond returns' }[S.section];
   const head = `<header class="eco-head"><h1>${esc(eco.name)}</h1><p>${sub}</p></header>`;
@@ -960,6 +966,12 @@ function setActive(id) {
   const nav = $('main').querySelector('.outline'); if (!nav) return;
   nav.querySelectorAll('.ol-btn').forEach(b => b.classList.toggle('active', b.dataset.jump === id));
 }
+function loadErrorNotice(eco) {
+  return `<div class="notice error"><h3>${esc(eco.name)}: the data file could not be read</h3>
+    <p><code>data/${esc(eco.id)}.yaml</code> is not in a form this page can read, so it is shown neither here nor for editing — nothing will be written over it.</p>
+    <p class="hint">${esc(S.loadError[eco.id])}</p>
+    <p>Fix the file by hand (or restore a previous version from OneDrive / SharePoint version history), then click <strong>Reload</strong>. The page writes only block maps and lists, <code>|-</code> literal text and quoted strings; folded <code>&gt;</code> text, flow lists like <code>[a, b]</code> and multi-line plain strings are not supported.</p></div>`;
+}
 function connectNotice() {
   if (Store.fallback) return `<div class="notice warn"><h3>This browser cannot write to the folder</h3>
     <p>Use Microsoft Edge or Google Chrome for full read/write access. Here you can open the YAML files manually with "Open YAML files"; saving will download updated files for you to copy into the <code>data/</code> folder.</p></div>`;
@@ -979,7 +991,7 @@ function switchEconomy(id) {
 function renderToolbar() {
   $('sections').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.section === S.section));
   const eco = S.data[S.current];
-  $('meta').textContent = eco && eco.updated_at ? `Last saved ${fmtTime(eco.updated_at)}${eco.updated_by ? ' by ' + eco.updated_by : ''} (v${eco.version})` : (eco ? 'Not yet saved' : '');
+  $('meta').textContent = S.loadError[S.current] ? 'Data file unreadable' : eco && eco.updated_at ? `Last saved ${fmtTime(eco.updated_at)}${eco.updated_by ? ' by ' + eco.updated_by : ''} (v${eco.version})` : (eco ? 'Not yet saved' : '');
   const a = $('actions');
   if (S.draft) {
     a.innerHTML = `<button type="button" class="btn quiet" id="btn-cancel">Cancel</button><button type="button" class="btn warn" id="btn-save">Save changes</button>`;
@@ -988,8 +1000,8 @@ function renderToolbar() {
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
     if (SNAPSHOT_AT) { a.innerHTML = ''; return; }
-    const can = Store.connected || Store.fallback;
-    a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}>Edit</button>`;
+    const can = (Store.connected || Store.fallback) && !S.loadError[S.current];
+    a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}${S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : ''}>Edit</button>`;
     $('btn-edit').addEventListener('click', startEdit);
   }
 }
@@ -1282,15 +1294,18 @@ async function saveDraft() {
   const changes = diff(S.data[id], D);
   if (!changes.length) { toast('No changes to save'); await releaseLock(id); S.draft = null; render(); return; }
 
-  // conflict check: re-read the file and compare version numbers
+  // conflict check: re-read the file; any difference from what was loaded (a save by someone
+  // else, a hand edit, a restored version) refuses the save, whatever the version number says
   if (Store.connected) {
     const onDisk = await Store.readText(`data/${id}.yaml`);
-    if (onDisk && onDisk !== S.loadedText[id]) {
-      let v = null; try { v = YAML.parse(onDisk); } catch (e) { /* ignore */ }
-      if (!v || Number(v.version) !== S.data[id].version) {
-        dialog('Someone saved this economy while you were editing', `<p>The file on disk is now v${esc(v && v.version)} (saved ${esc(fmtTime(v && v.updated_at))} by ${esc(v && v.updated_by)}), but you started from v${S.data[id].version}. Your changes were not written.</p><p>Copy anything you need out of the page, then click <strong>Reload</strong> and re-apply your edits.</p>`, [['Close']]);
-        return;
-      }
+    if ((onDisk || '') !== S.loadedText[id]) {
+      let v = null; try { v = YAML.parse(onDisk || ''); } catch (e) { /* ignore */ }
+      const saved = v && typeof v === 'object' && Number(v.version) !== S.data[id].version;
+      const what = saved
+        ? `<p>The file on disk is now v${esc(v.version)} (saved ${esc(fmtTime(v.updated_at))} by ${esc(v.updated_by)}), but you started from v${S.data[id].version}.</p>`
+        : `<p>The file on disk has been changed outside this page since you loaded it (edited by hand, restored, or re-synced), so saving would overwrite those changes.</p>`;
+      dialog(saved ? 'Someone saved this economy while you were editing' : 'The data file changed while you were editing', what + `<p>Your changes were not written. Copy anything you need out of the page, then click <strong>Reload</strong> and re-apply your edits.</p>`, [['Close']]);
+      return;
     }
   }
   const prev = S.data[id];

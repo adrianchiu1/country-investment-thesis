@@ -63,7 +63,7 @@ Paths use stable ids (`iss-xxxxxx`) so renaming an issue does not break its hist
 - **Per-economy files** mean two people editing different economies never touch the same file, so OneDrive never has to merge anything.
 - **If OneDrive does detect a conflict** (two machines writing the same file before syncing), it keeps both copies and names one `united-states-<ComputerName>.yaml`. The page only reads the canonical name; look for such files if a save seems to have vanished, and merge by hand.
 - **The log file is append-only** from the page's point of view; OneDrive still uploads the whole file each time, which is fine at this size.
-- **Reading YAML on the web.** The `data/` files are plain text, so anyone can read (or, in an emergency, edit) an economy's views from the SharePoint web UI without the HTML. Hand edits are not logged and do not bump `version`; if you must, bump `version` yourself so open sessions detect the change.
+- **Reading YAML on the web.** The `data/` files are plain text, so anyone can read (or, in an emergency, edit) an economy's views from the SharePoint web UI without the HTML. Hand edits are not logged and do not bump `version`, but they are safe: a save from the page is refused whenever the file on disk differs from what that page loaded, whoever changed it, and the person saving is asked to Reload first. If a hand edit leaves the file in a form the page cannot read, that economy shows the parse error instead of its content and cannot be edited until the file is fixed (or restored from SharePoint version history); the page never writes over a file it could not read.
 - The `.html` file itself cannot be opened from the SharePoint web UI (SharePoint serves it as a download). Use the synced folder.
 
 ## Adding an economy
