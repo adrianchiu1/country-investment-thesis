@@ -1046,7 +1046,8 @@ function renderToolbar() {
     if (SNAPSHOT_AT) { a.innerHTML = ''; return; }
     const can = (Store.connected || Store.fallback) && !S.loadError[S.current] && eco;
     const why = S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : '';
-    a.innerHTML = `<button type="button" class="btn" id="btn-import" ${can ? '' : 'disabled'}${why} title="Import a file handed back by Ada (see prompts/ada-update-economy.md)">Import</button><button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`;
+    a.innerHTML = `<button type="button" class="btn quiet" id="btn-ada" title="How to update this economy with Ada, and the prompt to paste">Ada prompt</button><button type="button" class="btn" id="btn-import" ${can ? '' : 'disabled'}${why} title="Import a file handed back by Ada">Import</button><button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`;
+    $('btn-ada').addEventListener('click', showAdaPrompt);
     $('btn-import').addEventListener('click', startImport);
     $('btn-edit').addEventListener('click', startEdit);
   }
@@ -1308,7 +1309,31 @@ function validate(D) {
 function markInvalid(c, i, k) { const el = $('main').querySelector(`textarea[data-sbind="${k}"][data-c="${c}"][data-i="${i}"]`); if (el) el.classList.add('invalid'); }
 
 /* ====================================================================
-   Import: a file handed back by Ada (prompts/ada-update-economy.md)
+   Ada: the steps, and the prompt to paste (prompts/ folder)
+   ==================================================================== */
+const ADA_PROMPT_FILE = 'prompts/Ada prompt - update an economy.txt';
+async function showAdaPrompt() {
+  const eco = S.config.economies.find(e => e.id === S.current);
+  let prompt = null;
+  if (Store.connected) { try { prompt = await Store.readText(ADA_PROMPT_FILE); } catch (e) { /* shown below */ } }
+  const steps = `<ol style="padding-left:20px;margin:8px 0">
+    <li>Open Ada in your browser and start a new conversation.</li>
+    <li>Paste the prompt into the message box${prompt ? ' (the <strong>Copy prompt</strong> button below puts it on your clipboard)' : ''}. Do not send yet.</li>
+    <li>Attach <code>data/${esc(eco.id)}.yaml</code> from this folder (paperclip button, open <code>data</code>, choose the file). If Ada refuses .yaml attachments, open the file in Notepad, copy everything and paste it below the prompt.</li>
+    <li>Send. Ada proposes three changes at a time, page by page: reply with the numbers you want, and say <strong>approve</strong> only when the wording is exactly right.</li>
+    <li>At the end Ada hands back the whole file. Save it as <code>${esc(eco.id)}.yaml</code> anywhere except the <code>data</code> folder, come back here and click <strong>Import</strong>.</li>
+  </ol>`;
+  const missing = prompt == null ? `<p class="hint">${Store.connected ? `The prompt file <code>${esc(ADA_PROMPT_FILE)}</code> was not found in the connected folder.` : 'Connect the folder to copy the prompt from here.'} You can also open <code>prompts/READ ME FIRST.txt</code> in the folder for the same steps.</p>` : `<p class="hint">Full instructions are in <code>prompts/READ ME FIRST.txt</code>.</p>`;
+  const r = await dialog(`Update ${eco.name} with Ada`, steps + missing, prompt == null ? [['Close']] : [['Close', 'quiet'], ['Copy prompt', 'primary']]);
+  if (r !== 1 || prompt == null) return;
+  let ok = false;
+  try { await navigator.clipboard.writeText(prompt); ok = true; } catch (e) { /* fall back */ }
+  if (!ok) { const ta = document.createElement('textarea'); ta.value = prompt; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (e) { /* no */ } ta.remove(); }
+  toast(ok ? 'Prompt copied. Paste it into a new Ada conversation and attach the economy file.' : 'Could not copy automatically; open prompts/Ada prompt - update an economy.txt and copy it from there.');
+}
+
+/* ====================================================================
+   Import: a file handed back by Ada
    ==================================================================== */
 async function startImport() {
   const id = S.current, ecoMeta = S.config.economies.find(e => e.id === id), cur = S.data[id];
@@ -1393,9 +1418,9 @@ function renderReview(imp) {
     const what = isItem ? (g.parts[0] === 'scenarios' ? 'signpost' : 'issue') : 'subsection';
     return `<section class="chg"><h3><span class="kind ${kind}">${kind} ${what}</span>${esc(label)}<span class="where">${esc(where(g.parts))}</span></h3>${fields}</section>`;
   }).join('');
-  const n = R.changes.length;
+  const n = groups.length, f = R.changes.length;
   return `<div class="review">
-    <header class="eco-head"><h1>${esc(cur.name)}: import review</h1><p>${n} change${n === 1 ? '' : 's'} against v${cur.version}. Nothing is written until you click <strong>Apply import</strong>.</p></header>
+    <header class="eco-head"><h1>${esc(cur.name)}: import review</h1><p>${n} item${n === 1 ? '' : 's'} changed (${f} field${f === 1 ? '' : 's'}) against v${cur.version}. Nothing is written until you click <strong>Apply import</strong>.</p></header>
     ${R.warnings.map(w => `<div class="notice warn"><p>${w}</p></div>`).join('')}
     ${R.note ? `<div class="note"><h3>Change note from Ada</h3>${esc(R.note)}</div>` : '<div class="notice warn"><p>The file carries no <code>change_note</code>. Ask Ada to include one next time so the log records who researched what, and why.</p></div>'}
     ${cards}

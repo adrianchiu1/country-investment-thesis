@@ -9,7 +9,8 @@ economy-views/
   country-investment-thesis.html      the tool (open with Edge or Chrome)
   config.yaml             list of economies, lock timeout, title
   prompts/
-    ada-update-economy.md  prompt for updating an economy with Ada (see below)
+    READ ME FIRST.txt                   how to update an economy with Ada, step by step
+    Ada prompt - update an economy.txt  the prompt to paste into Ada
   data/
     united-states.yaml    current state of one economy (one file each)
     eurozone.yaml
@@ -61,7 +62,7 @@ Paths use stable ids (`iss-xxxxxx`) so renaming an issue does not break its hist
 
 ## Updating an economy with Ada
 
-`prompts/ada-update-economy.md` is a prompt for the firm's internal chatbot, Ada. A researcher pastes it into a new Ada conversation with the current `data/<economy>.yaml` attached. Ada reviews the file, suggests three things worth working on, researches each chosen topic (web for what has changed, internal documents for how the house has framed it), and agrees the exact wording of every change with the researcher before recording it. It then hands back the whole file with a `change_note` at the top.
+`prompts/Ada prompt - update an economy.txt` is a prompt for the firm's internal chatbot, Ada; `prompts/READ ME FIRST.txt` walks a researcher through the steps in plain language, and the **Ada prompt** button in the page (next to Import) shows the same steps and copies the prompt to the clipboard. The researcher pastes the prompt into a new Ada conversation with the current `data/<economy>.yaml` attached (Ada asks for the file, and where to find it, if it is missing). Ada reviews the file, then works page by page, Drivers, Signposts, Investment implications, proposing three specific changes at a time, each naming one issue, signpost or matrix cell. It researches only what the researcher picks (web for what has changed, internal documents for how the house has framed it) and agrees the exact wording of every change before recording it. Matrix changes are never written to the file; they go into the change note as suggestions. At the end Ada hands back the whole file with a `change_note` at the top.
 
 The researcher saves that file anywhere (not into `data/`), opens the page, selects the economy and clicks **Import**. The page:
 
