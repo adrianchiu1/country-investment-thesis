@@ -8,6 +8,8 @@ A single-file HTML front-end plus YAML files, kept in a SharePoint document libr
 economy-views/
   country-investment-thesis.html      the tool (open with Edge or Chrome)
   config.yaml             list of economies, lock timeout, title
+  prompts/
+    ada-update-economy.md  prompt for updating an economy with Ada (see below)
   data/
     united-states.yaml    current state of one economy (one file each)
     eurozone.yaml
@@ -56,6 +58,19 @@ changes:
 ```
 
 Paths use stable ids (`iss-xxxxxx`) so renaming an issue does not break its history. Reordering shows up as `.../order` changes; deletions show `new: null`.
+
+## Updating an economy with Ada
+
+`prompts/ada-update-economy.md` is a prompt for the firm's internal chatbot, Ada. A researcher pastes it into a new Ada conversation with the current `data/<economy>.yaml` attached. Ada reviews the file, suggests three things worth working on, researches each chosen topic (web for what has changed, internal documents for how the house has framed it), and agrees the exact wording of every change with the researcher before recording it. It then hands back the whole file with a `change_note` at the top.
+
+The researcher saves that file anywhere (not into `data/`), opens the page, selects the economy and clicks **Import**. The page:
+
+1. reads the file (paste or choose), checks it is for the selected economy, and refuses it if it is malformed or incomplete, with the reason;
+2. keeps every existing id, mints ids for new items (`new-1` placeholders), and ignores the `implications` section — arrows are only ever set by clicking in the page;
+3. shows a review screen: every edited, added or retired issue and signpost, bullet by bullet, plus Ada's change note and a warning if the file was derived from an older version than the one on disk;
+4. on **Apply import**, writes the file with `version + 1` through the normal save path, so the lock and the on-disk conflict check apply, and appends a log entry marked `source: import` carrying the change note.
+
+If the change note lists matrix suggestions, click **Edit** afterwards and set the arrows on the Investment implications page.
 
 ## SharePoint / OneDrive behaviour to know about
 
