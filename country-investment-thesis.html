@@ -1393,9 +1393,9 @@ function renderReview(imp) {
     const what = isItem ? (g.parts[0] === 'scenarios' ? 'signpost' : 'issue') : 'subsection';
     return `<section class="chg"><h3><span class="kind ${kind}">${kind} ${what}</span>${esc(label)}<span class="where">${esc(where(g.parts))}</span></h3>${fields}</section>`;
   }).join('');
-  const n = R.changes.length;
+  const n = groups.length, f = R.changes.length;
   return `<div class="review">
-    <header class="eco-head"><h1>${esc(cur.name)}: import review</h1><p>${n} change${n === 1 ? '' : 's'} against v${cur.version}. Nothing is written until you click <strong>Apply import</strong>.</p></header>
+    <header class="eco-head"><h1>${esc(cur.name)}: import review</h1><p>${n} item${n === 1 ? '' : 's'} changed (${f} field${f === 1 ? '' : 's'}) against v${cur.version}. Nothing is written until you click <strong>Apply import</strong>.</p></header>
     ${R.warnings.map(w => `<div class="notice warn"><p>${w}</p></div>`).join('')}
     ${R.note ? `<div class="note"><h3>Change note from Ada</h3>${esc(R.note)}</div>` : '<div class="notice warn"><p>The file carries no <code>change_note</code>. Ask Ada to include one next time so the log records who researched what, and why.</p></div>'}
     ${cards}
