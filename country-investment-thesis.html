@@ -167,6 +167,7 @@
   table.scen td textarea { min-height: 90px; }
   th.upside { color: var(--up); } th.downside { color: var(--down); }
   .scen-foot { padding: 8px 16px 12px; border-top: 1px solid var(--rule-soft); }
+  .scen-head { padding: 0 16px; margin: 4px 0 10px; }
 
   /* ---------- implications matrix ---------- */
   .matrix-wrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
@@ -390,6 +391,8 @@ const YAML = (() => {
     return docs.length <= 1 ? (docs[0] === undefined ? null : docs[0]) : docs;
   }
   function isSkippable(l) { return l.text === '' || l.text.startsWith('#'); }
+  // literal block header: | plus optional chomping (+/-) and indentation indicator (1-9), in either order
+  function literalHeader(t) { const m = t.match(/^\|(?:([1-9])([+-])?|([+-])?([1-9])?)$/); return m ? { chomp: m[2] || m[3] || '', indent: +(m[1] || m[4] || 0) } : null; }
   function keyMatch(text) {
     // key: value  |  "quoted key": value
     const m = text.match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^:#\-\[\]{}"'][^:]*?):(?:\s+(.*)|$)/);
@@ -413,8 +416,9 @@ const YAML = (() => {
       if (l.indent > indent) throw new Error('YAML: unexpected indent at line ' + (l.n + 1));
       const km = keyMatch(l.text);
       if (!km) throw new Error('YAML: expected "key:" at line ' + (l.n + 1) + ': ' + l.text);
-      if (km.rest === '|' || km.rest === '|-' || km.rest === '|+') {
-        const [s, next] = parseLiteral(lines, i + 1, indent, km.rest);
+      const lit = literalHeader(km.rest);
+      if (lit) {
+        const [s, next] = parseLiteral(lines, i + 1, indent, lit);
         obj[km.key] = s; i = next;
       } else if (km.rest === '') {
         let j = i + 1;
@@ -444,8 +448,8 @@ const YAML = (() => {
         while (j < lines.length && isSkippable(lines[j])) j++;
         if (j < lines.length && lines[j].indent > indent) { const [v, next] = parseBlock(lines, j, lines[j].indent); arr.push(v); i = next; }
         else { arr.push(null); i = j; }
-      } else if (rest === '|' || rest === '|-') {
-        const [s, next] = parseLiteral(lines, i + 1, indent, rest); arr.push(s); i = next;
+      } else if (literalHeader(rest)) {
+        const [s, next] = parseLiteral(lines, i + 1, indent, literalHeader(rest)); arr.push(s); i = next;
       } else if (keyMatch(rest)) {
         // mapping whose first key sits on the dash line: re-indent that line and parse a map
         l.indent = l.raw.indexOf(rest); l.text = rest;
@@ -454,19 +458,22 @@ const YAML = (() => {
     }
     return [arr, i];
   }
-  function parseLiteral(lines, i, parentIndent, marker) {
+  function parseLiteral(lines, i, parentIndent, header) {
     const out = [];
-    let blockIndent = -1;
+    // explicit indentation indicator is relative to the parent node; otherwise the first non-blank line decides
+    let blockIndent = header.indent ? parentIndent + header.indent : -1;
     while (i < lines.length) {
       const l = lines[i];
-      if (l.text === '') { out.push(''); i++; continue; }
+      if (l.text === '') { out.push(blockIndent >= 0 ? l.raw.slice(blockIndent) : ''); i++; continue; }
       if (blockIndent < 0) { if (l.indent <= parentIndent) break; blockIndent = l.indent; }
       if (l.indent < blockIndent) break;
       out.push(l.raw.slice(blockIndent)); i++;
     }
-    while (out.length && out[out.length - 1] === '') out.pop();
+    let trailing = 0;
+    while (out.length && out[out.length - 1] === '') { out.pop(); trailing++; }
     let s = out.join('\n');
-    if (marker === '|' || marker === '|+') s += '\n';
+    if (header.chomp === '+') s += '\n'.repeat(trailing + (out.length ? 1 : 0));
+    else if (header.chomp === '' && out.length) s += '\n';
     return [s, i];
   }
   function scalar(t) {
@@ -486,9 +493,19 @@ const YAML = (() => {
   function needsQuote(s) {
     if (s === '' || !PLAIN.test(s) || s !== s.trim()) return true;
     if (/^(true|false|null|~|yes|no|on|off)$/i.test(s)) return true;
-    if (/^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return true;
+    if (/^[-+.]?\d/.test(s)) return true; // anything number-like (incl. hex, octal, dates, 1,000) so other YAML readers see a string too
     if (s.includes(': ') || s.includes(' #') || s.endsWith(':')) return true;
     return false;
+  }
+  /* Literal block scalar. Chomping keeps trailing newlines exactly; an explicit indentation
+     indicator is written when the first line starts with whitespace, otherwise readers would
+     take that whitespace as the block indent and fail on the following lines. */
+  function literal(v, indent) {
+    const pad = ' '.repeat(indent + 2);
+    const body = v.replace(/\n+$/, ''), trailing = v.length - body.length;
+    if (body === '' || trailing > 1) return JSON.stringify(v) + '\n'; // degenerate cases: a quoted string is unambiguous
+    const header = '|' + (/^[ \t]/.test(body) ? '2' : '') + (trailing ? '' : '-');
+    return header + '\n' + body.split('\n').map(l => l === '' ? '' : pad + l).join('\n') + '\n';
   }
   function str(s) { return needsQuote(s) ? JSON.stringify(s) : s; }
   function dump(v, indent = 0) { return dumpNode(v, indent, false).replace(/^\n/, '').replace(/\n+$/, '') + '\n'; }
@@ -497,7 +514,7 @@ const YAML = (() => {
     if (v === null || v === undefined) return 'null\n';
     if (typeof v === 'boolean' || typeof v === 'number') return String(v) + '\n';
     if (typeof v === 'string') {
-      if (v.includes('\n')) return '|-\n' + v.split('\n').map(l => l === '' ? '' : pad + '  ' + l).join('\n') + '\n';
+      if (v.includes('\n')) return literal(v, indent);
       return str(v) + '\n';
     }
     if (Array.isArray(v)) {
@@ -510,7 +527,7 @@ const YAML = (() => {
         } else if (Array.isArray(item) && item.length) {
           out += pad + '-' + dumpNode(item, indent + 2, false);
         } else {
-          out += pad + '- ' + dumpNode(item, indent + 2, true);
+          out += pad + '- ' + dumpNode(item, indent, true);
         }
       }
       return out;
@@ -690,11 +707,23 @@ function normalise(eco, raw) {
   const out = { ...base, ...raw };
   out.id = eco.id; out.name = eco.name;
   out.version = Number(out.version) || 0;
-  out.drivers = Array.isArray(out.drivers) && out.drivers.length ? out.drivers : base.drivers;
-  for (const d of out.drivers) { d.subsections = d.subsections || []; for (const s of d.subsections) { s.issues = s.issues || []; for (const i of s.issues) { i.title = i.title || ''; i.text = i.text || ''; } } }
-  out.scenarios = Array.isArray(out.scenarios) && out.scenarios.length ? out.scenarios : base.scenarios;
-  for (const c of out.scenarios) { c.issues = c.issues || []; for (const i of c.issues) { i.title = i.title || ''; for (const k of SCENARIO_COLS) i[k] = i[k] || ''; } }
-  out.implications = (out.implications && typeof out.implications === 'object' && !Array.isArray(out.implications)) ? out.implications : {};
+  const text = (v) => (v == null ? '' : String(v));
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const list = (v) => (Array.isArray(v) ? v.filter(isObj) : []);
+  out.drivers = list(out.drivers);
+  if (!out.drivers.length) out.drivers = base.drivers;
+  out.drivers.forEach((d, n) => {
+    d.id = text(d.id) || 'driver-' + (n + 1);
+    const t = DRIVER_TEMPLATE.find(x => x.id === d.id);
+    d.name = text(d.name) || (t ? t.name : d.id);
+    d.subsections = list(d.subsections);
+    d.subsections.forEach((s, m) => { s.id = text(s.id) || 'sub-' + (m + 1); s.name = text(s.name) || ((t && t.subsections.find(([id]) => id === s.id)) || [])[1] || ''; s.issues = list(s.issues); for (const i of s.issues) { i.id = text(i.id) || uid('iss'); i.title = text(i.title); i.text = text(i.text); } });
+  });
+  out.scenarios = list(out.scenarios);
+  if (!out.scenarios.length) out.scenarios = base.scenarios;
+  out.scenarios.forEach((c, n) => { c.id = text(c.id) || 'cat-' + (n + 1); c.name = text(c.name) || (SCENARIO_TEMPLATE.find(([id]) => id === c.id) || [])[1] || ''; c.issues = list(c.issues); for (const i of c.issues) { i.id = text(i.id) || uid('iss'); i.title = text(i.title); for (const k of SCENARIO_COLS) i[k] = text(i[k]); } });
+  out.implications = {};
+  if (isObj(raw.implications)) for (const [key, cells] of Object.entries(raw.implications)) if (isObj(cells)) { const row = {}; for (const [f, v] of Object.entries(cells)) if (v === 'up' || v === 'down') row[f] = v; if (Object.keys(row).length) out.implications[key] = row; }
   return out;
 }
 function rowKeys(eco) {
@@ -834,12 +863,14 @@ function fallbackOpen() {
     for (const f of inp.files) {
       const text = await f.text();
       const id = f.name.replace(/\.ya?ml$/, '');
-      if (id === 'config') { try { S.config = { ...S.config, ...YAML.parse(text) }; } catch (e) { toast('config.yaml unreadable'); } continue; }
+      if (id === 'config') { try { const cfg = YAML.parse(text); if (cfg && Array.isArray(cfg.economies) && cfg.economies.length) S.config = { ...S.config, ...cfg }; } catch (e) { toast('config.yaml unreadable'); } continue; }
       const eco = S.config.economies.find(e => e.id === id);
       if (!eco) { toast('Skipped ' + f.name + ': not a known economy'); continue; }
       try { S.data[id] = normalise(eco, YAML.parse(text)); S.loadedText[id] = text; } catch (e) { toast(f.name + ': ' + e.message); }
     }
     S.demo = false;
+    if (!S.config.economies.find(e => e.id === S.current)) S.current = S.config.economies[0].id;
+    for (const eco of S.config.economies) if (!S.data[eco.id]) S.data[eco.id] = normalise(eco, null);
     setStatus('warn', 'Files opened manually');
     render();
   };
@@ -992,9 +1023,9 @@ function renderIssue(i, di, si, ii, ed) {
   if (!ed) return `<details class="issue" id="d-${di}-${si}-${ii}" open><summary><span class="t">${esc(i.title) || '<span class="empty">Untitled</span>'}</span></summary><div class="issue-body">${renderRich(i.text)}</div></details>`;
   return `<details class="issue" id="d-${di}-${si}-${ii}" open>
     <summary><span class="t">${esc(i.title) || 'Untitled'}</span><span class="spacer"></span>
-      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="-1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move up">↑</button>
-      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move down">↓</button>
-      <button type="button" class="btn small quiet danger" data-act="del-issue" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()">Remove</button></summary>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="-1" data-d="${di}" data-s="${si}" data-i="${ii}" title="Move up">↑</button>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="1" data-d="${di}" data-s="${si}" data-i="${ii}" title="Move down">↓</button>
+      <button type="button" class="btn small quiet danger" data-act="del-issue" data-d="${di}" data-s="${si}" data-i="${ii}">Remove</button></summary>
     <div class="issue-body">
       <div class="field"><label>Issue title</label><input type="text" data-bind="title" data-d="${di}" data-s="${si}" data-i="${ii}" value="${esc(i.title)}" placeholder="Short name for the issue"></div>
       <div class="field"><label>View (one bullet per line, start each with "- "; indent two spaces for sub-bullets; **bold** allowed)</label><textarea data-bind="text" data-d="${di}" data-s="${si}" data-i="${ii}">${esc(i.text)}</textarea></div>
@@ -1015,8 +1046,8 @@ function renderScenarios(eco) {
   return eco.scenarios.map((c, ci) => {
     const optional = !SCENARIO_TEMPLATE.some(([id]) => id === c.id);
     return `<details class="scen-cat" id="c-${ci}" open>
-      <summary>${ed && optional ? `<input type="text" data-act="cat-name" data-c="${ci}" value="${esc(c.name)}" style="font:inherit;border:1px solid var(--rule);border-radius:4px;padding:2px 6px" onclick="event.stopPropagation()">` : esc(c.name)}<span class="count">${c.issues.length} signpost${c.issues.length === 1 ? '' : 's'}</span>
-        ${ed && optional ? `<span class="spacer"></span><button type="button" class="btn small quiet danger" data-act="del-cat" data-c="${ci}" onclick="event.stopPropagation()">Remove category</button>` : ''}</summary>
+      <summary><span class="t">${esc(c.name) || (ed ? 'Untitled' : '<span class="empty">Untitled</span>')}</span><span class="count">${c.issues.length} signpost${c.issues.length === 1 ? '' : 's'}</span></summary>
+      ${ed && optional ? `<div class="spanel-head scen-head"><div class="field"><input type="text" data-act="cat-name" data-c="${ci}" value="${esc(c.name)}" placeholder="Category name"></div><button type="button" class="btn small quiet danger" data-act="del-cat" data-c="${ci}">Remove category</button></div>` : ''}
       <table class="scen">
         <thead><tr><th class="issue-col">Signpost</th><th>Baseline</th><th class="upside">Upside</th><th class="downside">Downside</th></tr></thead>
         <tbody>
@@ -1073,21 +1104,29 @@ function wireMain(eco) {
   main.querySelectorAll('[data-bind]').forEach(el => el.addEventListener('input', () => {
     const i = D.drivers[+el.dataset.d].subsections[+el.dataset.s].issues[+el.dataset.i];
     i[el.dataset.bind] = el.value;
-    if (el.dataset.bind === 'title') el.closest('details').querySelector('summary .t').textContent = el.value || 'Untitled';
+    if (el.dataset.bind === 'title') { el.closest('details').querySelector('summary .t').textContent = el.value || 'Untitled'; const ol = main.querySelector(`.outline [data-jump="d-${el.dataset.d}-${el.dataset.s}-${el.dataset.i}"]`); if (ol) ol.textContent = el.value || 'Untitled'; }
     if (el.tagName === 'TEXTAREA') autoGrow(el);
   }));
   main.querySelectorAll('[data-sbind]').forEach(el => el.addEventListener('input', () => {
     D.scenarios[+el.dataset.c].issues[+el.dataset.i][el.dataset.sbind] = el.value;
     el.classList.remove('invalid');
+    if (el.dataset.sbind === 'title') { const ol = main.querySelector(`.outline [data-jump="c-${el.dataset.c}-${el.dataset.i}"]`); if (ol) ol.textContent = el.value || 'Untitled'; }
     if (el.tagName === 'TEXTAREA') autoGrow(el);
   }));
   main.querySelectorAll('[data-act="sub-name"]').forEach(el => el.addEventListener('input', () => {
     D.drivers[+el.dataset.d].subsections[+el.dataset.s].name = el.value;
     const lbl = main.querySelector(`.stab[data-d="${el.dataset.d}"][data-s="${el.dataset.s}"] .lbl`); if (lbl) lbl.textContent = el.value || 'Untitled';
   }));
-  main.querySelectorAll('[data-act="cat-name"]').forEach(el => el.addEventListener('input', () => { D.scenarios[+el.dataset.c].name = el.value; }));
+  main.querySelectorAll('[data-act="cat-name"]').forEach(el => el.addEventListener('input', () => {
+    D.scenarios[+el.dataset.c].name = el.value;
+    const lbl = main.querySelector(`#c-${el.dataset.c} > summary .t`); if (lbl) lbl.textContent = el.value || 'Untitled';
+    const btn = main.querySelector(`[data-act="add-scen"][data-c="${el.dataset.c}"]`); if (btn) btn.textContent = 'Add signpost to ' + (el.value || 'Untitled');
+  }));
   main.querySelectorAll('textarea').forEach(autoGrow);
   main.onclick = (e) => {
+    // Controls that sit inside a <summary> must not fold/unfold the <details> they belong to.
+    // (Do not stopPropagation on them: this delegated handler is what makes them work.)
+    if (e.target.closest('summary') && e.target.closest('button')) e.preventDefault();
     const b = e.target.closest('button[data-act]'); if (!b) return;
     const a = b.dataset.act, d = +b.dataset.d, s = +b.dataset.s, i = +b.dataset.i, c = +b.dataset.c;
     if (a === 'add-issue') { D.drivers[d].subsections[s].issues.push({ id: uid('iss'), title: '', text: '' }); render(); focusLast('[data-bind="title"]'); }
