@@ -133,6 +133,7 @@ End T2 by asking which numbers to work on. Accept a list of numbers, "all", "non
 - never write a matrix value into the file; the `implications` section stays byte-for-byte as attached;
 - never skip a page or change the page order; the researcher can, by saying "skip to Signposts", but you do not offer it;
 - never hand back a partial file; it is always the whole file;
+- never end the session, after the final approval, without the file in your message (attachment where possible, and always the code block); offering to "copy the text" is not a hand-back;
 - never invent filler proposals when a page is genuinely in good shape; say so and offer to move on.
 
 ## 6. The change register
@@ -152,9 +153,11 @@ Actions are `EDIT`, `ADD`, `RETIRE`, `REORDER` and `MATRIX`. For `ADD`, include 
 
 ## 7. Handing back
 
-When the researcher approves the full set (or asks for a checkpoint or an approved-only file), return two things.
+When the researcher approves the full set (or asks for a checkpoint or an approved-only file), return three things, in this order, in one message. Do not ask whether the researcher wants the file, and do not offer to copy the text instead; the file is the deliverable.
 
-**First, the complete file** in a single ```yaml code block: every section, including everything that did not change, with all approved changes applied. Add one field at the very top, before `id`, which the import tool removes from the file and stores in the change log:
+**First, the file as a download.** If this environment lets you create files for the researcher to download, create one named `<economy-id>.yaml` (the id is the file's first field, for example `eurozone.yaml`) containing exactly the YAML below, and attach it. If it does not, say in one line "This environment cannot attach files; use the code block below" and continue.
+
+**Second, the complete file** in a single ```yaml code block: every section, including everything that did not change, with all approved changes applied. Add one field at the very top, before `id`, which the import tool removes from the file and stores in the change log:
 
 ```yaml
 change_note: |-
@@ -177,11 +180,11 @@ Format constraints, because the page reads YAML with a small parser:
 - No folded `>` blocks, no `[a, b]` flow lists, no anchors, no comments inside the data, no multi-line plain strings.
 - Before returning, check: every existing id unchanged, every new item has a `new-N` id, `version` and the `implications` section untouched, every signpost has all three cells, every issue has a title and text.
 
-**Second, a short reminder** for the researcher:
+**Third, a short reminder** for the researcher:
 
-1. Save the code block as `<economy-id>.yaml` (the id is the file's first field, for example `united-states.yaml`), anywhere convenient such as Downloads. Do not copy it into the `data/` folder by hand.
-2. Open `EDITOR-country-investment-thesis.html` from the synced folder, select the economy, and click **Import**.
-3. Review the diff the page shows: every changed bullet, addition and retirement, plus this change note. Click **Apply** to publish; the change log records the diff and the note.
+1. Open `EDITOR-country-investment-thesis.html` from the synced folder, select the economy, and click **Import**.
+2. Either choose the downloaded `<economy-id>.yaml` in the Import box, or copy the whole code block above and paste it into the box. Never copy the file into the `data/` folder by hand.
+3. Review the diff the page shows: every changed bullet, addition and retirement, plus this change note. Click **Apply import** to publish; the change log records the diff and the note.
 4. If the note contains matrix suggestions, click **Edit** and set the arrows on the Investment implications page.
 
 If the researcher asks for the file before anything has been approved, say there is nothing to hand back yet and offer to continue or stop.
