@@ -186,7 +186,8 @@
   }
   table.matrix tr.group.closed td::before { transform: rotate(-45deg); margin-bottom: 1px; }
   table.matrix tr.leaf td.rowhead { padding-left: 30px; }
-  table.matrix tr.leaf td.rowhead .items { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  table.matrix tr.leaf.hl td { background: var(--accent-soft); }
+  table.matrix tr.leaf.hl td.rowhead { color: var(--accent); font-weight: 600; }
   table.matrix td.cell { text-align: center; width: 96px; font-size: 18px; line-height: 1; }
   button.cellbtn {
     width: 30px; height: 30px; border-radius: 50%; border: 1px dashed var(--rule); background: transparent; cursor: pointer;
@@ -199,7 +200,7 @@
 
   /* ---------- page layout: outline spine + content ---------- */
   .layout { display: grid; grid-template-columns: 260px minmax(0, 860px); gap: 36px; align-items: start; }
-  .layout.full { grid-template-columns: minmax(0, 1fr); }
+  .layout.wide { grid-template-columns: 260px minmax(0, 1fr); }
   .eco-head { margin: 0 0 18px; }
   .eco-head h1 { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
   .eco-head p { margin: 4px 0 0; color: var(--muted); }
@@ -219,7 +220,7 @@
   .ol-btn .cnt { color: #9AA5B1; font-weight: 400; margin-left: 4px; }
   .ol-btn.active { background: var(--accent-soft); color: var(--accent); }
   .ol-btn.l1.active { background: none; color: var(--accent); }
-  details, tr.scen-row { scroll-margin-top: 70px; }
+  details, tr.scen-row, tr.group, tr.leaf { scroll-margin-top: 70px; }
   .demo-note { background: var(--edit-soft); border: 1px solid #EBD9B4; color: #6E4A10; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 16px; }
   .demo-note a { color: inherit; }
   @media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } .outline { display: none; } }
@@ -730,8 +731,9 @@ function normalise(eco, raw) {
 }
 function rowKeys(eco) {
   const rows = [];
-  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name });
-  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name, items: c.issues.map(i => i.title.trim()).filter(Boolean) });
+  const titles = (issues) => issues.map(i => i.title.trim() || 'Untitled');
+  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name, items: titles(s.issues) });
+  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name, items: titles(c.issues) });
   return rows;
 }
 
@@ -908,35 +910,47 @@ function render() {
   const note = S.demo ? (SNAPSHOT_AT ? `<div class="demo-note">Read-only snapshot of the team's views as of ${fmtTime(SNAPSHOT_AT)}.</div>` : `<div class="demo-note">Preview with built-in sample content. Open this page from the synced OneDrive folder in Edge or Chrome and click <strong>Connect folder</strong> to load the team's files.</div>`) : '';
   const sub = { drivers: 'Structural drivers of the medium-term outlook', scenarios: 'Baseline, upside and downside by signpost group', implications: 'How drivers and signposts map to the building blocks of equity and bond returns' }[S.section];
   const head = `<header class="eco-head"><h1>${esc(eco.name)}</h1><p>${sub}</p></header>`;
-  if (S.section === 'implications') {
-    main.innerHTML = note + `<div class="layout full"><div>${head}${renderImplications(eco)}</div></div>`;
-  } else {
-    const body = S.section === 'drivers' ? renderDrivers(eco) : renderScenarios(eco);
-    main.innerHTML = note + `<div class="layout"><nav class="outline" aria-label="Outline">${renderOutline(eco)}</nav><div>${head}${body}</div></div>`;
-  }
+  const body = { drivers: renderDrivers, scenarios: renderScenarios, implications: renderImplications }[S.section](eco);
+  main.innerHTML = note + `<div class="layout${S.section === 'implications' ? ' wide' : ''}"><nav class="outline" aria-label="Outline">${renderOutline(eco)}</nav><div>${head}${body}</div></div>`;
   wireMain(eco);
   wireOutline();
 }
-S.olOpen = S.olOpen || new Set();
+S.olOpen = S.olOpen || new Set(); S.olClosed = S.olClosed || new Set();
+const olIsOpen = (id) => S.olOpen.has(id) ? true : S.olClosed.has(id) ? false : id.startsWith('m-');
+const olSet = (id, open) => { S.olOpen[open ? 'add' : 'delete'](id); S.olClosed[open ? 'delete' : 'add'](id); };
 function renderOutline(eco) {
   const tools = `<div class="outline-tools"><button type="button" data-fold="open">Expand all</button><button type="button" data-fold="close">Collapse all</button></div>`;
   const node = (lvl, id, label, children, extra = '') =>
-    `<li class="ol-node${children && !S.olOpen.has(id) ? ' closed' : ''}"><div class="ol-row"><button type="button" class="ol-tog${children ? '' : ' blank'}" data-tog="${id}" aria-label="Fold"></button><button type="button" class="ol-btn ${lvl}" data-jump="${id}">${esc(label)}${extra}</button></div>${children ? '<ol>' + children + '</ol>' : ''}</li>`;
+    `<li class="ol-node${children && !olIsOpen(id) ? ' closed' : ''}"><div class="ol-row"><button type="button" class="ol-tog${children ? '' : ' blank'}" data-tog="${id}" aria-label="Fold"></button><button type="button" class="ol-btn ${lvl}" data-jump="${id}">${esc(label)}${extra}</button></div>${children ? '<ol>' + children + '</ol>' : ''}</li>`;
   if (S.section === 'drivers') {
     return tools + '<ol>' + eco.drivers.map((d, di) => node('l1', `d-${di}`, d.name,
       d.subsections.map((s, si) => node('l2', `d-${di}-${si}`, s.name,
         s.issues.map((i, ii) => node('l3', `d-${di}-${si}-${ii}`, i.title || 'Untitled', '')).join(''),
         `<span class="cnt">${s.issues.length}</span>`)).join(''))).join('') + '</ol>';
   }
-  return tools + '<ol>' + eco.scenarios.map((c, ci) => node('l1', `c-${ci}`, c.name,
-    c.issues.map((i, ii) => node('l3', `c-${ci}-${ii}`, i.title || 'Untitled', '')).join(''),
-    `<span class="cnt">${c.issues.length}</span>`)).join('') + '</ol>';
+  if (S.section === 'scenarios') {
+    return tools + '<ol>' + eco.scenarios.map((c, ci) => node('l1', `c-${ci}`, c.name,
+      c.issues.map((i, ii) => node('l3', `c-${ci}-${ii}`, i.title || 'Untitled', '')).join(''),
+      `<span class="cnt">${c.issues.length}</span>`)).join('') + '</ol>';
+  }
+  // implications: group > matrix row > the issues / signposts that row stands for (full titles)
+  return tools + '<ol>' + rowGroups(eco).map((g, gi) => node('l1', `m-${gi}`, g.name,
+    g.rows.map((r, ri) => node('l2', `m-${gi}-${ri}`, r.name,
+      r.items.map((t, ii) => node('l3', `m-${gi}-${ri}-${ii}`, t, '')).join(''),
+      `<span class="cnt">${r.items.length}</span>`)).join(''))).join('') + '</ol>';
 }
 function jumpTo(id) {
   const parts = id.split('-');
   if (parts[0] === 'd' && parts.length >= 3) selectTab(+parts[1], +parts[2]);
-  const el = document.getElementById(id); if (!el) return;
+  let el = document.getElementById(id);
+  if (!el && parts[0] === 'm' && parts.length === 4) { id = parts.slice(0, 3).join('-'); el = document.getElementById(id); } // an issue in the spine jumps to its matrix row
+  if (!el) return;
   let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+  if (el.tagName === 'TR') {
+    const g = $('main').querySelector(`tr.group[data-g="${el.dataset.g}"]`); if (g && g.classList.contains('closed')) g.click();
+    $('main').querySelectorAll('tr.hl').forEach(t => t.classList.remove('hl')); el.classList.add('hl');
+  }
+  S.jumpingUntil = Date.now() + 900; // keep the clicked entry active while the smooth scroll runs
   el.scrollIntoView({ block: 'start', behavior: 'smooth' });
   setActive(id);
 }
@@ -946,15 +960,17 @@ function wireOutline() {
   nav.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => jumpTo(b.dataset.jump)));
   nav.querySelectorAll('[data-tog]').forEach(b => b.addEventListener('click', () => {
     const li = b.closest('.ol-node'); li.classList.toggle('closed');
-    if (li.classList.contains('closed')) S.olOpen.delete(b.dataset.tog); else S.olOpen.add(b.dataset.tog);
+    olSet(b.dataset.tog, !li.classList.contains('closed'));
   }));
   nav.querySelectorAll('[data-fold]').forEach(b => b.addEventListener('click', () => {
     const open = b.dataset.fold === 'open';
     $('main').querySelectorAll('details.issue, details.scen-cat').forEach(d => d.open = open);
-    nav.querySelectorAll('.ol-node').forEach(li => { if (li.querySelector('ol')) { li.classList.toggle('closed', !open); const id = li.querySelector('[data-tog]').dataset.tog; if (open) S.olOpen.add(id); else S.olOpen.delete(id); } });
+    $('main').querySelectorAll('tr.group').forEach(tr => { if (tr.classList.contains('closed') === open) tr.click(); });
+    nav.querySelectorAll('.ol-node').forEach(li => { if (li.querySelector('ol')) { li.classList.toggle('closed', !open); olSet(li.querySelector('[data-tog]').dataset.tog, open); } });
   }));
   const targets = [...nav.querySelectorAll('[data-jump]')].map(b => b.dataset.jump);
   const spy = () => {
+    if (S.jumpingUntil && Date.now() < S.jumpingUntil) return;
     let best = null;
     for (const id of targets) { const el = document.getElementById(id); if (!el || el.offsetParent === null) continue; if (el.getBoundingClientRect().top <= 80) best = id; else break; }
     if (best) setActive(best);
@@ -1085,18 +1101,14 @@ function renderScenIssue(i, ci, ii, ed) {
 }
 
 /* ---------- implications ---------- */
-/* Small text after a matrix row name: the signposts in that category, shortened to their first
-   two words each, full titles on hover. Driver rows carry nothing: the subsection name is the bucket. */
-function rowItems(r) {
-  if (!r.items || !r.items.length) return '';
-  const short = r.items.map(t => t.split(/\s+/).slice(0, 2).join(' '));
-  return `<span class="items" title="${esc(r.items.join('\n'))}">${short.map(esc).join(' · ')}</span>`;
+function rowGroups(eco) {
+  const groups = [];
+  for (const r of rowKeys(eco)) { let g = groups.find(x => x.name === r.group); if (!g) { g = { name: r.group, rows: [] }; groups.push(g); } g.rows.push(r); }
+  return groups;
 }
 function renderImplications(eco) {
   const ed = !!S.draft;
-  const rows = rowKeys(eco);
-  const groups = [];
-  for (const r of rows) { let g = groups.find(x => x.name === r.group); if (!g) { g = { name: r.group, rows: [] }; groups.push(g); } g.rows.push(r); }
+  const groups = rowGroups(eco);
   const eq = FACTORS.filter(f => f.group === 'equity'), bd = FACTORS.filter(f => f.group === 'bonds');
   const cellHtml = (key, f) => {
     const v = (eco.implications[key] || {})[f.id] || '';
@@ -1110,8 +1122,8 @@ function renderImplications(eco) {
       <tr>${FACTORS.map(f => `<th${f.id === 'sales_growth' || f.id === 'cash_rate' ? ' class="eq"' : ''}>${esc(f.name)}</th>`).join('')}</tr>
     </thead>
     <tbody>
-    ${groups.map((g, gi) => `<tr class="group" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}</td></tr>` +
-      g.rows.map(r => `<tr class="leaf" data-g="${gi}"><td class="rowhead">${esc(r.name)}${rowItems(r)}</td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
+    ${groups.map((g, gi) => `<tr class="group" id="m-${gi}" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}</td></tr>` +
+      g.rows.map((r, ri) => `<tr class="leaf" id="m-${gi}-${ri}" data-g="${gi}"><td class="rowhead">${esc(r.name)}</td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
     </tbody></table></div>
     <div class="legend"><span class="item"><span class="arrow up">${ARROW.up}</span>Upside to the factor</span><span class="item"><span class="arrow down">${ARROW.down}</span>Downside to the factor</span><span class="item"><span class="arrow none">${ARROW.none}</span>Neutral / not relevant</span>${ed ? '<span class="item">Click a cell to cycle through the three states.</span>' : ''}</div>`;
 }
