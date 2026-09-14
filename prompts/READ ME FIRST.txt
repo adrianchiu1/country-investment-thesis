@@ -30,17 +30,26 @@ STEPS
      If Ada refuses .yaml attachments: open the .yaml file in Notepad, press
      Ctrl+A then Ctrl+C, and paste it below the prompt in the same message.
 
-  4. Send. Ada will ask for your name if it does not know it, review the file,
-     and propose three changes on the Drivers page. Reply with the numbers
-     you want to work on (for example "1 and 3"), "all", "none", or name
-     something else on that page.
+  4. Send. Ada asks for your name if it does not know it, then asks how you
+     want to work:
+       - Reviewer: Ada reviews the file and proposes three changes at a
+         time, page by page (Drivers, Signposts, Implications). You pick.
+       - Wingman: you set the agenda. Ada works as a junior macro
+         strategist: frames the issue, challenges with numbers, floats the
+         decisions for you, drafts wording when you converge.
+       - Digest: you attach or paste a document (your own note, meeting
+         notes, a report) and Ada proposes changes grounded in that
+         document only, three at a time, page by page.
+     Reply with the mode. You can switch later by saying "switch to ...".
 
-  5. For each change Ada shows the current wording and the proposed wording
-     and asks "Do you approve this exact wording?". Reply "approve" only when
-     the wording is exactly what you want; otherwise say what to change.
+  5. Whatever the mode, a change only enters the file after Ada shows the
+     current wording and the proposed wording and you reply "approve".
+     Say "approve" only when the wording is exactly what you want;
+     otherwise say what to change.
 
-  6. When the page is done Ada offers three more proposals or moving on:
-     Drivers, then Signposts, then Investment implications.
+  6. In Reviewer and Digest, Ada offers three more proposals or moving on
+     to the next page. In Wingman, Ada ends each topic by asking whether
+     to carry on, do something else, or suggest what's next.
 
   7. At the end Ada shows the full list for a final approval and hands back
      the whole file: as a downloadable <economy>.yaml where Ada can attach
