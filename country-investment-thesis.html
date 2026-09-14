@@ -100,6 +100,7 @@
   .btn.quiet:hover { border-color: var(--rule); color: var(--ink); }
   .btn.small { padding: 3px 9px; font-size: 12.5px; }
   .btn.danger:hover { border-color: var(--down); color: var(--down); }
+  .btn:disabled, .btn:disabled:hover { opacity: 0.45; cursor: not-allowed; }
 
   body.editing .toolbar { border-bottom: 3px solid var(--edit); }
   .edit-banner {
@@ -167,6 +168,7 @@
   table.scen td textarea { min-height: 90px; }
   th.upside { color: var(--up); } th.downside { color: var(--down); }
   .scen-foot { padding: 8px 16px 12px; border-top: 1px solid var(--rule-soft); }
+  .scen-head { padding: 0 16px; margin: 4px 0 10px; }
 
   /* ---------- implications matrix ---------- */
   .matrix-wrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
@@ -184,7 +186,7 @@
   }
   table.matrix tr.group.closed td::before { transform: rotate(-45deg); margin-bottom: 1px; }
   table.matrix tr.leaf td.rowhead { padding-left: 30px; }
-  table.matrix tr.leaf td.rowhead .path { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  table.matrix tr.leaf td.rowhead .items { color: var(--muted); font-size: 12px; margin-left: 8px; }
   table.matrix td.cell { text-align: center; width: 96px; font-size: 18px; line-height: 1; }
   button.cellbtn {
     width: 30px; height: 30px; border-radius: 50%; border: 1px dashed var(--rule); background: transparent; cursor: pointer;
@@ -390,6 +392,8 @@ const YAML = (() => {
     return docs.length <= 1 ? (docs[0] === undefined ? null : docs[0]) : docs;
   }
   function isSkippable(l) { return l.text === '' || l.text.startsWith('#'); }
+  // literal block header: | plus optional chomping (+/-) and indentation indicator (1-9), in either order
+  function literalHeader(t) { const m = t.match(/^\|(?:([1-9])([+-])?|([+-])?([1-9])?)$/); return m ? { chomp: m[2] || m[3] || '', indent: +(m[1] || m[4] || 0) } : null; }
   function keyMatch(text) {
     // key: value  |  "quoted key": value
     const m = text.match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^:#\-\[\]{}"'][^:]*?):(?:\s+(.*)|$)/);
@@ -413,8 +417,9 @@ const YAML = (() => {
       if (l.indent > indent) throw new Error('YAML: unexpected indent at line ' + (l.n + 1));
       const km = keyMatch(l.text);
       if (!km) throw new Error('YAML: expected "key:" at line ' + (l.n + 1) + ': ' + l.text);
-      if (km.rest === '|' || km.rest === '|-' || km.rest === '|+') {
-        const [s, next] = parseLiteral(lines, i + 1, indent, km.rest);
+      const lit = literalHeader(km.rest);
+      if (lit) {
+        const [s, next] = parseLiteral(lines, i + 1, indent, lit);
         obj[km.key] = s; i = next;
       } else if (km.rest === '') {
         let j = i + 1;
@@ -444,8 +449,8 @@ const YAML = (() => {
         while (j < lines.length && isSkippable(lines[j])) j++;
         if (j < lines.length && lines[j].indent > indent) { const [v, next] = parseBlock(lines, j, lines[j].indent); arr.push(v); i = next; }
         else { arr.push(null); i = j; }
-      } else if (rest === '|' || rest === '|-') {
-        const [s, next] = parseLiteral(lines, i + 1, indent, rest); arr.push(s); i = next;
+      } else if (literalHeader(rest)) {
+        const [s, next] = parseLiteral(lines, i + 1, indent, literalHeader(rest)); arr.push(s); i = next;
       } else if (keyMatch(rest)) {
         // mapping whose first key sits on the dash line: re-indent that line and parse a map
         l.indent = l.raw.indexOf(rest); l.text = rest;
@@ -454,19 +459,22 @@ const YAML = (() => {
     }
     return [arr, i];
   }
-  function parseLiteral(lines, i, parentIndent, marker) {
+  function parseLiteral(lines, i, parentIndent, header) {
     const out = [];
-    let blockIndent = -1;
+    // explicit indentation indicator is relative to the parent node; otherwise the first non-blank line decides
+    let blockIndent = header.indent ? parentIndent + header.indent : -1;
     while (i < lines.length) {
       const l = lines[i];
-      if (l.text === '') { out.push(''); i++; continue; }
+      if (l.text === '') { out.push(blockIndent >= 0 ? l.raw.slice(blockIndent) : ''); i++; continue; }
       if (blockIndent < 0) { if (l.indent <= parentIndent) break; blockIndent = l.indent; }
       if (l.indent < blockIndent) break;
       out.push(l.raw.slice(blockIndent)); i++;
     }
-    while (out.length && out[out.length - 1] === '') out.pop();
+    let trailing = 0;
+    while (out.length && out[out.length - 1] === '') { out.pop(); trailing++; }
     let s = out.join('\n');
-    if (marker === '|' || marker === '|+') s += '\n';
+    if (header.chomp === '+') s += '\n'.repeat(trailing + (out.length ? 1 : 0));
+    else if (header.chomp === '' && out.length) s += '\n';
     return [s, i];
   }
   function scalar(t) {
@@ -486,9 +494,19 @@ const YAML = (() => {
   function needsQuote(s) {
     if (s === '' || !PLAIN.test(s) || s !== s.trim()) return true;
     if (/^(true|false|null|~|yes|no|on|off)$/i.test(s)) return true;
-    if (/^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return true;
+    if (/^[-+.]?\d/.test(s)) return true; // anything number-like (incl. hex, octal, dates, 1,000) so other YAML readers see a string too
     if (s.includes(': ') || s.includes(' #') || s.endsWith(':')) return true;
     return false;
+  }
+  /* Literal block scalar. Chomping keeps trailing newlines exactly; an explicit indentation
+     indicator is written when the first line starts with whitespace, otherwise readers would
+     take that whitespace as the block indent and fail on the following lines. */
+  function literal(v, indent) {
+    const pad = ' '.repeat(indent + 2);
+    const body = v.replace(/\n+$/, ''), trailing = v.length - body.length;
+    if (body === '' || trailing > 1) return JSON.stringify(v) + '\n'; // degenerate cases: a quoted string is unambiguous
+    const header = '|' + (/^[ \t]/.test(body) ? '2' : '') + (trailing ? '' : '-');
+    return header + '\n' + body.split('\n').map(l => l === '' ? '' : pad + l).join('\n') + '\n';
   }
   function str(s) { return needsQuote(s) ? JSON.stringify(s) : s; }
   function dump(v, indent = 0) { return dumpNode(v, indent, false).replace(/^\n/, '').replace(/\n+$/, '') + '\n'; }
@@ -497,7 +515,7 @@ const YAML = (() => {
     if (v === null || v === undefined) return 'null\n';
     if (typeof v === 'boolean' || typeof v === 'number') return String(v) + '\n';
     if (typeof v === 'string') {
-      if (v.includes('\n')) return '|-\n' + v.split('\n').map(l => l === '' ? '' : pad + '  ' + l).join('\n') + '\n';
+      if (v.includes('\n')) return literal(v, indent);
       return str(v) + '\n';
     }
     if (Array.isArray(v)) {
@@ -510,7 +528,7 @@ const YAML = (() => {
         } else if (Array.isArray(item) && item.length) {
           out += pad + '-' + dumpNode(item, indent + 2, false);
         } else {
-          out += pad + '- ' + dumpNode(item, indent + 2, true);
+          out += pad + '- ' + dumpNode(item, indent, true);
         }
       }
       return out;
@@ -633,6 +651,7 @@ const S = {
   config: { title: 'Country Investment Thesis', lock_minutes: 30, economies: DEFAULT_ECONOMIES },
   data: {},          // id -> economy object (as on disk)
   loadedText: {},    // id -> raw text loaded (for version checks)
+  loadError: {},     // id -> parse error message when the data file could not be read
   current: null,     // economy id
   section: 'drivers',
   draft: null,       // working copy while editing
@@ -690,17 +709,29 @@ function normalise(eco, raw) {
   const out = { ...base, ...raw };
   out.id = eco.id; out.name = eco.name;
   out.version = Number(out.version) || 0;
-  out.drivers = Array.isArray(out.drivers) && out.drivers.length ? out.drivers : base.drivers;
-  for (const d of out.drivers) { d.subsections = d.subsections || []; for (const s of d.subsections) { s.issues = s.issues || []; for (const i of s.issues) { i.title = i.title || ''; i.text = i.text || ''; } } }
-  out.scenarios = Array.isArray(out.scenarios) && out.scenarios.length ? out.scenarios : base.scenarios;
-  for (const c of out.scenarios) { c.issues = c.issues || []; for (const i of c.issues) { i.title = i.title || ''; for (const k of SCENARIO_COLS) i[k] = i[k] || ''; } }
-  out.implications = (out.implications && typeof out.implications === 'object' && !Array.isArray(out.implications)) ? out.implications : {};
+  const text = (v) => (v == null ? '' : String(v));
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const list = (v) => (Array.isArray(v) ? v.filter(isObj) : []);
+  out.drivers = list(out.drivers);
+  if (!out.drivers.length) out.drivers = base.drivers;
+  out.drivers.forEach((d, n) => {
+    d.id = text(d.id) || 'driver-' + (n + 1);
+    const t = DRIVER_TEMPLATE.find(x => x.id === d.id);
+    d.name = text(d.name) || (t ? t.name : d.id);
+    d.subsections = list(d.subsections);
+    d.subsections.forEach((s, m) => { s.id = text(s.id) || 'sub-' + (m + 1); s.name = text(s.name) || ((t && t.subsections.find(([id]) => id === s.id)) || [])[1] || ''; s.issues = list(s.issues); for (const i of s.issues) { i.id = text(i.id) || uid('iss'); i.title = text(i.title); i.text = text(i.text); } });
+  });
+  out.scenarios = list(out.scenarios);
+  if (!out.scenarios.length) out.scenarios = base.scenarios;
+  out.scenarios.forEach((c, n) => { c.id = text(c.id) || 'cat-' + (n + 1); c.name = text(c.name) || (SCENARIO_TEMPLATE.find(([id]) => id === c.id) || [])[1] || ''; c.issues = list(c.issues); for (const i of c.issues) { i.id = text(i.id) || uid('iss'); i.title = text(i.title); for (const k of SCENARIO_COLS) i[k] = text(i[k]); } });
+  out.implications = {};
+  if (isObj(raw.implications)) for (const [key, cells] of Object.entries(raw.implications)) if (isObj(cells)) { const row = {}; for (const [f, v] of Object.entries(cells)) if (v === 'up' || v === 'down') row[f] = v; if (Object.keys(row).length) out.implications[key] = row; }
   return out;
 }
 function rowKeys(eco) {
   const rows = [];
   for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name });
-  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name });
+  for (const c of eco.scenarios) rows.push({ key: `scenarios/${c.id}`, group: 'Scenarios & signposts', name: c.name, items: c.issues.map(i => i.title.trim()).filter(Boolean) });
   return rows;
 }
 
@@ -710,23 +741,28 @@ function rowKeys(eco) {
 async function boot() {
   S.author = safeGet('author') || '';
   $('btn-author').textContent = S.author ? S.author : 'Set your name';
-  if (SNAPSHOT_AT) { $('btn-folder').style.display = 'none'; $('btn-snapshot').style.display = 'none'; $('btn-author').style.display = 'none'; }
+  $('sections').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { S.section = b.dataset.section; render(); } });
+  S.current = S.config.economies[0].id;
+  if (SNAPSHOT_AT) {
+    // A snapshot is a frozen, read-only copy: never touch the folder (the browser may still hold
+    // its permission from the live page) and show none of the connect/edit controls.
+    document.querySelector('.band-tools').style.display = 'none';
+    loadDemo(); render(); return;
+  }
   $('btn-folder').addEventListener('click', connectFolder);
   $('btn-snapshot').addEventListener('click', exportSnapshot);
   $('btn-author').addEventListener('click', askAuthor);
-  $('sections').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { S.section = b.dataset.section; render(); } });
   window.addEventListener('beforeunload', (e) => { if (S.draft) { e.preventDefault(); e.returnValue = ''; } });
 
-  S.current = S.config.economies[0].id;
   if (!Store.hasFS) {
     Store.fallback = true; loadDemo();
-    setStatus('warn', SNAPSHOT_AT ? 'Snapshot' : 'Preview: sample content');
+    setStatus('warn', 'Preview: sample content');
     $('btn-folder').textContent = 'Open YAML files';
     render(); return;
   }
   const r = await Store.reconnect();
   if (r === true) await loadAll();
-  else { loadDemo(); setStatus('warn', SNAPSHOT_AT ? 'Snapshot' : 'Preview: sample content'); if (r === 'prompt') $('btn-folder').textContent = 'Reconnect folder'; }
+  else { loadDemo(); setStatus('warn', 'Preview: sample content'); if (r === 'prompt') $('btn-folder').textContent = 'Reconnect folder'; }
   render();
 }
 function loadDemo() {
@@ -767,7 +803,8 @@ async function loadAll() {
 async function loadEconomy(eco) {
   const text = await Store.readText(`data/${eco.id}.yaml`);
   let raw = null;
-  if (text && text.trim()) { try { raw = YAML.parse(text); } catch (e) { toast(`${eco.name}: data file could not be parsed — ${e.message}`); } }
+  delete S.loadError[eco.id];
+  if (text && text.trim()) { try { raw = YAML.parse(text); } catch (e) { S.loadError[eco.id] = e.message; toast(`${eco.name}: data file could not be parsed`); } }
   S.data[eco.id] = normalise(eco, raw);
   S.loadedText[eco.id] = text || '';
 }
@@ -834,12 +871,16 @@ function fallbackOpen() {
     for (const f of inp.files) {
       const text = await f.text();
       const id = f.name.replace(/\.ya?ml$/, '');
-      if (id === 'config') { try { S.config = { ...S.config, ...YAML.parse(text) }; } catch (e) { toast('config.yaml unreadable'); } continue; }
+      if (id === 'config') { try { const cfg = YAML.parse(text); if (cfg && Array.isArray(cfg.economies) && cfg.economies.length) S.config = { ...S.config, ...cfg }; } catch (e) { toast('config.yaml unreadable'); } continue; }
       const eco = S.config.economies.find(e => e.id === id);
       if (!eco) { toast('Skipped ' + f.name + ': not a known economy'); continue; }
-      try { S.data[id] = normalise(eco, YAML.parse(text)); S.loadedText[id] = text; } catch (e) { toast(f.name + ': ' + e.message); }
+      delete S.loadError[id];
+      try { S.data[id] = normalise(eco, YAML.parse(text)); } catch (e) { S.loadError[id] = e.message; S.data[id] = normalise(eco, null); toast(f.name + ' could not be parsed'); }
+      S.loadedText[id] = text;
     }
     S.demo = false;
+    if (!S.config.economies.find(e => e.id === S.current)) S.current = S.config.economies[0].id;
+    for (const eco of S.config.economies) if (!S.data[eco.id]) S.data[eco.id] = normalise(eco, null);
     setStatus('warn', 'Files opened manually');
     render();
   };
@@ -863,6 +904,7 @@ function render() {
   const eco = S.draft || S.data[S.current] || emptyEconomy(ecoMeta);
   const main = $('main');
   if (!Store.connected && !Object.keys(S.data).length) { main.innerHTML = connectNotice(); return; }
+  if (S.loadError[S.current]) { main.innerHTML = loadErrorNotice(ecoMeta); return; }
   const note = S.demo ? (SNAPSHOT_AT ? `<div class="demo-note">Read-only snapshot of the team's views as of ${fmtTime(SNAPSHOT_AT)}.</div>` : `<div class="demo-note">Preview with built-in sample content. Open this page from the synced OneDrive folder in Edge or Chrome and click <strong>Connect folder</strong> to load the team's files.</div>`) : '';
   const sub = { drivers: 'Structural drivers of the medium-term outlook', scenarios: 'Baseline, upside and downside by signpost group', implications: 'How drivers and signposts map to the building blocks of equity and bond returns' }[S.section];
   const head = `<header class="eco-head"><h1>${esc(eco.name)}</h1><p>${sub}</p></header>`;
@@ -924,6 +966,12 @@ function setActive(id) {
   const nav = $('main').querySelector('.outline'); if (!nav) return;
   nav.querySelectorAll('.ol-btn').forEach(b => b.classList.toggle('active', b.dataset.jump === id));
 }
+function loadErrorNotice(eco) {
+  return `<div class="notice error"><h3>${esc(eco.name)}: the data file could not be read</h3>
+    <p><code>data/${esc(eco.id)}.yaml</code> is not in a form this page can read, so it is shown neither here nor for editing — nothing will be written over it.</p>
+    <p class="hint">${esc(S.loadError[eco.id])}</p>
+    <p>Fix the file by hand (or restore a previous version from OneDrive / SharePoint version history), then click <strong>Reload</strong>. The page writes only block maps and lists, <code>|-</code> literal text and quoted strings; folded <code>&gt;</code> text, flow lists like <code>[a, b]</code> and multi-line plain strings are not supported.</p></div>`;
+}
 function connectNotice() {
   if (Store.fallback) return `<div class="notice warn"><h3>This browser cannot write to the folder</h3>
     <p>Use Microsoft Edge or Google Chrome for full read/write access. Here you can open the YAML files manually with "Open YAML files"; saving will download updated files for you to copy into the <code>data/</code> folder.</p></div>`;
@@ -943,7 +991,7 @@ function switchEconomy(id) {
 function renderToolbar() {
   $('sections').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.section === S.section));
   const eco = S.data[S.current];
-  $('meta').textContent = eco && eco.updated_at ? `Last saved ${fmtTime(eco.updated_at)}${eco.updated_by ? ' by ' + eco.updated_by : ''} (v${eco.version})` : (eco ? 'Not yet saved' : '');
+  $('meta').textContent = S.loadError[S.current] ? 'Data file unreadable' : eco && eco.updated_at ? `Last saved ${fmtTime(eco.updated_at)}${eco.updated_by ? ' by ' + eco.updated_by : ''} (v${eco.version})` : (eco ? 'Not yet saved' : '');
   const a = $('actions');
   if (S.draft) {
     a.innerHTML = `<button type="button" class="btn quiet" id="btn-cancel">Cancel</button><button type="button" class="btn warn" id="btn-save">Save changes</button>`;
@@ -951,8 +999,9 @@ function renderToolbar() {
     $('btn-cancel').addEventListener('click', cancelDraft);
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
-    const can = Store.connected || Store.fallback;
-    a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}>Edit</button>`;
+    if (SNAPSHOT_AT) { a.innerHTML = ''; return; }
+    const can = (Store.connected || Store.fallback) && !S.loadError[S.current];
+    a.innerHTML = `<button type="button" class="btn primary" id="btn-edit" ${can && eco ? '' : 'disabled'}${S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : ''}>Edit</button>`;
     $('btn-edit').addEventListener('click', startEdit);
   }
 }
@@ -992,9 +1041,9 @@ function renderIssue(i, di, si, ii, ed) {
   if (!ed) return `<details class="issue" id="d-${di}-${si}-${ii}" open><summary><span class="t">${esc(i.title) || '<span class="empty">Untitled</span>'}</span></summary><div class="issue-body">${renderRich(i.text)}</div></details>`;
   return `<details class="issue" id="d-${di}-${si}-${ii}" open>
     <summary><span class="t">${esc(i.title) || 'Untitled'}</span><span class="spacer"></span>
-      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="-1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move up">↑</button>
-      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="1" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()" title="Move down">↓</button>
-      <button type="button" class="btn small quiet danger" data-act="del-issue" data-d="${di}" data-s="${si}" data-i="${ii}" onclick="event.stopPropagation()">Remove</button></summary>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="-1" data-d="${di}" data-s="${si}" data-i="${ii}" title="Move up">↑</button>
+      <button type="button" class="btn small quiet" data-act="move-issue" data-dir="1" data-d="${di}" data-s="${si}" data-i="${ii}" title="Move down">↓</button>
+      <button type="button" class="btn small quiet danger" data-act="del-issue" data-d="${di}" data-s="${si}" data-i="${ii}">Remove</button></summary>
     <div class="issue-body">
       <div class="field"><label>Issue title</label><input type="text" data-bind="title" data-d="${di}" data-s="${si}" data-i="${ii}" value="${esc(i.title)}" placeholder="Short name for the issue"></div>
       <div class="field"><label>View (one bullet per line, start each with "- "; indent two spaces for sub-bullets; **bold** allowed)</label><textarea data-bind="text" data-d="${di}" data-s="${si}" data-i="${ii}">${esc(i.text)}</textarea></div>
@@ -1015,8 +1064,8 @@ function renderScenarios(eco) {
   return eco.scenarios.map((c, ci) => {
     const optional = !SCENARIO_TEMPLATE.some(([id]) => id === c.id);
     return `<details class="scen-cat" id="c-${ci}" open>
-      <summary>${ed && optional ? `<input type="text" data-act="cat-name" data-c="${ci}" value="${esc(c.name)}" style="font:inherit;border:1px solid var(--rule);border-radius:4px;padding:2px 6px" onclick="event.stopPropagation()">` : esc(c.name)}<span class="count">${c.issues.length} signpost${c.issues.length === 1 ? '' : 's'}</span>
-        ${ed && optional ? `<span class="spacer"></span><button type="button" class="btn small quiet danger" data-act="del-cat" data-c="${ci}" onclick="event.stopPropagation()">Remove category</button>` : ''}</summary>
+      <summary><span class="t">${esc(c.name) || (ed ? 'Untitled' : '<span class="empty">Untitled</span>')}</span><span class="count">${c.issues.length} signpost${c.issues.length === 1 ? '' : 's'}</span></summary>
+      ${ed && optional ? `<div class="spanel-head scen-head"><div class="field"><input type="text" data-act="cat-name" data-c="${ci}" value="${esc(c.name)}" placeholder="Category name"></div><button type="button" class="btn small quiet danger" data-act="del-cat" data-c="${ci}">Remove category</button></div>` : ''}
       <table class="scen">
         <thead><tr><th class="issue-col">Signpost</th><th>Baseline</th><th class="upside">Upside</th><th class="downside">Downside</th></tr></thead>
         <tbody>
@@ -1036,6 +1085,13 @@ function renderScenIssue(i, ci, ii, ed) {
 }
 
 /* ---------- implications ---------- */
+/* Small text after a matrix row name: the signposts in that category, shortened to their first
+   two words each, full titles on hover. Driver rows carry nothing: the subsection name is the bucket. */
+function rowItems(r) {
+  if (!r.items || !r.items.length) return '';
+  const short = r.items.map(t => t.split(/\s+/).slice(0, 2).join(' '));
+  return `<span class="items" title="${esc(r.items.join('\n'))}">${short.map(esc).join(' · ')}</span>`;
+}
 function renderImplications(eco) {
   const ed = !!S.draft;
   const rows = rowKeys(eco);
@@ -1055,7 +1111,7 @@ function renderImplications(eco) {
     </thead>
     <tbody>
     ${groups.map((g, gi) => `<tr class="group" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}</td></tr>` +
-      g.rows.map(r => `<tr class="leaf" data-g="${gi}"><td class="rowhead">${esc(r.name)}<span class="path">${esc(r.key)}</span></td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
+      g.rows.map(r => `<tr class="leaf" data-g="${gi}"><td class="rowhead">${esc(r.name)}${rowItems(r)}</td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
     </tbody></table></div>
     <div class="legend"><span class="item"><span class="arrow up">${ARROW.up}</span>Upside to the factor</span><span class="item"><span class="arrow down">${ARROW.down}</span>Downside to the factor</span><span class="item"><span class="arrow none">${ARROW.none}</span>Neutral / not relevant</span>${ed ? '<span class="item">Click a cell to cycle through the three states.</span>' : ''}</div>`;
 }
@@ -1073,21 +1129,29 @@ function wireMain(eco) {
   main.querySelectorAll('[data-bind]').forEach(el => el.addEventListener('input', () => {
     const i = D.drivers[+el.dataset.d].subsections[+el.dataset.s].issues[+el.dataset.i];
     i[el.dataset.bind] = el.value;
-    if (el.dataset.bind === 'title') el.closest('details').querySelector('summary .t').textContent = el.value || 'Untitled';
+    if (el.dataset.bind === 'title') { el.closest('details').querySelector('summary .t').textContent = el.value || 'Untitled'; const ol = main.querySelector(`.outline [data-jump="d-${el.dataset.d}-${el.dataset.s}-${el.dataset.i}"]`); if (ol) ol.textContent = el.value || 'Untitled'; }
     if (el.tagName === 'TEXTAREA') autoGrow(el);
   }));
   main.querySelectorAll('[data-sbind]').forEach(el => el.addEventListener('input', () => {
     D.scenarios[+el.dataset.c].issues[+el.dataset.i][el.dataset.sbind] = el.value;
     el.classList.remove('invalid');
+    if (el.dataset.sbind === 'title') { const ol = main.querySelector(`.outline [data-jump="c-${el.dataset.c}-${el.dataset.i}"]`); if (ol) ol.textContent = el.value || 'Untitled'; }
     if (el.tagName === 'TEXTAREA') autoGrow(el);
   }));
   main.querySelectorAll('[data-act="sub-name"]').forEach(el => el.addEventListener('input', () => {
     D.drivers[+el.dataset.d].subsections[+el.dataset.s].name = el.value;
     const lbl = main.querySelector(`.stab[data-d="${el.dataset.d}"][data-s="${el.dataset.s}"] .lbl`); if (lbl) lbl.textContent = el.value || 'Untitled';
   }));
-  main.querySelectorAll('[data-act="cat-name"]').forEach(el => el.addEventListener('input', () => { D.scenarios[+el.dataset.c].name = el.value; }));
+  main.querySelectorAll('[data-act="cat-name"]').forEach(el => el.addEventListener('input', () => {
+    D.scenarios[+el.dataset.c].name = el.value;
+    const lbl = main.querySelector(`#c-${el.dataset.c} > summary .t`); if (lbl) lbl.textContent = el.value || 'Untitled';
+    const btn = main.querySelector(`[data-act="add-scen"][data-c="${el.dataset.c}"]`); if (btn) btn.textContent = 'Add signpost to ' + (el.value || 'Untitled');
+  }));
   main.querySelectorAll('textarea').forEach(autoGrow);
   main.onclick = (e) => {
+    // Controls that sit inside a <summary> must not fold/unfold the <details> they belong to.
+    // (Do not stopPropagation on them: this delegated handler is what makes them work.)
+    if (e.target.closest('summary') && e.target.closest('button')) e.preventDefault();
     const b = e.target.closest('button[data-act]'); if (!b) return;
     const a = b.dataset.act, d = +b.dataset.d, s = +b.dataset.s, i = +b.dataset.i, c = +b.dataset.c;
     if (a === 'add-issue') { D.drivers[d].subsections[s].issues.push({ id: uid('iss'), title: '', text: '' }); render(); focusLast('[data-bind="title"]'); }
@@ -1230,15 +1294,18 @@ async function saveDraft() {
   const changes = diff(S.data[id], D);
   if (!changes.length) { toast('No changes to save'); await releaseLock(id); S.draft = null; render(); return; }
 
-  // conflict check: re-read the file and compare version numbers
+  // conflict check: re-read the file; any difference from what was loaded (a save by someone
+  // else, a hand edit, a restored version) refuses the save, whatever the version number says
   if (Store.connected) {
     const onDisk = await Store.readText(`data/${id}.yaml`);
-    if (onDisk && onDisk !== S.loadedText[id]) {
-      let v = null; try { v = YAML.parse(onDisk); } catch (e) { /* ignore */ }
-      if (!v || Number(v.version) !== S.data[id].version) {
-        dialog('Someone saved this economy while you were editing', `<p>The file on disk is now v${esc(v && v.version)} (saved ${esc(fmtTime(v && v.updated_at))} by ${esc(v && v.updated_by)}), but you started from v${S.data[id].version}. Your changes were not written.</p><p>Copy anything you need out of the page, then click <strong>Reload</strong> and re-apply your edits.</p>`, [['Close']]);
-        return;
-      }
+    if ((onDisk || '') !== S.loadedText[id]) {
+      let v = null; try { v = YAML.parse(onDisk || ''); } catch (e) { /* ignore */ }
+      const saved = v && typeof v === 'object' && Number(v.version) !== S.data[id].version;
+      const what = saved
+        ? `<p>The file on disk is now v${esc(v.version)} (saved ${esc(fmtTime(v.updated_at))} by ${esc(v.updated_by)}), but you started from v${S.data[id].version}.</p>`
+        : `<p>The file on disk has been changed outside this page since you loaded it (edited by hand, restored, or re-synced), so saving would overwrite those changes.</p>`;
+      dialog(saved ? 'Someone saved this economy while you were editing' : 'The data file changed while you were editing', what + `<p>Your changes were not written. Copy anything you need out of the page, then click <strong>Reload</strong> and re-apply your edits.</p>`, [['Close']]);
+      return;
     }
   }
   const prev = S.data[id];
