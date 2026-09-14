@@ -777,6 +777,7 @@ async function boot() {
   $('btn-snapshot').addEventListener('click', exportSnapshot);
   $('btn-author').addEventListener('click', askAuthor);
   window.addEventListener('beforeunload', (e) => { if (S.draft) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('pagehide', () => { if (S.draft && Store.connected) Store.remove(lockPath(S.current)).catch(() => {}); }); // best effort: a closed window should not hold the lock for others
 
   if (!Store.hasFS) {
     Store.fallback = true; loadDemo();
@@ -1050,7 +1051,17 @@ function renderToolbar() {
     $('btn-ada').addEventListener('click', showAdaPrompt);
     $('btn-import').addEventListener('click', startImport);
     $('btn-edit').addEventListener('click', startEdit);
+    showLockHolder();
   }
+}
+/* Appends "being edited by X" to the toolbar when someone else holds an unexpired lock. */
+async function showLockHolder() {
+  const id = S.current;
+  const lock = await readLock(id);
+  if (id !== S.current || S.draft) return; // the page moved on while we were reading
+  const held = lock && lock.client !== S.clientId && lock.expires && new Date(lock.expires) > new Date();
+  const el = $('meta'); el.textContent = el.textContent.replace(/ · being edited by .*$/, '');
+  if (held) el.textContent += ` · being edited by ${lock.by}${S.author && lock.by === S.author ? ' (you, in another window)' : ''} since ${fmtTime(lock.since)}`;
 }
 
 /* ==== JS: drivers — card per driver, tab per subsection ==== */
@@ -1269,8 +1280,12 @@ async function acquireLock() {
   const id = S.current;
   const lock = await readLock(id);
   if (lock && lock.client !== S.clientId && lock.expires && new Date(lock.expires) > new Date()) {
-    const r = await dialog(`${S.data[id].name} is being edited`, `<p><strong>${esc(lock.by)}</strong> started editing at ${esc(fmtTime(lock.since))}. Their lock expires ${esc(fmtTime(lock.expires))} unless renewed.</p><p>Taking over means both of you could save; the second save will be refused as a conflict.</p>`, [['Cancel', 'quiet'], ['Take over anyway', 'warn']]);
-    if (r !== 1) return false;
+    if (S.author && lock.by === S.author) {
+      toast(`Taking over your own lock from another window (since ${fmtTime(lock.since)})`);
+    } else {
+      const r = await dialog(`${S.data[id].name} is being edited`, `<p><strong>${esc(lock.by)}</strong> started editing at ${esc(fmtTime(lock.since))}. Their lock expires ${esc(fmtTime(lock.expires))} unless they save, cancel or keep the page open.</p><p>If this is you on another computer, or a window you closed while editing, take over. If it is someone else, taking over means both of you could save and the second save will be refused as a conflict.</p>`, [['Cancel', 'quiet'], ['Take over', 'primary']]);
+      if (r !== 1) return false;
+    }
   }
   S.clientId = S.clientId || uid('client');
   S.lockSince = null;
