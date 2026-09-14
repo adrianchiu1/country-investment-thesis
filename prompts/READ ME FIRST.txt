@@ -6,7 +6,7 @@ file, work through changes with it, and bring its answer back into the page.
 One economy per conversation.
 
 Before you start you need two things from this folder (the synced Country
-Investment Thesis folder, the one with country-investment-thesis.html in it):
+Investment Thesis folder, the one with EDITOR-country-investment-thesis.html in it):
 
   1. The prompt:  prompts\Ada prompt - update an economy.txt
      Double-click it (it opens in Notepad), press Ctrl+A then Ctrl+C.
@@ -14,7 +14,7 @@ Investment Thesis folder, the one with country-investment-thesis.html in it):
   2. The economy file:  data\<economy>.yaml, for example data\eurozone.yaml
      This is the file you will attach to Ada.
 
-Tip: open country-investment-thesis.html, select the economy, and click the
+Tip: open EDITOR-country-investment-thesis.html, select the economy, and click the
 "Ada prompt" button next to Import. It shows these steps and copies the prompt
 for you.
 
@@ -47,7 +47,7 @@ STEPS
      it as <economy>.yaml (for example eurozone.yaml) somewhere convenient
      such as Downloads. Do NOT save it into the data folder.
 
-  8. Open country-investment-thesis.html from this folder, select the
+  8. Open EDITOR-country-investment-thesis.html from this folder, select the
      economy, click Import, choose the file you just saved, review the
      changes and click "Apply import". The change log records everything,
      including Ada's change note.
