@@ -26,7 +26,7 @@ economy-views/
 
 1. Put this whole folder in the team's SharePoint library. Everyone syncs the library with OneDrive ("Add shortcut to OneDrive" or "Sync").
 2. Each person opens `EDITOR-country-investment-thesis.html` from the synced folder in File Explorer (double-click; it opens in the default browser — make that Edge or Chrome). Bookmark the resulting `file:///...` address, or right-click the file and "Pin to Quick access".
-3. First time: click **Connect folder** and choose this folder. The browser asks for permission once per session (one click on **Reconnect folder** on later visits). This is how a local page is allowed to read and write files; it cannot be skipped.
+3. First time: click **Connect folder** and choose this folder. The browser asks for permission to *view* the folder once per session (one click on **Reconnect folder** on later visits). Write access is requested separately, and only when someone clicks **Edit** or **Import** (or exports a snapshot). Readers never grant it.
 4. Click **Set your name** so saves are attributed in the log.
 
 On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the Ada prompt, Import and Export snapshot. Click **Guide** (top right) to replay it any time.
@@ -64,7 +64,7 @@ Paths use stable ids (`iss-xxxxxx`) so renaming an issue does not break its hist
 
 ## Updating an economy with Ada
 
-`prompts/Ada prompt - update an economy.txt` is a prompt for the firm's internal chatbot, Ada; `prompts/READ ME FIRST.txt` walks a researcher through the steps in plain language, and the **Ada prompt** button in the page (next to Import) shows the same steps and copies the prompt to the clipboard. The researcher pastes the prompt into a new Ada conversation with the current `data/<economy>.yaml` attached (Ada asks for the file, and where to find it, if it is missing). Ada then asks the researcher to choose a mode. **Review Mode**: Ada reviews the thesis with the researcher three items at a time, page by page (Drivers, Signposts, Implications), asking whether each item still holds given the latest evidence and the researcher's latest judgement, and researches only what the researcher picks. **Discuss Mode**: the researcher sets the topic and Ada discusses it with them as a friendly junior macro strategist, framing the issue, bringing numbers and a view of its own, floating decisions, and refining wording only when the discussion converges. **Incorporate Mode**: the researcher provides a document (their own note, meeting notes, a report); Ada extracts numbered key points and incorporates them into the thesis, grounded in the document alone, with the supporting passage quoted against each one. In every mode Ada agrees the exact wording of every change before recording it, and matrix changes are never written to the file; they go into the change note as suggestions. At the end Ada hands back the whole file with a `change_note` at the top: as a downloadable `<economy>.yaml` where the portal lets Ada attach files, and always as a code block.
+`prompts/Ada prompt - update an economy.txt` is a prompt for the firm's internal chatbot, Ada; `prompts/READ ME FIRST.txt` walks a researcher through the steps in plain language, and the **Ada prompt** button in the page (next to Import) shows the same steps with three copy buttons: **Copy prompt + file** puts the prompt and the economy's current YAML on the clipboard together, so one paste into a new Ada conversation starts the session and nobody has to open the `data/` folder; **Copy prompt** and **Copy file** copy them separately. (Ada asks for the file, and where to find it, if it is missing.) Ada then asks the researcher to choose a mode. **Review Mode**: Ada reviews the thesis with the researcher three items at a time, page by page (Drivers, Signposts, Implications), asking whether each item still holds given the latest evidence and the researcher's latest judgement, and researches only what the researcher picks. **Discuss Mode**: the researcher sets the topic and Ada discusses it with them as a friendly junior macro strategist, framing the issue, bringing numbers and a view of its own, floating decisions, and refining wording only when the discussion converges. **Incorporate Mode**: the researcher provides a document (their own note, meeting notes, a report); Ada extracts numbered key points and incorporates them into the thesis, grounded in the document alone, with the supporting passage quoted against each one. In every mode Ada agrees the exact wording of every change before recording it, and matrix changes are never written to the file; they go into the change note as suggestions. At the end Ada hands back the whole file with a `change_note` at the top: as a downloadable `<economy>.yaml` where the portal lets Ada attach files, and always as a code block.
 
 The researcher opens the page, selects the economy, clicks **Import**, and either chooses the downloaded file or pastes the code block (never saving it into `data/` by hand). The page:
 
@@ -74,6 +74,16 @@ The researcher opens the page, selects the economy, clicks **Import**, and eithe
 4. on **Apply import**, writes the file with `version + 1` through the normal save path, so the lock and the on-disk conflict check apply, and appends a log entry marked `source: import` carrying the change note.
 
 If the change note lists matrix suggestions, click **Edit** afterwards and set the arrows on the Investment implications page.
+
+## Who can write to the data folder
+
+The page itself is only ever one layer. Three layers together keep `data/` safe:
+
+1. **The page connects read-only.** Opening the folder asks the browser for view access only. Write access is a second, explicit prompt that appears when someone clicks Edit or Import, so a reader who never edits never has write permission, and the page cannot write by accident.
+2. **An `editors:` list in `config.yaml`** (optional). If present, only people whose name (as set with "Set your name") is on the list get working Edit and Import buttons; everyone else sees them disabled with the list in the tooltip. This is a guard rail against accidental edits, not security: anyone with write access to the library could still edit the files by hand.
+3. **SharePoint permissions are the real control.** Give the library (or the `data/` and `log/` folders) *Contribute* to the editors and *Read* to everyone else. A reader who somehow edits through the page would then hit an upload error in OneDrive and their copy would diverge; layers 1 and 2 stop that before it happens. People who only need to read are best served by an exported snapshot in a read-only location, which needs no folder connection at all.
+
+Never edit or move the files in `data/` by hand; hand edits are not logged and a stale page can refuse to save over them.
 
 ## SharePoint / OneDrive behaviour to know about
 

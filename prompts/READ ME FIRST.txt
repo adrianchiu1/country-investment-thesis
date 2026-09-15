@@ -5,30 +5,30 @@ Ada is the firm's chatbot in the browser. You give it a prompt and one economy
 file, work through changes with it, and bring its answer back into the page.
 One economy per conversation.
 
-Before you start you need two things from this folder (the synced Country
-Investment Thesis folder, the one with EDITOR-country-investment-thesis.html in it):
+The easy way: open EDITOR-country-investment-thesis.html, select the economy,
+and click the "Ada prompt" button next to Import. Its "Copy prompt + file"
+button puts the prompt AND the economy's current file on your clipboard in
+one go, so you never need to find anything in the folder. The steps below
+assume you did that; the folder route is given as a fallback.
 
+Fallback, if the page is not available: in this synced folder,
   1. The prompt:  prompts\Ada prompt - update an economy.txt
      Double-click it (it opens in Notepad), press Ctrl+A then Ctrl+C.
-
   2. The economy file:  data\<economy>.yaml, for example data\eurozone.yaml
-     This is the file you will attach to Ada.
-
-Tip: open EDITOR-country-investment-thesis.html, select the economy, and click the
-"Ada prompt" button next to Import. It shows these steps and copies the prompt
-for you.
+     Open it the same way and copy it, or attach it to Ada.
+Never edit or move the files in data\ by hand.
 
 STEPS
 -----
 
   1. Open Ada in your browser and start a new conversation.
 
-  2. Paste the prompt (Ctrl+V) into the message box. Do not send yet.
+  2. Paste (Ctrl+V) into the message box: the prompt and the economy file
+     arrive together. Do not send yet.
 
-  3. Attach the economy file: click the attach (paperclip) button, go to this
-     folder, open "data" and choose the economy's .yaml file.
-     If Ada refuses .yaml attachments: open the .yaml file in Notepad, press
-     Ctrl+A then Ctrl+C, and paste it below the prompt in the same message.
+  3. Check the end of what you pasted shows the economy file (it starts with
+     "id:" and ends with the implications block). If you copied only the
+     prompt, click "Copy file" in the page and paste it below the prompt.
 
   4. Send. Ada asks for your name if it does not know it, then asks how you
      want to work:
