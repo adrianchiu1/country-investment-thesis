@@ -621,6 +621,7 @@ const YAML = (() => {
 const Store = (() => {
   let dir = null;
   let fallback = false;
+  let writable = false;   // the folder is opened read-only; write permission is requested only when someone edits or imports
   const hasFS = typeof window.showDirectoryPicker === 'function';
 
   async function idb(op, val) {
@@ -644,22 +645,29 @@ const Store = (() => {
     try {
       const h = await idb('get');
       if (!h) return false;
-      const perm = await h.queryPermission({ mode: 'readwrite' });
-      if (perm === 'granted') { dir = h; return true; }
+      if (await h.queryPermission({ mode: 'read' }) === 'granted') { dir = h; writable = await h.queryPermission({ mode: 'readwrite' }) === 'granted'; return true; }
       return 'prompt';
     } catch (e) { return false; }
   }
   async function requestSaved() {
     const h = await idb('get');
     if (!h) return false;
-    const perm = await h.requestPermission({ mode: 'readwrite' });
-    if (perm === 'granted') { dir = h; return true; }
+    const perm = await h.requestPermission({ mode: 'read' });
+    if (perm === 'granted') { dir = h; writable = false; return true; }
     return false;
   }
   async function pick() {
-    dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    dir = await window.showDirectoryPicker({ mode: 'read' });
+    writable = false;
     try { await idb('put', dir); } catch (e) { /* non-fatal */ }
     return true;
+  }
+  /* Ask the browser for write access to the connected folder (a second, explicit prompt). */
+  async function ensureWrite() {
+    if (!dir) return false;
+    if (writable) return true;
+    try { writable = (await dir.requestPermission({ mode: 'readwrite' })) === 'granted'; } catch (e) { writable = false; }
+    return writable;
   }
   async function resolve(path, create) {
     const parts = path.split('/').filter(Boolean);
@@ -697,8 +705,9 @@ const Store = (() => {
     try { const [d, name] = await resolve(path, false); await d.removeEntry(name); } catch (e) { /* already gone */ }
   }
   return {
-    hasFS, reconnect, requestSaved, pick, readText, writeText, appendText, remove,
+    hasFS, reconnect, requestSaved, pick, ensureWrite, readText, writeText, appendText, remove,
     get connected() { return !!dir; },
+    get writable() { return !!dir && writable; },
     get name() { return dir ? dir.name : ''; },
     get fallback() { return fallback; }, set fallback(v) { fallback = v; },
   };
@@ -854,6 +863,13 @@ function loadDemo() {
 function safeGet(k) { try { return localStorage.getItem('economy-views:' + k); } catch (e) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem('economy-views:' + k, v); } catch (e) { /* ignore */ } }
 function setStatus(kind, text) { const s = $('folder-status'); s.className = 'status ' + kind; s.textContent = text; $('btn-snapshot').disabled = !Store.connected; }
+const connectedLabel = () => `Connected${Store.writable ? '' : ' (read-only)'}: ${Store.name}`;
+/* Who may write through this page. config.yaml may carry an `editors:` list of names; with none, anyone who sets a name may edit. */
+function canEditHere() {
+  const ed = Array.isArray(S.config.editors) ? S.config.editors.map(x => String(x).trim().toLowerCase()).filter(Boolean) : [];
+  return !ed.length || (!!S.author && ed.includes(S.author.trim().toLowerCase()));
+}
+const editorsHint = () => Array.isArray(S.config.editors) && S.config.editors.length ? `Editing is limited to: ${S.config.editors.join(', ')}. Set your name (top right) to match.` : '';
 
 async function connectFolder() {
   if (Store.fallback) return fallbackOpen();
@@ -877,7 +893,7 @@ async function loadAll() {
   if (!S.config.economies.find(e => e.id === S.current)) S.current = S.config.economies[0].id;
   for (const eco of S.config.economies) await loadEconomy(eco);
   S.demo = false;
-  setStatus('ok', 'Connected: ' + Store.name);
+  setStatus('ok', connectedLabel());
   $('btn-folder').textContent = 'Reload';
   $('brand').firstChild.textContent = S.config.title || 'Country Investment Thesis';
   document.title = S.config.title || 'Country Investment Thesis';
@@ -892,6 +908,8 @@ async function loadEconomy(eco) {
 }
 async function exportSnapshot() {
   if (!Store.connected) return;
+  if (!(await Store.ensureWrite())) { toast('Exporting a snapshot needs permission to write to the folder; allow it when the browser asks'); return; }
+  setStatus('ok', connectedLabel());
   try {
     let name = decodeURIComponent(location.pathname.split('/').pop());
     let src = await Store.readText(name);
@@ -1100,8 +1118,9 @@ function renderToolbar() {
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
     if (SNAPSHOT_AT) { a.innerHTML = ''; return; }
-    const can = (Store.connected || Store.fallback) && !S.loadError[S.current] && eco;
-    const why = S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : '';
+    const allowed = canEditHere();
+    const can = (Store.connected || Store.fallback) && !S.loadError[S.current] && eco && allowed;
+    const why = S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : !allowed ? ` title="${esc(editorsHint())}"` : '';
     a.innerHTML = `<button type="button" class="btn quiet" id="btn-ada" title="How to update this economy with Ada, and the prompt to paste">Ada prompt</button><button type="button" class="btn" id="btn-import" ${can ? '' : 'disabled'}${why} title="Import a file handed back by Ada">Import</button><button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`;
     $('btn-ada').addEventListener('click', showAdaPrompt);
     $('btn-import').addEventListener('click', startImport);
@@ -1302,7 +1321,7 @@ async function askAuthor() {
   const p = dialog('Your name', `<p>Recorded in the change log against every save you make.</p><div class="field"><input type="text" id="dlg-input" value="${esc(S.author)}"></div>`, [['Cancel', 'quiet'], ['Save', 'primary']]);
   const inp = $('dlg-input'); inp.focus(); inp.select();
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('dlg-actions').querySelector('[data-i="1"]').click(); });
-  if (await p === 1) { S.author = inp.value.trim(); safeSet('author', S.author); $('btn-author').textContent = S.author || 'Set your name'; }
+  if (await p === 1) { S.author = inp.value.trim(); safeSet('author', S.author); $('btn-author').textContent = S.author || 'Set your name'; if (!S.draft && !S.review) renderToolbar(); }
   return !!S.author;
 }
 
@@ -1324,6 +1343,9 @@ async function writeLock(id) {
 /* Name check + lock for the current economy; false if the user backed out. */
 async function acquireLock() {
   if (!S.author && !(await askAuthor())) { toast('Set your name first so the change log can record it'); return false; }
+  if (!canEditHere()) { toast(editorsHint()); render(); return false; }
+  if (Store.connected && !(await Store.ensureWrite())) { toast('Editing needs permission to write to the folder; allow it when the browser asks, then try again'); return false; }
+  if (Store.connected) setStatus('ok', connectedLabel());
   const id = S.current;
   const lock = await readLock(id);
   if (lock && lock.client !== S.clientId && lock.expires && new Date(lock.expires) > new Date()) {
@@ -1381,20 +1403,31 @@ async function showAdaPrompt() {
   const eco = S.config.economies.find(e => e.id === S.current);
   let prompt = null;
   if (Store.connected) { try { prompt = await Store.readText(ADA_PROMPT_FILE); } catch (e) { /* shown below */ } }
+  // the economy file exactly as loaded (or as the page would write it), so nobody has to find it in the folder
+  const fileText = S.data[eco.id] && !S.loadError[eco.id] ? (S.loadedText[eco.id] || YAML.dump({ id: eco.id, name: eco.name, version: S.data[eco.id].version, drivers: S.data[eco.id].drivers, implications: S.data[eco.id].implications })) : null;
   const steps = `<ol style="padding-left:20px;margin:8px 0">
     <li>Open Ada in your browser and start a new conversation.</li>
-    <li>Paste the prompt into the message box${prompt ? ' (the <strong>Copy prompt</strong> button below puts it on your clipboard)' : ''}. Do not send yet.</li>
-    <li>Attach <code>data/${esc(eco.id)}.yaml</code> from this folder (paperclip button, open <code>data</code>, choose the file). If Ada refuses .yaml attachments, open the file in Notepad, copy everything and paste it below the prompt.</li>
+    <li>${prompt && fileText ? 'Click <strong>Copy prompt + file</strong> below and paste into the message box: the prompt and the current <code>' + esc(eco.id) + '.yaml</code> go in together, so there is nothing to find in the folder. (Or copy them one at a time with the other two buttons.)' : prompt ? 'Paste the prompt into the message box (the <strong>Copy prompt</strong> button puts it on your clipboard).' : 'Paste the prompt into the message box.'} Do not send yet.</li>
+    ${prompt && fileText ? '' : `<li>Paste or attach <code>data/${esc(eco.id)}.yaml</code> below the prompt${fileText ? ' (the <strong>Copy file</strong> button puts it on your clipboard)' : ''}.</li>`}
     <li>Send. Ada asks how you want to work: <strong>Review</strong> (Ada reviews the thesis with you, three items at a time, page by page), <strong>Discuss</strong> (you set the topic; Ada discusses it with you, brings numbers and a view, and refines wording with you) or <strong>Incorporate</strong> (Ada extracts the key points of a note or document you provide and incorporates them, grounded in it alone). Say <strong>approve</strong> only when a proposed wording is exactly right.</li>
     <li>At the end Ada hands back the whole file, as a download where it can and always as a code block. Come back here, click <strong>Import</strong>, and either choose the downloaded <code>${esc(eco.id)}.yaml</code> or paste the code block. Never save it into the <code>data</code> folder.</li>
   </ol>`;
   const missing = prompt == null ? `<p class="hint">${Store.connected ? `The prompt file <code>${esc(ADA_PROMPT_FILE)}</code> was not found in the connected folder.` : 'Connect the folder to copy the prompt from here.'} You can also open <code>prompts/READ ME FIRST.txt</code> in the folder for the same steps.</p>` : `<p class="hint">Full instructions are in <code>prompts/READ ME FIRST.txt</code>.</p>`;
-  const r = await dialog(`Update ${eco.name} with Ada`, steps + missing, prompt == null ? [['Close']] : [['Close', 'quiet'], ['Copy prompt', 'primary']]);
-  if (r !== 1 || prompt == null) return;
-  let ok = false;
-  try { await navigator.clipboard.writeText(prompt); ok = true; } catch (e) { /* fall back */ }
-  if (!ok) { const ta = document.createElement('textarea'); ta.value = prompt; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (e) { /* no */ } ta.remove(); }
-  toast(ok ? 'Prompt copied. Paste it into a new Ada conversation and attach the economy file.' : 'Could not copy automatically; open prompts/Ada prompt - update an economy.txt and copy it from there.');
+  const buttons = [['Close', 'quiet']], payloads = [null];
+  if (fileText) { buttons.push(['Copy file']); payloads.push(fileText); }
+  if (prompt) { buttons.push(['Copy prompt']); payloads.push(prompt); }
+  if (prompt && fileText) { buttons.push(['Copy prompt + file', 'primary']); payloads.push(prompt.replace(/\s+$/, '') + '\n\n---\n\nHere is the current economy file, ' + eco.id + '.yaml:\n\n```yaml\n' + fileText.replace(/\s+$/, '') + '\n```\n'); }
+  else if (prompt) buttons[buttons.length - 1][1] = 'primary';
+  const r = await dialog(`Update ${eco.name} with Ada`, steps + missing, buttons);
+  if (r < 1 || !payloads[r]) return;
+  const ok = await copyText(payloads[r]);
+  const what = buttons[r][0].replace('Copy ', '');
+  toast(ok ? `${what[0].toUpperCase()}${what.slice(1)} copied. Paste into a new Ada conversation.` : 'Could not copy automatically; open the prompts folder and copy from the files there.');
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back */ }
+  const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* no */ } ta.remove(); return ok;
 }
 
 /* ====================================================================
@@ -1593,9 +1626,9 @@ function tourSteps() {
   const steps = [
     { target: '#sections', title: 'One economy, three views', body: `<p>One hierarchy of drivers runs through all three. <strong>Drivers</strong> holds the view on each issue. <strong>Scenarios &amp; signposts</strong> shows the same issues with what we track for each: baseline, upside, downside. <strong>Investment implications</strong> maps the drivers onto equity and bond return building blocks.</p><p>Switch views here, or with the Views | Signposts toggle on any driver card; the tabs above switch economy.</p>` },
     connected
-      ? { target: '#btn-folder', title: 'Connected to the team folder', body: `<p>The page reads and writes the YAML files in the synced folder. <strong>Reload</strong> picks up other people's saves.</p>` }
+      ? { target: '#btn-folder', title: 'Connected to the team folder', body: `<p>The page reads the YAML files in the synced folder${Store.writable ? ' and may write to them' : ', read-only for now: the browser asks for write access only when you click Edit or Import'}. <strong>Reload</strong> picks up other people's saves.</p>` }
       : fs
-        ? { target: '#btn-folder', title: 'Connect the team folder', body: `<p>Click <strong>Connect folder</strong> and choose the synced folder that contains this page (the one with <code>config.yaml</code> and a <code>data</code> subfolder). The browser asks once per session; this is how a local page is allowed to read and write files.</p><p>Until the folder is connected you are looking at built-in sample content.</p>`, action: { label: 'Connect folder now', run: connectFolder } }
+        ? { target: '#btn-folder', title: 'Connect the team folder', body: `<p>Click <strong>Connect folder</strong> and choose the synced folder that contains this page (the one with <code>config.yaml</code> and a <code>data</code> subfolder). The browser asks to <em>view</em> the folder, once per session; it asks separately for write access only when you click Edit or Import.</p><p>Until the folder is connected you are looking at built-in sample content.</p>`, action: { label: 'Connect folder now', run: connectFolder } }
         : { target: '#btn-folder', title: 'Open the YAML files', body: `<p>This browser cannot write to the folder. <strong>Open YAML files</strong> loads the files you pick; saving downloads updated files for you to copy into <code>data</code>. Edge or Chrome give the full experience.</p>`, action: { label: 'Open files now', run: connectFolder } },
     { target: '#btn-author', title: S.author ? `Saving as ${S.author}` : 'Set your name', body: `<p>Every save and import is recorded in the change log under this name. ${S.author ? 'Change it here if needed.' : 'Set it before you edit.'}</p>`, action: S.author ? null : { label: 'Set name now', run: askAuthor } },
     { target: '#tabs', title: 'Pick an economy', body: `<p>One file per economy. Two people can work on different economies at the same time; the same economy is locked while someone edits it.</p>` },

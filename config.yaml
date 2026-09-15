@@ -4,6 +4,11 @@
 
 title: Country Investment Thesis
 lock_minutes: 30
+# Optional: names (as set with "Set your name") allowed to Edit or Import. Everyone else gets a read-only page.
+# This is a guard rail against accidental edits, not security: SharePoint permissions decide who can really write.
+# editors:
+#   - Adrian
+#   - Alex
 economies:
   - id: united-states
     name: United States
