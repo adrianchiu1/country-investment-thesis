@@ -161,6 +161,13 @@ function buildDocument(eco) {
   let b = para('CITTitle', eco.name);
   b += sdt(`meta|${eco.id}|${eco.version}`, 'Do not edit',
     para('CITMeta', `${eco.name} · version ${eco.version} · edit inside the boxes, then import this file back into the page`), { lock: 'sdtContentLocked' });
+  /* The manifest records which issues existed when this file was exported. Without it, an issue
+     a colleague adds while the document is out would be absent here and read as a deletion. */
+  const exported = eco.drivers.flatMap(d => d.subsections.flatMap(s => s.issues.map(i => i.id)));
+  b += sdt('manifest', 'Do not edit — records what this file was exported from',
+    `<w:p><w:pPr><w:pStyle w:val="CITMeta"/><w:rPr><w:vanish/></w:rPr></w:pPr>`
+    + `<w:r><w:rPr><w:vanish/></w:rPr><w:t xml:space="preserve">${X(exported.join(' '))}</w:t></w:r></w:p>`,
+    { lock: 'sdtContentLocked' });
   for (const d of eco.drivers) {
     /* the four driver groups are fixed: the page cannot add, remove or reorder them,
        so the heading is read-only and the reader ignores group order entirely */
@@ -311,7 +318,7 @@ function docxParse(xml) {
   if (doc.getElementsByTagName('parsererror').length) throw new Error('document.xml is not well-formed');
   const body = doc.getElementsByTagName('w:body')[0];
   if (!body) throw new Error('no w:body');
-  const res = { meta: null, places: [], newSubs: [], orphans: [] };
+  const res = { meta: null, manifest: null, places: [], newSubs: [], orphans: [] };
   let place = null, orphan = null;
   (function walk(node) {
     for (const c of node.children) {
@@ -333,6 +340,7 @@ function docxParse(xml) {
       if (!tag || !content) { walk(content || c); continue; }
       const [kind, a, bb] = tag.split('|');
       if (kind === 'meta') { res.meta = { economy: a, version: Number(bb) }; continue; }
+      if (kind === 'manifest') { res.manifest = NORM(paras(content).map(paraText).join(' ')).trim().split(/\s+/).filter(Boolean); continue; }
       if (kind === 'group' || kind === 'matrix') continue;   // fixed / read-only by design
       if (kind === 'sub') {
         place = { key: a, name: '', items: [] }; res.places.push(place);
@@ -367,7 +375,7 @@ async function docxRead(bytes) {
 }
 /* ===== reconcile against what is on disk: what the review screen would show ===== */
 function reconcile(parsed, cur) {
-  const r = { added: [], recovered: [], edited: [], retired: [], signpostsCleared: [], reordered: [], moved: [], problems: [], newSubs: parsed.newSubs };
+  const r = { added: [], recovered: [], untouched: [], edited: [], retired: [], signpostsCleared: [], reordered: [], moved: [], problems: [], newSubs: parsed.newSubs };
   const where = {}, byId = {};
   for (const p of cur.places) p.items.forEach((i, n) => { where[i.id] = p.key; byId[i.id] = { ...i, order: n + 1 }; });
   const seen = new Set();
@@ -394,7 +402,13 @@ function reconcile(parsed, cur) {
     const fields = ['title', 'text', ...CELLS_R].filter(k => NORM(String(was[k] ?? '')) !== NORM(String(it[k] ?? '')));
     if (fields.length && !(hadCells && !hasCells && fields.every(f => CELLS_R.includes(f)))) r.edited.push({ id: it.id, place: p.key, title: it.title, fields });
   });
-  for (const id of Object.keys(byId)) if (!seen.has(id)) r.retired.push({ id, place: where[id], title: byId[id].title, how: 'box missing from the document — may be accidental' });
+  for (const id of Object.keys(byId)) {
+    if (seen.has(id)) continue;
+    /* absent from the document. If the manifest says it was not in the file when it was
+       exported, someone added it on disk since: leave it alone rather than deleting it. */
+    if (parsed.manifest && !parsed.manifest.includes(id)) { r.untouched.push({ id, place: where[id], title: byId[id].title, why: 'added since this document was exported; kept as it is on disk' }); continue; }
+    r.retired.push({ id, place: where[id], title: byId[id].title, how: 'box missing from the document — may be accidental' });
+  }
   return r;
 }
 
@@ -543,6 +557,18 @@ function currentOf(eco) {
     check('nothing wrongly reported as retired', rM.retired.length === 0, JSON.stringify(rM.retired));
     check('nothing wrongly reported as added', rM.added.length === 0, JSON.stringify(rM.added.map(a => a.title)));
 
+    /* ---------- a stale document: someone else added an issue meanwhile ---------- */
+    const laterCur = currentOf(JSON.parse(JSON.stringify(eco)));
+    laterCur.places.find(p => p.key === place).items.push({ id: 'iss-us-NEW', title: 'Tariff refunds are a 2027 fiscal cliff', text: '- Added by a colleague while the Word copy was out', baseline: '', upside: '', downside: '' });
+    const rStale = reconcile(docxParse(XML), laterCur);
+    say('TEST 6  a Word copy that went stale while it was out:');
+    check('an issue added on disk since export is NOT retired', !rStale.retired.some(x => x.id === 'iss-us-NEW'));
+    check('it is reported as left alone', rStale.untouched.some(x => x.id === 'iss-us-NEW'));
+    check('a genuinely deleted box is still retired', (() => {
+      const gone = editXml(XML, (d, h) => { const g = h.byTag('issue|iss-us-fi1'); g.parentNode.removeChild(g); });
+      return reconcile(docxParse(gone), laterCur).retired.some(x => x.id === 'iss-us-fi1'); })());
+    check('manifest read back', docxParse(XML).manifest && docxParse(XML).manifest.includes('iss-us-tg1'));
+
     /* ---------- editing + tracked changes ---------- */
     const ed = editXml(XML, (d, h) => {
       const box = h.byTag('issue|iss-us-tg2');
@@ -555,13 +581,13 @@ function currentOf(eco) {
       p.appendChild(mk('del', 'delText', ' DELETE ME'));
     });
     const rEd = reconcile(docxParse(ed), cur);
-    say('TEST 6  ordinary editing:');
+    say('TEST 7  ordinary editing:');
     check('edit reported on the right issue only', rEd.edited.length === 1 && rEd.edited[0].id === 'iss-us-tg2');
     check('tracked insertion accepted, deletion dropped', (() => { const i = docxParse(ed).places.flatMap(p => p.items).find(x => x.id === 'iss-us-tg2'); return /long-term unemployment is rising/.test(i.text) && !/DELETE ME/.test(i.text); })());
 
     let refused = 'accepted (BAD)';
     try { await docxRead(await zipWrite([{ name: 'word/other.xml', text: '<a/>' }])); } catch (e) { refused = 'refused — ' + e.message; }
-    say('TEST 7  a file that is not a thesis document: ' + refused);
+    say('TEST 8  a file that is not a thesis document: ' + refused);
   } catch (e) { say('ERROR ' + (e && e.stack || e)); }
   const txt = log.join('\n');
   const out = document.getElementById('out');

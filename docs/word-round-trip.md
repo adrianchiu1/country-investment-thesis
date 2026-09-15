@@ -420,25 +420,155 @@ was changed anyway, surface the difference as a *suggestion* in the review scree
 
 ---
 
-## 8. How it fits the existing tool
+## 8. How it is provisioned in the editor, and what the researcher does
 
-The integration surface is small, which is the main argument for doing it this
-way:
+### 8a. What gets added to the HTML file
 
-- **Export.** One new button beside *Export snapshot*. Writes
-  `<economy>-v<version>.docx` into the folder, or downloads it in the fallback
-  browsers.
-- **Import.** The existing Import dialog already has a file picker. Add `.docx`
-  to its `accept`, and branch on the extension: `.yaml` → today's path, `.docx` →
-  the new reader. Both produce a candidate economy object.
-- **Everything after that is unchanged** — `normalise`, id fixing, `tidy`,
-  `validate`, `diff`, the review cards, `acquireLock`, the on-disk version check,
-  `saveDraft`, and the log entry. Only the log's `source` gains a new value,
-  `word-import`, next to the existing `import`.
-- Roughly 600–700 lines added to the single HTML file (~30 KB): ZIP codec ~120,
-  docx writer ~200, reader ~180, reconciliation ~120.
+One new module, `const DOCX = (() => { … })()`, sitting next to `YAML` (which is
+at `EDITOR-country-investment-thesis.html:438`). It exposes exactly two calls:
 
----
+```js
+DOCX.write(eco)            -> Uint8Array    // an economy object -> .docx bytes
+DOCX.read(arrayBuffer)     -> { meta, manifest, places, newSubs }
+```
+
+About 600 lines, ~30 KB: ZIP codec ~120, document builder ~200, reader ~180,
+reconciliation ~120. Nothing else in the page needs to know how a `.docx` works,
+in the same way nothing needs to know how YAML is dumped.
+
+Then five small edits to existing code:
+
+| Where | Change |
+| --- | --- |
+| `download()` (`:989`) | takes `text` and hardcodes `type: 'text/yaml'`. Generalise to accept bytes and a MIME type. One line. |
+| `renderToolbar()` (`:1104`) | add a **Word copy** button to the `actions` row, beside *Ada prompt* |
+| `startImport()` (`:1436`) | accept `.docx` in the file input and branch on the extension |
+| `renderReview()` (`:1487`) | render the reader's `problems` and `untouched` lists as cards |
+| `saveDraft()` (`:1593`) | `entry.source = S.review.source \|\| 'import'`, so the log says `word-import` |
+
+### 8b. Getting the Word document out
+
+**Word copy** goes in the per-economy toolbar, not in the header next to *Export
+snapshot*: a snapshot is the whole folder, a Word copy is the selected economy.
+
+It is deliberately gated differently from everything else on that row:
+
+- **No write permission.** `exportSnapshot()` calls `Store.ensureWrite()`
+  (`:911`) because it writes a file into the folder. A Word copy does not: it
+  builds the bytes in memory and hands them to `download()`, so the browser saves
+  it to Downloads. Since `main` now connects the folder **read-only** and only
+  asks for write access on Edit or Import, this matters — the people most likely
+  to want a Word copy are reviewers who will never edit, and they can now get one
+  without ever granting write access.
+- **No `editors:` check.** `canEditHere()` gates Edit and Import. Reading is not
+  editing, so the button is live for everyone, including in a snapshot
+  (`SNAPSHOT_AT`) copy.
+- **Works in the fallback browsers.** It is just a Blob, so Word export works in
+  Safari and Firefox, where the File System Access API path does not.
+
+Downloading rather than writing into the synced folder is the deliberate choice.
+A `.docx` written into `data/` would sync to everyone, go stale the moment the
+economy is saved, and invite a second person to pick up the stale copy. The file
+name carries the version — `united-states-v2.docx` — which is the staleness cue.
+
+So the researcher's path out is: pick the economy → **Word copy** → the file is
+in Downloads → email it, or open it.
+
+### 8c. Loading it back
+
+The **Import** button, unchanged in position. The dialog copy widens from "Paste
+the YAML that Ada handed back" to also offer a Word document, and the file input
+becomes `accept=".yaml,.yml,.txt,.docx"`.
+
+One detail that will bite if missed: the current change handler does
+`$('imp-text').value = await f.text()` (`:1441`). Running that on a `.docx`
+fills the textarea with binary garbage. The handler has to branch on the
+extension, read a `.docx` with `arrayBuffer()`, keep the parsed result in a
+variable, and show a one-line confirmation — *"Read united-states-v2.docx: 13
+issues, exported from v2"* — instead of dumping text.
+
+From **Review changes** onward, the two paths converge and everything downstream
+is untouched: id fixing, `tidy()`, `validate()`, `diff()`, `acquireLock()`, the
+review screen, the on-disk conflict check in `saveDraft()`, and the log entry.
+
+**But the two paths build their candidate differently, and this is the
+important part.** Ada hands back the *whole* economy, so the YAML path can use
+the file as the new state. A Word document is a **projection** — it deliberately
+omits the implications matrix and driver-group order, and it can go stale. So the
+Word path starts from a clone of what is on disk *now* and applies only what the
+document says changed:
+
+```js
+const imp = clone(cur);                 // everything not in the document survives
+for (const place of parsed.places)      // rebuild each subsection's issue list
+  … in document order, applying edits, retirements and additions
+imp.implications = clone(cur.implications);   // never touched by Word
+```
+
+That is not just tidiness. It is what makes a stale Word document **safer** than
+a stale Ada file: the YAML path replaces everything, so it silently undoes
+whatever changed in between (which is exactly what its existing warning says).
+The Word path applies per-issue deltas, so an issue nobody touched in Word keeps
+whatever it now says on disk.
+
+### 8d. The manifest, and the failure it prevents
+
+A Word copy is detached. It may be out for days, and no lock is held while it is.
+So an issue a colleague adds in the meantime is simply **absent from the
+document** — and absence is how a retirement is expressed. Without a guard,
+importing a week-old Word file would quietly delete their work.
+
+The export therefore carries a **manifest**: a hidden (`w:vanish`), read-only
+control listing the issue ids that existed when the file was written. At import:
+
+| Id | In the manifest? | Read as |
+| --- | --- | --- |
+| Absent from the document | yes | **retired** (the box was deleted) |
+| Absent from the document | no | **added since export — left exactly as it is on disk** |
+
+Tested both ways:
+
+```
+TEST 6  a Word copy that went stale while it was out:
+   PASS  an issue added on disk since export is NOT retired
+   PASS  it is reported as left alone
+   PASS  a genuinely deleted box is still retired
+```
+
+The `meta|<economy>|<version>` control gives the other two checks for free: the
+wrong economy is refused outright, and a version older than the one on disk
+raises the same loud warning the YAML path already shows.
+
+### 8e. Problems need somewhere to live
+
+The reader emits *problems* — a half-filled signpost, an issue that lost its
+title — that today have nowhere to go: `validate()` either passes or refuses the
+whole import with a dialog.
+
+For a first version, reuse that: refuse, but with the specific message
+(*"Trend inflation › Oil shock…: signposts are half filled, upside is empty.
+Fill it in, or clear all three"*), so the researcher fixes one cell in the same
+document and imports again. It matches existing behaviour and is barely any code.
+
+The better version, once the pattern proves itself, is amber cards at the top of
+the review screen with Apply disabled until each is resolved or that issue's
+changes are dropped. Worth doing if half-filled signposts turn out to be common,
+which the Word cell layout makes plausible.
+
+### 8f. End to end
+
+1. Researcher picks the economy, clicks **Word copy**, gets
+   `united-states-v2.docx`. No permissions, no lock, nobody is blocked.
+2. They — or a PM who has never opened the tool — edit it in Word, with Track
+   Changes and comments if they like.
+3. Back in the page: **Import** → choose the `.docx` → *Review changes*.
+4. The page acquires write access and the lock, checks the economy and version,
+   builds the candidate from disk + the document's deltas, and shows the usual
+   review: edited, added, retired, reordered, moved — plus anything it could not
+   place, and anything it deliberately left alone.
+5. **Apply import** goes through the normal save path: version + 1, the on-disk
+   conflict check, `data/<economy>.yaml` rewritten, one log entry appended with
+   `source: word-import`, lock released.
 
 ## 9. Build order
 
