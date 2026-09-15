@@ -18,6 +18,9 @@ drivers:
             text: |-
               - Growth has slowed from above 3% in 2023-24 toward about 1.9% in 2026; Q2 came in near flat as the lagged effect of a 15% Selic and tighter credit bit
               - Potential growth is around 2% with a tight labour market; the cycle is being driven by monetary policy and fiscal transfers pulling in opposite directions
+            baseline: "- Growth 1.5-2% in 2026 and 1.5% in 2027; unemployment low, consumption sustained by transfers, investment weak on high real rates"
+            upside: "- Market-friendly election outcome and credible fiscal plan; real rates fall fast, capex recovers, growth back toward 2.5-3% in 2027"
+            downside: "- Fiscal drift continues, the BRL sells off and Copom stops easing; growth below 1% with rising unemployment"
           - id: iss-br-tg2
             title: Commodity terms of trade in a Gulf war
             text: |-
@@ -31,6 +34,9 @@ drivers:
             text: |-
               - IPCA expectations for 2026 sit near 5%, above the 4.5% ceiling of the 3% target band, and 2027 near 4.2%; core has slowed to just below the ceiling
               - The problem is fiscal-monetary: expansionary fiscal policy (income-tax exemption, transfers, new federal hiring) plus a tight labour market keep services inflation sticky; the BRL is the transmission channel to headline
+            baseline: "- IPCA near 5% in 2026 easing to about 4.2% in 2027; services inflation sticky, food and fuel volatile"
+            upside: "- BRL appreciation on a market-friendly outcome and easing food prices bring IPCA toward 3.5% in 2027"
+            downside: "- Fiscal loosening and a weaker real push IPCA back toward 6% and expectations de-anchor further"
   - id: policy
     name: Policy
     subsections:
@@ -43,6 +49,9 @@ drivers:
               - Selic at 14.00% after four consecutive 25bp cuts (unanimous in August), with the committee refusing to pre-commit to more while headline is above the band; the Focus survey sees 13.75% at year-end and 12% at end-2027
               - Galípolo has established credibility (275bp of hikes in his first year, then a slow easing) under a government that wants faster cuts; the election is the test of whether the reaction function survives
               - Watch: the September meeting, fiscal news that pushes rate expectations up rather than down, and any change to the BCB's inflation-target or governance framework after the election
+            baseline: "- One more cut to 13.75% in 2026, then 12% by end-2027 as inflation edges back into the band; real rate stays near 8-9%"
+            upside: "- Post-election credibility allows cuts to 10-11% by end-2027; curve bull-flattens and the real rallies toward 4.8"
+            downside: "- Easing halted or reversed; questions over central-bank independence after the election; Selic back above 15%"
       - id: fiscal
         name: Fiscal
         issues:
@@ -97,40 +106,6 @@ drivers:
             text: |-
               - The Lula-Trump relationship stabilised after the 2025 tariff episode; Brazil is a beneficiary of China's diversification away from US agriculture and of Gulf-shock oil prices
               - Brazil's own tariffs on Chinese steel and autos show the backlash is global; Mercosur-EU implementation is the medium-term trade upside
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-br-sg1
-        title: Election-year economy
-        baseline: |-
-          - Growth 1.5-2% in 2026 and 1.5% in 2027; unemployment low, consumption sustained by transfers, investment weak on high real rates
-        upside: |-
-          - Market-friendly election outcome and credible fiscal plan; real rates fall fast, capex recovers, growth back toward 2.5-3% in 2027
-        downside: |-
-          - Fiscal drift continues, the BRL sells off and Copom stops easing; growth below 1% with rising unemployment
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-br-si1
-        title: Back inside the band
-        baseline: |-
-          - IPCA near 5% in 2026 easing to about 4.2% in 2027; services inflation sticky, food and fuel volatile
-        upside: |-
-          - BRL appreciation on a market-friendly outcome and easing food prices bring IPCA toward 3.5% in 2027
-        downside: |-
-          - Fiscal loosening and a weaker real push IPCA back toward 6% and expectations de-anchor further
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-br-sp1
-        title: Selic path from 14%
-        baseline: |-
-          - One more cut to 13.75% in 2026, then 12% by end-2027 as inflation edges back into the band; real rate stays near 8-9%
-        upside: |-
-          - Post-election credibility allows cuts to 10-11% by end-2027; curve bull-flattens and the real rallies toward 4.8
-        downside: |-
-          - Easing halted or reversed; questions over central-bank independence after the election; Selic back above 15%
 implications:
   drivers/regime/trend-growth:
     sales_growth: down
@@ -162,13 +137,3 @@ implications:
   drivers/geopolitics/international:
     sales_growth: up
     dividend_yield: up
-  scenarios/growth:
-    sales_growth: down
-    cash_rate: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-  scenarios/policy:
-    cash_rate: down
-    term_premium: down
-    valuation: up

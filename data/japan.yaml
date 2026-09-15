@@ -21,8 +21,7 @@ drivers:
               - Labour scarcity is the binding constraint; capex in automation and software is the one genuinely structural upside
           - id: iss-jp-tg2
             title: Corporate governance and capital return
-            text: |-
-              - Cross-shareholding unwinds, buybacks and activist pressure keep ROE rising; this is the equity story regardless of macro and is now in its fourth year
+            text: "- Cross-shareholding unwinds, buybacks and activist pressure keep ROE rising; this is the equity story regardless of macro and is now in its fourth year"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -32,6 +31,9 @@ drivers:
               - Shunto outcomes have delivered a third year of strong base-pay rises; services inflation and rent are finally moving, which is the domestic anchor the BOJ wanted
               - The Gulf war pushed headline inflation up through energy and food, exactly the import-driven inflation that squeezed real incomes in 2022-23; the yen's September rally is the offset
               - We assume underlying inflation settles around 2% with two-sided risk, which is a regime change from the 2010s
+            baseline: "- Core inflation settles near 2% through 2027; the 2027 shunto delivers base-pay growth of 3% or more"
+            upside: "- Services inflation and rents keep rising; underlying inflation runs 2.5% and the BOJ's terminal rate estimate moves up"
+            downside: "- Yen strength and an energy reversal drag headline below 1.5%; the wage-price mechanism stalls and the BOJ pauses indefinitely"
   - id: policy
     name: Policy
     subsections:
@@ -44,6 +46,9 @@ drivers:
               - Policy rate raised to 1.00% in June and widely expected to reach 1.25% at the September meeting, a 30-year high; the stated logic is upside inflation risk from oil and the weak yen
               - The BOJ has said it will stop tapering JGB purchases from April 2027, holding monthly buying steady; the balance sheet is nonetheless down about 15% from its peak, the largest QT any G7 central bank has run
               - Takaichi has pressed Ueda to buy more bonds if long yields rise disorderly and has appointed reflationist board members; independence is intact but the terminal rate debate (1.5% or 2%?) is now political
+            baseline: "- Hikes to 1.25% in September and 1.50% by mid-2027, then a pause near the lower end of neutral estimates; JGB taper halted from April 2027"
+            upside: "- Terminal rate revised to 2% with orderly curve; yen appreciates gradually and lifers return to super-longs"
+            downside: "- A disorderly super-long sell-off forces the BOJ into yield-curve intervention under political pressure; credibility and the yen both suffer"
       - id: fiscal
         name: Fiscal
         issues:
@@ -53,6 +58,9 @@ drivers:
               - FY2026 budget a record ¥122tn with debt service up 11% on an assumed 3% rate; supplementary budgets and a possible food consumption-tax cut (up to ¥5tn of revenue) are the pressure points
               - Debt-to-GDP has been falling on nominal growth, which is the government's defence; the market's counter is the 30-year yield at record highs near 4% and a 10-year near 2.8-2.9%, the highest since 1996
               - Watch: issuance mix (shorter maturities to placate lifers), any move on the consumption tax, and the FY2027 budget request
+            baseline: "- Supplementary budgets continue, a partial food tax cut is enacted, 10-year yield 2.5-3%; debt ratio roughly stable on nominal growth"
+            upside: "- Spending restraint and primary-balance progress; 30-year yields fall back below 3.5%"
+            downside: "- Large consumption-tax cut plus defence overshoot; 30-year above 4.5%, rating pressure and a fiscal-dominance debate"
   - id: imbalances
     name: Imbalances
     subsections:
@@ -64,6 +72,9 @@ drivers:
             text: |-
               - Nominal wages are rising but real wages have oscillated around zero as food and energy inflation bit; consumption is soft and the political pressure for handouts and tax cuts comes from here
               - Household portfolio shift from deposits into equities (NISA) is a slow structural positive for domestic asset demand
+            baseline: "- Growth 0.7-1% in 2027 as real wages turn modestly positive and fiscal support flows; exports flat on tariffs and China weakness"
+            upside: "- Energy normalises and a stronger yen restores real incomes; consumption and capex lift growth to 1.5%"
+            downside: "- Oil stays above $100, the yen weakens again on fiscal concern and real incomes fall; growth near zero and a technical recession"
       - id: external
         name: External
         issues:
@@ -104,48 +115,6 @@ drivers:
             text: |-
               - Defence and economic-security spending are structural and bipartisan; relations with Beijing are tense after the Taiwan remarks episode and Chinese trade measures, so supply-chain diversification carries a fiscal cost
               - Alignment with the US on chips and export controls is complete; the exposure is to a US-China re-escalation that hits Japanese suppliers on both sides
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-jp-sg1
-        title: Consumption recovery versus energy squeeze
-        baseline: |-
-          - Growth 0.7-1% in 2027 as real wages turn modestly positive and fiscal support flows; exports flat on tariffs and China weakness
-        upside: |-
-          - Energy normalises and a stronger yen restores real incomes; consumption and capex lift growth to 1.5%
-        downside: |-
-          - Oil stays above $100, the yen weakens again on fiscal concern and real incomes fall; growth near zero and a technical recession
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-jp-si1
-        title: Underlying inflation at 2%
-        baseline: |-
-          - Core inflation settles near 2% through 2027; the 2027 shunto delivers base-pay growth of 3% or more
-        upside: |-
-          - Services inflation and rents keep rising; underlying inflation runs 2.5% and the BOJ's terminal rate estimate moves up
-        downside: |-
-          - Yen strength and an energy reversal drag headline below 1.5%; the wage-price mechanism stalls and the BOJ pauses indefinitely
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-jp-sp1
-        title: BOJ path from 1.00-1.25%
-        baseline: |-
-          - Hikes to 1.25% in September and 1.50% by mid-2027, then a pause near the lower end of neutral estimates; JGB taper halted from April 2027
-        upside: |-
-          - Terminal rate revised to 2% with orderly curve; yen appreciates gradually and lifers return to super-longs
-        downside: |-
-          - A disorderly super-long sell-off forces the BOJ into yield-curve intervention under political pressure; credibility and the yen both suffer
-      - id: iss-jp-sp2
-        title: Fiscal credibility
-        baseline: |-
-          - Supplementary budgets continue, a partial food tax cut is enacted, 10-year yield 2.5-3%; debt ratio roughly stable on nominal growth
-        upside: |-
-          - Spending restraint and primary-balance progress; 30-year yields fall back below 3.5%
-        downside: |-
-          - Large consumption-tax cut plus defence overshoot; 30-year above 4.5%, rating pressure and a fiscal-dominance debate
 implications:
   drivers/regime/trend-growth:
     margin_growth: up
@@ -178,13 +147,3 @@ implications:
   drivers/geopolitics/international:
     margin_growth: down
     inflation_expectation: up
-  scenarios/growth:
-    sales_growth: up
-    margin_growth: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-  scenarios/policy:
-    cash_rate: up
-    term_premium: up
-    valuation: down
