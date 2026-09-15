@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Word round-trip prototype — Country Investment Thesis</title>
+<style>
+ body{font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#1c2024}
+ .wrap{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+ h1{font-size:23px;margin:0 0 6px} h2{font-size:15px;margin:28px 0 8px}
+ p{margin:0 0 12px;color:#42484f} code{background:#e9ecf0;padding:1px 5px;border-radius:4px;font-size:12.5px}
+ pre{background:#fff;border:1px solid #dfe3e8;border-radius:8px;padding:16px;overflow:auto;font-size:12.5px;line-height:1.5}
+ .PASS{color:#0f7b3e;font-weight:600} .FAIL{color:#c0392b;font-weight:600}
+ button{font:inherit;padding:8px 14px;border:1px solid #c7ccd3;background:#fff;border-radius:7px;cursor:pointer;margin:0 8px 8px 0}
+ button.primary{background:#1a1d21;color:#fff;border-color:#1a1d21}
+ .note{background:#fff8e6;border:1px solid #f0dca8;border-radius:8px;padding:12px 14px;margin:0 0 16px}
+</style></head><body><div class="wrap">
+<h1>Word round-trip prototype</h1>
+<p>Proves that a single-file page, with no libraries, can write a real <code>.docx</code> from an economy\u2019s YAML and read a human-edited one back. Open this file in Edge or Chrome; the tests run on load.</p>
+<div class="note"><strong>What to check first:</strong> click <em>Download United States.docx</em>, open it in Word, edit some bullets, save, and confirm the grey content-control boxes survive. That is the one assumption these tests cannot verify without Word.</div>
+<p><button class="primary" id="dl">Download United States.docx</button><button id="dlsample">Download the test sample.docx</button></p>
+<h2>Test results</h2>
+<pre id="out">running\u2026</pre>
+</div>
+<script>
+const REAL = {"id": "united-states", "name": "United States", "version": 2, "updated_at": "2026-09-13T12:00:00+08:00", "updated_by": "draft", "drivers": [{"id": "regime", "name": "Regime", "subsections": [{"id": "trend-growth", "name": "Trend growth", "issues": [{"id": "iss-us-tg1", "title": "AI capex is now the growth engine, and the concentration risk", "text": "- Investment in data centres, power and chips is running at something like 2-2.5% of GDP and has carried GDP growth through the tariff and oil shocks; ex-AI, the economy is close to stall speed\n- Financing has migrated from hyperscaler cash flow to bonds and private credit, so a capex pause would hit both growth and credit markets at once\n- Working assumption: potential growth around 2% while the productivity dividend is still mostly promise; hours worked and non-residential investment are the tells"}, {"id": "iss-us-tg2", "title": "Labour supply is the binding constraint", "text": "- Immigration enforcement has cut labour-force growth to a trickle; payrolls in the 50-150k range are now consistent with a flat unemployment rate (4.1% in August)\n- A low-churn market: few layoffs, few hires, long-term unemployment share at a five-year high, wage growth down to about 3% and below headline inflation for four months running\n- Implication: break-even payroll growth is much lower than markets are used to, and a downturn would show up in hours and participation before it shows in the unemployment rate"}]}, {"id": "trend-inflation", "name": "Trend inflation", "issues": [{"id": "iss-us-ti1", "title": "Oil shock on top of tariff pass-through", "text": "- Headline CPI is stuck at 3.4% with gasoline at record nominal highs after the Hormuz closure; core has cooled to the low 2s as goods pass-through from 2025 tariffs fades and shelter decelerates\n- The risk is second-round effects: short-horizon inflation expectations are elevated and real wages are falling, which is the classic set-up for wage catch-up demands in 2027\n- We assume trend inflation settles near 2.5-3% rather than 2%, with the energy path the swing factor"}]}]}, {"id": "policy", "name": "Policy", "subsections": [{"id": "monetary", "name": "Monetary", "issues": [{"id": "iss-us-mo1", "title": "Warsh Fed facing a hike into a slowing economy", "text": "- Funds rate at 3.50-3.75% after the July 9-3 hold; three dissents for a hike, and markets price roughly two-thirds odds of a 25bp increase on 16 September\n- The committee is split between looking through a supply shock and defending credibility after leaving rates unchanged into rising headline inflation; Hammack and others have floated multiple hikes\n- Watch: the September dots, whether Warsh frames any hike as insurance or the start of a cycle, and the balance-sheet language (reserve-management purchases have been keeping front-end funding calm)"}, {"id": "iss-us-mo2", "title": "Independence and the reaction function", "text": "- The 2026 chair transition went through without the institutional rupture markets feared, but the administration's preference for lower rates is public and the committee's composition has shifted\n- Our read: the reaction function is more tolerant of inflation than in 2022 but not captured; the term premium is where markets express doubt, not the front end"}]}, {"id": "fiscal", "name": "Fiscal", "issues": [{"id": "iss-us-fi1", "title": "Deficit near 6-7% of GDP and losing its tariff crutch", "text": "- The 2025 tax package locked in a structural deficit; the Supreme Court's February ruling voided IEEPA tariff revenue and triggered refunds, and the replacement 10-12.5% Section 301 tariffs on 60 economies raise less\n- Treasury keeps skewing issuance to bills to limit duration supply; that caps term premium today at the cost of rollover risk and growing dependence on money funds\n- Higher oil raises the deficit further via indexed programmes and lower real growth; no consolidation is plausible before the 2028 cycle"}]}]}, {"id": "imbalances", "name": "Imbalances", "subsections": [{"id": "domestic", "name": "Domestic", "issues": [{"id": "iss-us-do1", "title": "Two-speed households", "text": "- Consumption is being carried by the top of the income distribution on equity wealth; lower-income cohorts are squeezed by $4-plus gasoline, tariff-driven goods prices and rising card delinquencies\n- The transmission channel that matters is asset prices: an equity correction would hit the only cohort still spending freely"}, {"id": "iss-us-do2", "title": "Corporate margins under a cost squeeze", "text": "- Tariffs, energy and a tight labour market are compressing margins outside the AI complex; an earnings recession is already visible in consumer discretionary and industrials"}]}, {"id": "external", "name": "External", "issues": [{"id": "iss-us-ex1", "title": "Dollar has lost its reflexive safe-haven bid", "text": "- The dollar did not rally on the Iran war the way it did in 2022; foreign official demand for Treasuries is slower and more price sensitive, and the euro and yen have both strengthened on repatriation flows\n- The current account is narrowing as tariffs compress imports, but the financing question (who absorbs record Treasury supply at a lower dollar) is the live one"}]}, {"id": "credit", "name": "Credit", "issues": [{"id": "iss-us-cr1", "title": "Private credit is the AI financing plumbing", "text": "- Private credit has absorbed the leveraged-loan market and now a large share of data-centre and power project finance; opacity, not aggregate size, is the concern\n- Stress would surface first in redemption gates and mark-downs at private funds, then in bank lines to those funds; the sector has not been tested by a capex downturn"}]}]}, {"id": "geopolitics", "name": "Geopolitics", "subsections": [{"id": "domestic", "name": "Domestic", "issues": [{"id": "iss-us-gd1", "title": "Midterms and the policy volatility premium", "text": "- November midterms are being fought on the cost of living; a Democratic House would end the legislative agenda and raise the odds of investigations, but tariff and regulatory policy would still move by executive action\n- Congress is also stirring on trade powers (bills to restrain 122, 232 and 301 authority); a real transfer of authority back to Congress would be a structural change in policy risk"}]}, {"id": "international", "name": "International", "issues": [{"id": "iss-us-gi1", "title": "Iran war, Hormuz and the energy price regime", "text": "- The Strait has been effectively contested since late February; a June US-Iran MOU reopened it partially, fighting resumed in September and Brent is back near $100 with Iran-Gulf talks pending in Oman\n- EIA does not expect Gulf output to normalise before 2027; the US is the relative winner as an energy exporter, but the consumer and the Fed pay first"}, {"id": "iss-us-gi2", "title": "Tariff regime is fragmenting into 232 and 301 tools", "text": "- After IEEPA and Section 122 fell, the administration rebuilt the tariff wall with sectoral 232 actions (metals, 100% on patented pharma, autos, chips) and country 301 actions; the EU has a negotiated 15% ceiling, USMCA goods are exempt, China sits under the Busan and Beijing truce\n- The marginal news is now about excess-capacity investigations and exemptions rather than headline rates; effective tariff rate around 11%, the highest since the 1940s"}]}]}], "scenarios": [{"id": "growth", "name": "Growth", "issues": [{"id": "iss-us-sg1", "title": "Consumer under the oil and tariff squeeze", "baseline": "- Real consumption slows to 1-1.5% as real incomes stagnate; wealth effects and fiscal support prevent a contraction", "upside": "- Hormuz reopens durably, gasoline falls back below $3.50 and real wages turn positive; consumption re-accelerates above 2%", "downside": "- Oil stays above $100 into 2027 and equities correct 15-20%; high-income spending stops and unemployment rises past 5%"}, {"id": "iss-us-sg2", "title": "AI capex durability", "baseline": "- Data-centre and power investment keeps growing but decelerates; contributes 0.3-0.5pp to growth in 2027 with financing increasingly debt-funded", "upside": "- Investment broadens into the grid, industrial automation and measured productivity; potential growth revised up toward 2.5%", "downside": "- Returns disappoint and private-credit financing tightens; orders are cut, investment subtracts from growth and the credit channel amplifies it"}]}, {"id": "inflation", "name": "Inflation", "issues": [{"id": "iss-us-si1", "title": "Headline and core convergence", "baseline": "- Headline CPI drifts from 3.4% toward 2.8% by mid-2027 as the energy contribution fades; core stays 2.3-2.6%", "upside": "- Energy normalises quickly and shelter disinflation brings headline to 2.3% by end-2027; expectations re-anchor", "downside": "- Second-round effects from energy and a weaker dollar push core back above 3%; short-horizon expectations unanchor and the Fed is forced into a real tightening cycle"}]}, {"id": "policy", "name": "Policy", "issues": [{"id": "iss-us-sp1", "title": "Fed path from 3.50-3.75%", "baseline": "- One or two insurance hikes to 4.00%, then an extended hold while the committee watches the labour market; cuts return only in 2H27", "upside": "- Energy relief lets the Fed stay on hold and resume cutting toward 3% in 2027; the curve bull-steepens in an orderly way", "downside": "- Either a full hiking cycle toward 4.5-5% into a stagflationary economy, or a growth shock forcing rapid cuts below 2.5%; both damage risk assets and the credibility of the reaction function"}, {"id": "iss-us-sp2", "title": "Fiscal and issuance", "baseline": "- Deficit 6-7% of GDP, bills share stays high, no consolidation before 2028; term premium grinds higher", "upside": "- Tariff revenue and stronger nominal growth stabilise the debt ratio; Treasury terms out issuance without a term-premium shock", "downside": "- A cluster of weak auctions or a political challenge to Fed independence produces a term-premium spike and a disorderly bear-steepening"}]}], "implications": {"drivers/regime/trend-growth": {"sales_growth": "up", "margin_growth": "up", "valuation": "down", "liquidity": "down"}, "drivers/regime/trend-inflation": {"margin_growth": "down", "inflation_expectation": "up", "cash_rate": "up"}, "drivers/policy/monetary": {"valuation": "down", "cash_rate": "up", "term_premium": "up", "liquidity": "down"}, "drivers/policy/fiscal": {"sales_growth": "up", "term_premium": "up", "liquidity": "down"}, "drivers/imbalances/domestic": {"sales_growth": "down", "margin_growth": "down", "dividend_yield": "up"}, "drivers/imbalances/external": {"term_premium": "up", "valuation": "down", "inflation_expectation": "up"}, "drivers/imbalances/credit": {"liquidity": "down", "valuation": "down"}, "drivers/geopolitics/domestic": {"valuation": "down", "term_premium": "up"}, "drivers/geopolitics/international": {"margin_growth": "down", "inflation_expectation": "up", "cash_rate": "up"}, "scenarios/growth": {"sales_growth": "down", "margin_growth": "down", "valuation": "down"}, "scenarios/inflation": {"inflation_expectation": "up", "cash_rate": "up", "valuation": "down"}, "scenarios/policy": {"cash_rate": "up", "term_premium": "up", "liquidity": "down"}}};
+
+/* ===================== CRC32 ===================== */
+const CRC_T = (() => { const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(buf) { let c = 0xFFFFFFFF; for (let i = 0; i < buf.length; i++) c = CRC_T[(c ^ buf[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+
+/* ===================== ZIP (deflate via CompressionStream) ===================== */
+const enc = new TextEncoder(), dec = new TextDecoder();
+async function deflateRaw(bytes) {
+  const cs = new CompressionStream('deflate-raw');
+  const out = await new Response(new Blob([bytes]).stream().pipeThrough(cs)).arrayBuffer();
+  return new Uint8Array(out);
+}
+async function inflateRaw(bytes) {
+  const ds = new DecompressionStream('deflate-raw');
+  const out = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(out);
+}
+async function zipWrite(files) {           // files: [{name, text}]
+  const parts = [], central = []; let offset = 0;
+  for (const f of files) {
+    const data = enc.encode(f.text), crc = crc32(data), comp = await deflateRaw(data);
+    const nm = enc.encode(f.name);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+    lh.setUint16(8, 8, true); lh.setUint16(10, 0, true); lh.setUint16(12, 0x2821, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, comp.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nm, comp);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true); ch.setUint16(10, 8, true); ch.setUint16(12, 0, true); ch.setUint16(14, 0x2821, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, comp.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, nm.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), nm);
+    offset += 30 + nm.length + comp.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const eo = new DataView(new ArrayBuffer(22));
+  eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, files.length, true); eo.setUint16(10, files.length, true);
+  eo.setUint32(12, cdSize, true); eo.setUint32(16, offset, true);
+  const all = [...parts, ...central, new Uint8Array(eo.buffer)];
+  const total = all.reduce((a, b) => a + b.length, 0), out = new Uint8Array(total);
+  let p = 0; for (const b of all) { out.set(b, p); p += b.length; }
+  return out;
+}
+async function zipRead(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  for (let i = bytes.length - 22; i >= 0 && i > bytes.length - 65558; i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('not a zip');
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+  const out = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('bad central directory');
+    const method = dv.getUint16(p + 10, true), crc = dv.getUint32(p + 16, true);
+    const csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const name = dec.decode(bytes.subarray(p + 46, p + 46 + nlen));
+    const lnlen = dv.getUint16(lho + 26, true), lelen = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lnlen + lelen;
+    const raw = bytes.subarray(start, start + csize);
+    let data = method === 0 ? raw : await inflateRaw(raw);
+    if (data.length !== usize) throw new Error('size mismatch in ' + name);
+    if (crc32(data) !== crc) throw new Error('CRC mismatch in ' + name);
+    out[name] = dec.decode(data);
+    p += 46 + nlen + elen + clen;
+  }
+  return out;
+}
+
+/* ===================== docx WRITE ===================== */
+const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+let SDTID = 1000;
+
+/* one run, honouring **bold** */
+function runs(text) {
+  return text.split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
+    const b = /^\*\*[^*]+\*\*$/.test(seg);
+    const t = b ? seg.slice(2, -2) : seg;
+    return `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+  }).join('');
+}
+const para = (style, text, extra = '') => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${runs(text)}</w:p>`;
+function bulletParas(text) {
+  if (!text.trim()) return para('CITBullet', '');
+  return text.split('\n').map(line => {
+    const m = line.match(/^(\s*)-\s+(.*)$/);
+    if (!m) return para('CITBody', line.trim());
+    const lvl = Math.min(Math.floor(m[1].length / 2), 1);
+    return para(lvl ? 'CITBullet2' : 'CITBullet', m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
+  }).join('');
+}
+function sdt(tag, alias, inner, lock = 'sdtLocked') {
+  return `<w:sdt><w:sdtPr><w:alias w:val="${X(alias)}"/><w:tag w:val="${X(tag)}"/><w:id w:val="${SDTID++}"/>`
+    + `<w:lock w:val="${lock}"/></w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
+}
+function buildDocument(eco) {
+  SDTID = 1000;
+  let b = '';
+  b += para('CITTitle', eco.name);
+  b += para('CITMeta', `Version ${eco.version} · exported for review · do not edit outside the boxes`);
+  b += para('CITH1', 'Drivers');
+  for (const d of eco.drivers) {
+    b += para('CITH2', d.name);
+    for (const s of d.subsections) {
+      let inner = para('CITH3', s.name);
+      for (const i of s.issues) {
+        inner += sdt(`issue|drivers/${d.id}/${s.id}|${i.id}`, i.title || 'Issue',
+          sdt('field|title', 'Title', para('CITIssueTitle', i.title)) + sdt('field|text', 'View', bulletParas(i.text)));
+      }
+      b += sdt(`sub|drivers/${d.id}/${s.id}`, s.name, inner);
+    }
+  }
+  b += para('CITH1', 'Scenarios & signposts');
+  for (const c of eco.scenarios) {
+    let inner = para('CITH2', c.name);
+    for (const i of c.issues) {
+      const cells = ['baseline', 'upside', 'downside'].map(k =>
+        `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${sdt('field|' + k, k, bulletParas(i[k]))}</w:tc>`).join('');
+      const head = ['Baseline', 'Upside', 'Downside'].map(h =>
+        `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
+      inner += sdt(`signpost|scenarios/${c.id}|${i.id}`, i.title || 'Signpost',
+        sdt('field|title', 'Title', para('CITIssueTitle', i.title))
+        + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+        + `<w:tr>${head}</w:tr><w:tr>${cells}</w:tr></w:tbl>` + para('CITBody', ''));
+    }
+    b += inner;
+  }
+  b += para('CITH1', 'Investment implications (read-only)');
+  b += sdt('matrix', 'Investment implications — set these in the page, not here',
+    `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+    + `<w:tr><w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', 'Row')}</w:tc>`
+    + `<w:tc><w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>${para('CITTableHead', 'Arrows')}</w:tc></w:tr>`
+    + Object.entries(eco.implications).map(([k, cells]) =>
+      `<w:tr><w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITBody', k)}</w:tc>`
+      + `<w:tc><w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>${para('CITBody', Object.entries(cells).map(([f, v]) => `${f} ${v === 'up' ? '↑' : '↓'}`).join(', '))}</w:tc></w:tr>`).join('')
+    + `</w:tbl>`, 'contentLocked');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${W}><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
+}
+const STYLE = (id, name, base, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/>${base ? `<w:basedOn w:val="${base}"/>` : ''}${def}</w:style>`;
+function buildStyles() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${W}>`
+    + `<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>`
+    + STYLE('Normal', 'Normal', '', '<w:pPr><w:spacing w:after="120"/></w:pPr>')
+    + STYLE('CITTitle', 'CIT Title', 'Normal', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
+    + STYLE('CITMeta', 'CIT Meta', 'Normal', '<w:rPr><w:i/><w:color w:val="767676"/></w:rPr>')
+    + STYLE('CITH1', 'CIT Heading 1', 'Normal', '<w:pPr><w:spacing w:before="320" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/></w:rPr>')
+    + STYLE('CITH2', 'CIT Heading 2', 'Normal', '<w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr>')
+    + STYLE('CITH3', 'CIT Heading 3', 'Normal', '<w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CITIssueTitle', 'CIT Issue Title', 'Normal', '<w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CITBullet', 'CIT Bullet', 'Normal', '<w:pPr><w:ind w:left="360" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
+    + STYLE('CITBullet2', 'CIT Bullet 2', 'Normal', '<w:pPr><w:ind w:left="720" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
+    + STYLE('CITBody', 'CIT Body', 'Normal', '')
+    + STYLE('CITTableHead', 'CIT Table Head', 'Normal', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
+    + `<w:style w:type="table" w:styleId="CITTable"><w:name w:val="CIT Table"/><w:tblPr><w:tblBorders>`
+    + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>`).join('')
+    + `</w:tblBorders><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
+    + `</w:styles>`;
+}
+function buildNumbering() {
+  const lvl = (i, ch, ind) => `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${ch}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${ind}" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering ${W}>`
+    + `<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${lvl(0, '', 360)}${lvl(1, 'o', 720)}</w:abstractNum>`
+    + `<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+}
+async function docxWrite(eco) {
+  return zipWrite([
+    { name: '[Content_Types].xml', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>` },
+    { name: '_rels/.rels', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+    { name: 'word/_rels/document.xml.rels', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>` },
+    { name: 'word/document.xml', text: buildDocument(eco) },
+    { name: 'word/styles.xml', text: buildStyles() },
+    { name: 'word/numbering.xml', text: buildNumbering() },
+  ]);
+}
+
+/* ===================== docx READ ===================== */
+const kids = (el, ln) => [...el.children].filter(c => c.localName === ln);
+function paraText(p) {
+  let out = '';
+  const walk = (n) => {
+    for (const c of n.children) {
+      if (c.localName === 'del') continue;                       // tracked deletion: treat as accepted
+      if (c.localName === 'r') {
+        const rPr = kids(c, 'rPr')[0];
+        const bold = rPr && kids(rPr, 'b').length && kids(rPr, 'b')[0].getAttribute('w:val') !== '0';
+        let t = '';
+        for (const x of c.children) {
+          if (x.localName === 't') t += x.textContent;
+          else if (x.localName === 'tab') t += ' ';
+          else if (x.localName === 'br') t += '\n';
+        }
+        out += bold && t.trim() ? '**' + t + '**' : t;
+      } else walk(c);                                            // ins, smartTag, hyperlink, sdt inside a paragraph…
+    }
+  };
+  walk(p);
+  return out;
+}
+function paraLevel(p) {
+  const pPr = kids(p, 'pPr')[0]; if (!pPr) return -1;
+  const style = (kids(pPr, 'pStyle')[0] || {}).getAttribute ? kids(pPr, 'pStyle')[0].getAttribute('w:val') : null;
+  const numPr = kids(pPr, 'numPr')[0];
+  const ilvl = numPr && kids(numPr, 'ilvl')[0] ? +kids(numPr, 'ilvl')[0].getAttribute('w:val') : null;
+  if (style === 'CITBullet2') return 1;
+  if (style === 'CITBullet') return 0;
+  if (ilvl != null) return Math.min(ilvl, 1);
+  return -1;                                                     // not a bullet
+}
+/* collect every paragraph under a node, in order, including inside tables */
+function paras(node) {
+  const out = [];
+  (function walk(n) { for (const c of n.children) { if (c.localName === 'p') out.push(c); else walk(c); } })(node);
+  return out;
+}
+function blockText(node) {
+  const lines = [];
+  for (const p of paras(node)) {
+    const t = paraText(p).replace(/ /g, ' ').trimEnd();
+    const lvl = paraLevel(p);
+    if (!t.trim()) continue;
+    const stripped = t.replace(/^\s*[•○▪ o·-]\s+/, '');   // a human who typed their own bullet char
+    lines.push(lvl > 0 ? '  - ' + stripped : '- ' + stripped);
+  }
+  return lines.join('\n');
+}
+function findSdts(root) {                                         // every sdt, with its tag, depth-first
+  const out = [];
+  (function walk(n) {
+    for (const c of n.children) {
+      if (c.localName === 'sdt') {
+        const pr = kids(c, 'sdtPr')[0], tagEl = pr && kids(pr, 'tag')[0];
+        const content = kids(c, 'sdtContent')[0];
+        out.push({ tag: tagEl ? tagEl.getAttribute('w:val') : null, content, el: c });
+        if (content) walk(content);
+      } else walk(c);
+    }
+  })(root);
+  return out;
+}
+function docxParse(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('document.xml is not well-formed');
+  const body = doc.getElementsByTagName('w:body')[0];
+  if (!body) throw new Error('no w:body');
+  const all = findSdts(body);
+  const out = { drivers: {}, scenarios: {}, unmatched: [] };
+  for (const s of all) {
+    if (!s.tag) { out.unmatched.push('untagged sdt'); continue; }
+    const [kind, place, id] = s.tag.split('|');
+    if (kind !== 'issue' && kind !== 'signpost') continue;
+    const inner = findSdts(s.content).filter(x => x.tag && x.tag.startsWith('field|'));
+    const rec = { id, place };
+    for (const f of inner) {
+      const key = f.tag.split('|')[1];
+      rec[key] = key === 'title' ? paras(f.content).map(paraText).join(' ').replace(/ /g, ' ').trim() : blockText(f.content);
+    }
+    const bucket = kind === 'issue' ? out.drivers : out.scenarios;
+    (bucket[place] = bucket[place] || []).push(rec);
+  }
+  return out;
+}
+async function docxRead(bytes) {
+  const files = await zipRead(bytes);
+  if (!files['word/document.xml']) throw new Error('not a Word document (no word/document.xml)');
+  return docxParse(files['word/document.xml']);
+}
+
+/* ===== structural fallback: read the document by STYLE when controls are gone ===== */
+function structuralParse(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  const body = doc.getElementsByTagName('w:body')[0];
+  const styleOf = (p) => { const pPr = kids(p, 'pPr')[0]; const s = pPr && kids(pPr, 'pStyle')[0]; return s ? s.getAttribute('w:val') : 'Normal'; };
+  /* nearest enclosing sdt tag, so we know which paragraphs are still anchored */
+  const tagOf = (p) => { let n = p.parentNode, best = null;
+    while (n && n.localName !== 'body') { if (n.localName === 'sdtContent') { const pr = kids(n.parentNode, 'sdtPr')[0], t = pr && kids(pr, 'tag')[0];
+      if (t && /^(issue|signpost)\|/.test(t.getAttribute('w:val'))) { best = t.getAttribute('w:val'); break; } } n = n.parentNode; } return best; };
+  const out = []; let section = null, group = null, sub = null, cur = null;
+  for (const p of paras(body)) {
+    const st = styleOf(p), txt = paraText(p).replace(/ /g, ' ').trim();
+    if (st === 'CITH1') { section = /driver/i.test(txt) ? 'drivers' : /scenario|signpost/i.test(txt) ? 'scenarios' : 'other'; cur = null; continue; }
+    if (st === 'CITH2') { group = txt; cur = null; continue; }
+    if (st === 'CITH3') { sub = txt; cur = null; continue; }
+    if (st === 'CITIssueTitle') { cur = { section, group, sub, title: txt, lines: [], tag: tagOf(p) }; out.push(cur); continue; }
+    if (cur && (st === 'CITBullet' || st === 'CITBullet2' || st === 'CITBody' || st === 'Normal')) {
+      if (!txt) continue;
+      cur.lines.push((paraLevel(p) > 0 ? '  - ' : '- ') + txt.replace(/^\s*[•○▪ o·]\s+/, ''));
+    }
+  }
+  return out.map(o => ({ ...o, text: o.lines.join('\n') }));
+}
+/* ===== reconcile: tagged results win; orphans are re-attached by place + title ===== */
+function reconcile(tagged, structural, current) {
+  const report = { matched: [], recovered: [], added: [], retired: [], notes: [] };
+  const seen = new Set();
+  for (const [place, items] of Object.entries(tagged.drivers)) for (const i of items) { seen.add(i.id); report.matched.push({ place, id: i.id, title: i.title, text: i.text }); }
+  const orphans = structural.filter(s => !s.tag && s.section === 'drivers');
+  for (const o of orphans) {
+    const place = Object.keys(current).find(k => current[k].subName === o.sub);
+    const known = place && current[place].issues.find(i => i.title.trim() === o.title.trim());
+    if (known && !seen.has(known.id)) { seen.add(known.id); report.recovered.push({ place, id: known.id, title: o.title, text: o.text, how: 'title match' }); }
+    else report.added.push({ place: place || '?', title: o.title, text: o.text });
+  }
+  for (const [place, meta] of Object.entries(current)) for (const i of meta.issues) if (!seen.has(i.id)) report.retired.push({ place, id: i.id, title: i.title });
+  return report;
+}
+
+
+const SAMPLE = {
+  id: 'united-states', name: 'United States', version: 2,
+  drivers: [{ id: 'regime', name: 'Regime', subsections: [
+    { id: 'trend-growth', name: 'Trend growth', issues: [
+      { id: 'iss-us-tg1', title: 'AI capex is now the growth engine, and the concentration risk',
+        text: '- Investment in data centres, power and chips is running at 2-2.5% of GDP\n- Financing has migrated to bonds & private credit, so a pause hits both\n  - the "nested" case matters too\n- Working assumption: **potential growth around 2%**' },
+      { id: 'iss-us-tg2', title: 'Labour supply is the binding constraint',
+        text: '- Immigration enforcement has cut labour-force growth to a trickle\n- A low-churn market: few layoffs, few hires' } ] },
+    { id: 'trend-inflation', name: 'Trend inflation', issues: [
+      { id: 'iss-us-ti1', title: 'Oil shock on top of tariff pass-through', text: '- Headline CPI is stuck at 3.4% <after> the closure' } ] } ] }],
+  scenarios: [{ id: 'growth', name: 'Growth', issues: [
+    { id: 'iss-us-sg1', title: 'Consumer under the oil and tariff squeeze',
+      baseline: '- Real consumption slows to 1-1.5%', upside: '- Hormuz reopens durably', downside: '- Oil stays above $100 and equities correct 15-20%' } ] }],
+  implications: { 'drivers/regime/trend-growth': { sales_growth: 'up', valuation: 'down' } },
+};
+const CURRENT = {};
+for (const d of SAMPLE.drivers) for (const s of d.subsections) CURRENT[`drivers/${d.id}/${s.id}`] = { subName: s.name, issues: s.issues };
+
+function expected(eco) {
+  const o = { drivers: {}, scenarios: {} };
+  for (const d of eco.drivers) for (const s of d.subsections) o.drivers[`drivers/${d.id}/${s.id}`] = s.issues.map(i => ({ id: i.id, title: i.title, text: i.text }));
+  for (const c of eco.scenarios) o.scenarios[`scenarios/${c.id}`] = c.issues.map(i => ({ id: i.id, title: i.title, baseline: i.baseline, upside: i.upside, downside: i.downside }));
+  return o;
+}
+function compare(exp, got) {
+  const fails = [];
+  for (const [place, items] of Object.entries(exp.drivers)) {
+    const g = got.drivers[place] || [];
+    if (g.length !== items.length) { fails.push(`${place}: ${items.length} out, ${g.length} back`); continue; }
+    items.forEach((i, n) => { for (const k of ['id', 'title', 'text']) if (g[n][k] !== i[k]) fails.push(`${place}#${n}.${k}\n   out: ${JSON.stringify(i[k])}\n   back:${JSON.stringify(g[n][k])}`); });
+  }
+  for (const [place, items] of Object.entries(exp.scenarios)) {
+    const g = got.scenarios[place] || [];
+    if (g.length !== items.length) { fails.push(`${place}: ${items.length} out, ${g.length} back`); continue; }
+    items.forEach((i, n) => { for (const k of ['id', 'title', 'baseline', 'upside', 'downside']) if (g[n][k] !== i[k]) fails.push(`${place}#${n}.${k}\n   out: ${JSON.stringify(i[k])}\n   back:${JSON.stringify(g[n][k])}`); });
+  }
+  return fails;
+}
+const rezip = (files) => zipWrite(Object.entries(files).map(([name, text]) => ({ name, text })));
+/* edit the document.xml the way Word would, via the DOM */
+function editXml(xml, fn) {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  fn(doc, {
+    sdtByTag: (t) => [...doc.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === t; }),
+    setText: (el, from, to) => { for (const t of el.getElementsByTagName('w:t')) if (t.textContent === from) { t.textContent = to; return true; } return false; },
+  });
+  return new XMLSerializer().serializeToString(doc);
+}
+
+(async () => {
+  const log = []; const say = (s) => log.push(s);
+  const check = (n, ok) => say('   ' + (ok ? 'PASS' : 'FAIL') + '  ' + n);
+  try {
+    say('CompressionStream: ' + typeof CompressionStream + ' / DecompressionStream: ' + typeof DecompressionStream);
+    const bytes = await docxWrite(SAMPLE);
+    say('docx written: ' + bytes.length + ' bytes');
+    window.__DOCX = Array.from(bytes);
+    const fails = compare(expected(SAMPLE), await docxRead(bytes));
+    say('TEST 1  clean round-trip: ' + (fails.length ? 'FAIL\n' + fails.join('\n') : 'PASS (every id, title, bullet and nesting level identical)'));
+
+    const files = await zipRead(bytes);
+    /* ---- TEST 2: ordinary Word editing ---- */
+    const edited = editXml(files['word/document.xml'], (doc, h) => {
+      const tg2 = h.sdtByTag('issue|drivers/regime/trend-growth|iss-us-tg2');
+      h.setText(tg2, 'Immigration enforcement has cut labour-force growth to a trickle', 'Immigration enforcement has cut labour-force growth to ZERO');
+      // tracked change: an insertion and a deletion on the next bullet
+      const t = [...tg2.getElementsByTagName('w:t')].find(x => /low-churn/.test(x.textContent));
+      const p = t.parentNode.parentNode, W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+      const mk = (kind, tagName, text) => { const ins = doc.createElementNS(W, 'w:' + kind); ins.setAttribute('w:id', '900'); ins.setAttribute('w:author', 'AC'); ins.setAttribute('w:date', '2026-09-15T09:00:00Z');
+        const r = doc.createElementNS(W, 'w:r'), tt = doc.createElementNS(W, 'w:' + tagName); tt.setAttribute('xml:space', 'preserve'); tt.textContent = text; r.appendChild(tt); ins.appendChild(r); return ins; };
+      p.appendChild(mk('ins', 't', ', and long-term unemployment is rising'));
+      p.appendChild(mk('del', 'delText', ' DELETE ME'));
+      // retitle inside the control (the <w:t>, not the alias)
+      const ti = h.sdtByTag('issue|drivers/regime/trend-inflation|iss-us-ti1');
+      h.setText(ti, 'Oil shock on top of tariff pass-through', 'Oil shock, tariffs and the 2027 wage round');
+      h.setText(ti, 'Headline CPI is stuck at 3.4% <after> the closure', 'Headline CPI is stuck at 3.4% “after” the closure');
+    });
+    const got2 = await docxRead(await rezip({ ...files, 'word/document.xml': edited }));
+    const tg = got2.drivers['drivers/regime/trend-growth'], ti = got2.drivers['drivers/regime/trend-inflation'];
+    say('TEST 2  document edited in Word:');
+    check('ids survive editing', tg.map(i => i.id).join(',') === 'iss-us-tg1,iss-us-tg2');
+    check('edited bullet returns', /to ZERO/.test(tg[1].text));
+    check('tracked insertion read as accepted', /long-term unemployment is rising/.test(tg[1].text));
+    check('tracked deletion dropped', !/DELETE ME/.test(tg[1].text));
+    check('retitle read, id unchanged', ti[0].title === 'Oil shock, tariffs and the 2027 wage round' && ti[0].id === 'iss-us-ti1');
+    check('Word smart quotes arrive (normalise on import)', /“/.test(ti[0].text));
+    check('untouched issue byte-identical to the YAML', tg[0].text === SAMPLE.drivers[0].subsections[0].issues[0].text);
+
+    /* ---- TEST 3: the control itself is destroyed ---- */
+    const mangled = editXml(files['word/document.xml'], (doc, h) => {
+      // (a) paste-over: the content control is gone, its paragraphs remain
+      const victim = h.sdtByTag('issue|drivers/regime/trend-growth|iss-us-tg2');
+      const content = victim.getElementsByTagName('w:sdtContent')[0];
+      const keep = [...content.childNodes].map(n => { const c = n.cloneNode(true); return c; });
+      const frag = doc.createDocumentFragment();
+      for (const k of keep) { // also unwrap the inner field controls, as a paste would
+        if (k.localName === 'sdt') for (const p of [...k.getElementsByTagName('w:sdtContent')[0].childNodes]) frag.appendChild(p.cloneNode(true));
+        else frag.appendChild(k);
+      }
+      victim.parentNode.replaceChild(frag, victim);
+      // (b) a brand-new issue typed by hand, no control at all
+      const ti = h.sdtByTag('sub|drivers/regime/trend-inflation');
+      const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+      const mkP = (style, text) => { const p = doc.createElementNS(W, 'w:p'), pPr = doc.createElementNS(W, 'w:pPr'), st = doc.createElementNS(W, 'w:pStyle');
+        st.setAttribute('w:val', style); pPr.appendChild(st); p.appendChild(pPr);
+        const r = doc.createElementNS(W, 'w:r'), t = doc.createElementNS(W, 'w:t'); t.setAttribute('xml:space', 'preserve'); t.textContent = text; r.appendChild(t); p.appendChild(r); return p; };
+      ti.getElementsByTagName('w:sdtContent')[0].appendChild(mkP('CITIssueTitle', 'Wage catch-up is the 2027 risk'));
+      ti.getElementsByTagName('w:sdtContent')[0].appendChild(mkP('CITBullet', 'Real wages have fallen for four months; unions are reopening'));
+    });
+    const mz = await rezip({ ...files, 'word/document.xml': mangled });
+    const taggedM = await docxRead(mz);
+    const structM = structuralParse((await zipRead(mz))['word/document.xml']);
+    const rep = reconcile(taggedM, structM, CURRENT);
+    say('TEST 3  content controls destroyed by a paste, plus a hand-typed issue:');
+    check('parser did not crash', true);
+    check('surviving tagged issues still carry ids', rep.matched.map(m => m.id).sort().join(',') === 'iss-us-tg1,iss-us-ti1');
+    check('orphaned issue recovered by title, id restored', rep.recovered.length === 1 && rep.recovered[0].id === 'iss-us-tg2');
+    check('its edited text came with it', /low-churn/.test((rep.recovered[0] || {}).text || ''));
+    check('hand-typed issue seen as an addition', rep.added.length === 1 && rep.added[0].title === 'Wage catch-up is the 2027 risk');
+    check('nothing wrongly reported as retired', rep.retired.length === 0);
+    say('   report: ' + JSON.stringify({ matched: rep.matched.length, recovered: rep.recovered.length, added: rep.added.length, retired: rep.retired.length }));
+
+    /* ---- TEST 4: not a thesis document at all ---- */
+    let refused = 'accepted (BAD)';
+    try { await docxRead(await zipWrite([{ name: 'word/other.xml', text: '<a/>' }])); }
+    catch (e) { refused = 'refused: ' + e.message; }
+    say('TEST 4  wrong file type: ' + refused);
+  } catch (e) { say('ERROR ' + (e && e.stack || e)); }
+  document.getElementById('out').innerHTML = log.join('\n').replace(/\bPASS\b/g,'<span class="PASS">PASS</span>').replace(/\bFAIL\b/g,'<span class="FAIL">FAIL</span>');
+  window.__RESULT = log.join('\n');
+})();
+
+document.getElementById('dl').onclick = async () => {
+  const b = await docxWrite(REAL);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([b], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+  a.download = (REAL.id || 'economy') + '-v' + (REAL.version || 0) + '.docx'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+document.getElementById('dlsample').onclick = async () => {
+  const b = await docxWrite(SAMPLE);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([b], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+  a.download = 'sample.docx'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+</script></body></html>
