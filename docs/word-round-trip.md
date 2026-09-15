@@ -3,6 +3,13 @@
 A design note. Nothing in the tool has changed yet — this sets out a method, says
 which parts are proven and which are not, and gives a build order.
 
+Written against the schema now on `main`: **one hierarchy** (drivers →
+subsections → issues) with a **signpost as three optional cells on an issue**,
+and a **read-only folder connect** that asks for write access only on Edit or
+Import. An earlier draft of this note targeted the old two-hierarchy layout with
+a separate `scenarios:` section; that is gone, and the design got simpler for
+it.
+
 There is a working prototype next to this note: open `poc/docx-round-trip.html`
 in Edge or Chrome and it runs its own tests, or open
 `poc/sample-united-states-v2.docx` in Word to see the document it produces.
@@ -57,9 +64,16 @@ stay freely editable. The user sees a labelled box; we see:
 
 ```
 issue|iss-us-tg1
-   field|title    -> one paragraph
-   field|text     -> the bullets
+   field|title      -> one paragraph
+   field|text       -> the view bullets
+   field|baseline   -> a table cell
+   field|upside     -> a table cell
+   field|downside   -> a table cell
 ```
+
+Since `main` collapsed the two hierarchies into one, there is exactly **one kind
+of editable box in the document: the issue.** Everything a researcher can change
+is a field inside one of those, or the order they sit in.
 
 The tag carries **identity only — never placement.** Where an item sits comes
 from the container it is inside and from document order. That split is what lets
@@ -82,8 +96,9 @@ Everything else follows the same principle:
 | Which field (title, text, baseline…) | nested content control, `field\|…` |
 | Bullet, nested bullet | paragraph styles `CIT Bullet` / `CIT Bullet 2` + real list numbering |
 | `**bold**` | a bold run |
-| Baseline / upside / downside | a three-column table, one control per cell |
-| Subsection, group | headings `CIT Heading 2` / `CIT Heading 3`, wrapped in a control |
+| Baseline / upside / downside | a three-column table on the issue, one control per cell |
+| An issue with no signposts | the same three cells, left showing their italic hint |
+| Subsection, group | headings, wrapped in a control (the group's is read-only) |
 | Implications matrix | a table inside a `contentLocked` control — read-only |
 
 Named styles matter as much as the controls: they are the **second** anchor. If a
@@ -168,22 +183,26 @@ title against the current YAML — the same title-matching the YAML import alrea
 does. Anything that still cannot be placed is offered as an *addition*, never
 silently merged.
 
-This is the tier the original question was really about, and it works. In the
-prototype, with one issue's controls destroyed by a simulated paste and a second
-issue typed by hand with no control at all:
+This is the tier the original question was really about, and it works. Each
+field falls back independently, because a box can lose one control and keep the
+others. In the prototype, with one issue's inner controls destroyed and a second
+issue's box unwrapped entirely:
 
 ```
-PASS  surviving tagged issues still carry ids
-PASS  orphaned issue recovered by title, id restored
-PASS  its edited text came with it
-PASS  hand-typed issue seen as an addition
-PASS  nothing wrongly reported as retired
+TEST 5  Tier B — content controls destroyed:
+   PASS  parser did not crash
+   PASS  box intact but inner controls gone: still read by style anchor
+   PASS  whole box unwrapped: recovered by title, id restored
+   PASS  its text came with it
+   PASS  nothing wrongly reported as retired
+   PASS  nothing wrongly reported as added
 ```
 
-That last line is the important one. The failure that would actually hurt is not
-"the import stops"; it is **an issue quietly reported as retired because its box
-got mangled**, which through the normal save path would delete it. Tier B exists
-to make that impossible.
+Those last two lines are the important ones. The failure that would actually
+hurt is not "the import stops"; it is **an issue quietly reported as retired
+because its box got mangled**, which through the normal save path would delete
+it — or the mirror image, the same issue coming back as a duplicate addition.
+Tier B exists to make both impossible.
 
 **Tier C — the structure is gone.** The document is unreadable, is for a
 different economy, or has lost so much that headings no longer make sense. Refuse
@@ -201,8 +220,8 @@ went out with the ids that came back.
 ## 5. Structural edits: adding, deleting, reprioritising
 
 Text editing is the easy half. The operations that break naive round-trips are
-the ones that change *which items exist and in what order*. All three are
-proven in the prototype; the tests are `TEST 2`, `TEST 3` and `TEST 4`.
+the ones that change *which items exist, in what order, and with what attached*.
+All are proven in the prototype.
 
 First, what the page itself allows, because Word must not offer more than the
 tool can accept:
@@ -212,40 +231,46 @@ tool can accept:
 | Driver group (Regime, Policy, Imbalances, Geopolitics) | — | — | — | — |
 | Subsection (Trend growth, Monetary …) | yes | only ones you added | yes | only ones you added |
 | Issue | yes | yes | yes, within its subsection | yes |
-| Scenario category | yes | only ones you added | *no UI* | only ones you added |
-| Signpost | yes | yes | yes, within its category | yes |
+| Signposts on an issue | fill the three cells | clear all three | n/a — they belong to the issue | n/a |
 
-The four driver groups are fixed. So in the Word file their headings are
-`contentLocked` and **the reader ignores group order entirely** — otherwise a
-researcher could reorder them, and the change would be silently lost, because
-`flatten()` does not track group order and the log would never show it.
+The four driver groups are fixed, so their headings are `contentLocked` and **the
+reader ignores group order entirely** — otherwise a researcher could reorder them
+and the change would vanish, because `flatten()` does not track group order and
+the log could not represent it.
+
+Note what the new schema removed: there are no scenario categories to add,
+delete or reorder any more, and a signpost is no longer an item with an identity
+of its own. The Signposts lens in the page is explicit that "issues are added,
+renamed and removed on the Drivers page; here you fill in what we track for
+each." The Word document mirrors exactly that.
 
 ### Adding
 
 A new issue is typed into an **"add here" slot**: an empty content control at the
-end of every subsection, carrying Word placeholder text —
-*"Click here and type a new issue: its title on the first line, then one bullet
-per line."* Word's `<w:showingPlcHdr/>` flag tells us the slot is untouched, so
-an unused slot can never become a phantom addition. There is a slot at the end of
-each driver group for a **new subsection**, and one at the end of the scenarios
-page for a **new category**.
+end of every subsection carrying Word placeholder text. Word's
+`<w:showingPlcHdr/>` flag tells us the slot is untouched, so an unused slot can
+never become a phantom addition. There is one slot per subsection for a new
+issue, and one at the end of each driver group for a new subsection.
 
 The slot exists because of the failure it prevents. Without it, a researcher who
 wants to add an issue puts the cursor at the end of the last bullet and presses
-Enter — and they are now typing *inside the previous issue's text control*. Their
-new issue silently becomes three more bullets on the issue above. A visibly
+Enter — and is now typing *inside the previous issue's text control*, so the new
+issue silently becomes three more bullets on the issue above. A visibly
 different, italic, empty box is the affordance that stops that.
 
-Inside a slot, a paragraph in the `CIT Issue Title` style starts a new item, so
-several can be added at once; if the researcher does not touch the styles, the
-first line is the title and the rest are bullets. For a signpost the three lines
-after the title become baseline, upside and downside. New items arrive with no
-id and are minted permanent ids on apply — the same `new-1` treatment the Ada
-import already uses.
+Inside a slot, the first line is the title and the rest are bullets; a paragraph
+in the `CIT Issue Title` style starts another issue, so several can be added at
+once. Lines beginning `Baseline:`, `Upside:` and `Downside:` become the new
+issue's signpost cells, so an issue can arrive complete in one pass.
 
-Anything typed *outside* a slot is still caught by the orphan detector in §4 and
-offered as an addition placed by the nearest heading. The slot is the happy path,
-not the only path.
+**Adding signposts to an issue that has none** is the case the new schema
+creates, and it needs no new machinery. Every issue carries all three cells,
+whether or not it uses them; an unused cell shows an italic hint
+(*"Baseline — what we expect. Leave all three empty if this issue has no
+signposts."*) and is marked as a placeholder. Type over the hint and the signpost
+exists. This matches the page, which also shows three empty boxes per issue in
+edit mode. The reader treats a still-hinted cell as empty, so the 51 of 78 issues
+that currently have no signposts round-trip with nothing added.
 
 ### Deleting
 
@@ -255,96 +280,103 @@ issue impossible.
 
 The resolution is that `sdtLocked` locks the *frame*, not the contents. So:
 
-> **To retire an issue or signpost, select everything inside its boxes and delete
-> it. The empty frame stays behind, and its tag tells us which item you emptied.**
+> **To retire an issue, select everything inside its boxes and delete it. The
+> empty frame stays behind, and its tag says which item you emptied.**
 
-That is the natural gesture — select, press Delete — and it is unambiguous,
-because the surviving frame means we never have to guess *which* item was
-removed. It works identically with Track Changes on, since the reader treats
-`w:del` content as already accepted, so a struck-through issue reads as empty.
+That is the natural gesture, and unambiguous, because the surviving frame means
+we never have to guess *which* item went. It works identically with Track Changes
+on, since the reader treats `w:del` content as already accepted.
 
-Three cases, deliberately treated differently:
+The new schema adds a second, weaker deletion: **clearing just the three cells
+drops the signposts and keeps the issue.** `flatten()` only emits a cell path
+when the cell is non-empty, so that reads as three removals and the log records
+it properly.
 
 | What the document shows | Read as |
 | --- | --- |
-| Title and body both empty, frame intact | **Retire.** Confident. |
+| Title, view and all three cells empty | **Retire the issue.** Confident. |
+| Only the three cells empty | **Drop the signposts, keep the issue.** |
 | Frame gone entirely | **Retire, flagged "may be accidental."** |
-| Title empty, body still has text | **Neither.** A question in the review: *restore the title, or clear the whole box to retire it.* |
+| Title empty, content still there | **Neither.** A question in the review. |
+| One or two cells of three filled | **Neither.** A question in the review. |
 
-That third row matters more than it looks. Without it, deleting a title by
-accident would empty `title`, fail `validate()`'s "every issue needs a title"
-check, and **refuse the entire import** — one slip costing the whole document.
-The reader must therefore classify retirements *before* validation runs, not
-after.
+The last two rows are the ones that earn their keep, because `validate()` refuses
+the **entire import** if any problem is found, and it now has two rules that a
+careless Word edit will trip:
 
-The worst outcome here is not a refused import; it is an issue quietly retired
-because its box was mangled, which the normal save path would then delete. Hence
-the middle row is labelled rather than trusted, and every retirement appears in
-the review as a red card with the full old text, written only on Apply. The log
-keeps the old text either way, so it is recoverable.
+- every issue needs a title; and
+- *"once any cell is filled all three are required"* — so deleting one cell of a
+  signpost, which is a single stray keystroke, would otherwise cost the whole
+  document.
 
-If retirement-by-emptying turns out to happen by accident in practice, the
-hardening is a "Retire this item" dropdown control on each box — explicit intent,
-impossible to trigger by a stray Delete. I would not build it until the need
-shows up: it puts a widget on every item to guard against something that may
-never occur.
+The reader therefore classifies these **before** validation runs and surfaces
+them as a question against that one issue — *"signposts are half filled: upside
+is empty. Fill it in, or clear all three to drop the signposts."* — rather than
+letting a one-cell slip refuse a fifty-change import.
+
+The worst outcome is not a refused import; it is an issue quietly retired because
+its box was mangled, which the normal save path would then delete. Hence the
+"frame gone" row is labelled rather than trusted, every retirement appears in the
+review as a red card with the full old text, and nothing is written until Apply.
+The log keeps the old text, so it is recoverable either way.
+
+If retirement-by-emptying proves accident-prone, the hardening is a "Retire this
+issue" dropdown on each box. I would not build it until the need shows up.
 
 ### Reprioritising
 
 Because the tag carries identity and the container carries placement, reordering
-needs no machinery at all: **move the box, and the item moves.** The reader takes
-document order, and `flatten()` already emits an `order` field per item, so the
-existing diff and log record it exactly as they do for the page's own ↑/↓
-buttons — the README already documents `.../order` changes.
+needs no machinery: **move the box, and the item moves.** The reader takes
+document order, and `flatten()` already emits an `order` field, so the existing
+diff and log record it exactly as they do for the page's own ↑/↓ buttons.
 
-This works for issues inside a subsection, signposts inside a category,
-subsections inside a group, and scenario categories on the scenarios page. Note
-the last one is a capability the page's own UI does not have: there is no "move
-category" button, but the order *is* tracked in the file and the log. Word would
-therefore let a researcher do something the page cannot. That is coherent and
-useful, but worth deciding deliberately rather than discovering.
+This covers issues within a subsection and subsections within a group — which is
+the whole of what the page can reorder. Signposts have no order of their own any
+more; they move with their issue, which is one fewer thing to get wrong than in
+the old layout.
 
 Two edges:
 
 - **If Word drops the control during a drag** (it sometimes pastes as plain
   text), the item becomes an orphan — and the Tier B recovery in §4 re-attaches
-  it by title *at its new position*, which is the outcome we wanted anyway. The
-  fallback handles reordering correctly by accident of design.
+  it by title *at its new position*, which is the outcome we wanted anyway.
 - **Moving an issue to a different subsection** is read correctly and the id is
-  preserved, but the underlying history model keys paths by subsection, so the
-  log will show it as a retirement in the old place plus an addition in the new
-  one. The id survives, so it is traceable; it is a limitation of the existing
-  model, not of Word. The page cannot do this at all, so the same "more than the
-  UI offers" question applies.
+  preserved, but the history model keys paths by subsection, so the log shows it
+  as a retirement in the old place plus an addition in the new one. The id
+  survives, so it is traceable. The page cannot do this at all — see §10.
 
 ### What the tests show
 
 ```
+TEST 1  clean round-trip (new one-hierarchy schema):
+   PASS  united-states    13 issues  identical, zero spurious changes
+   PASS  china            12 issues  identical, zero spurious changes
+   …all seven economies, 78 issues
+   PASS  issues with no signposts stay empty (hints are not content)
+   PASS  issues that have signposts keep all three cells
 TEST 2  Q1 — adding:
    PASS  new issue typed into the slot is an addition
-   PASS  two new issues in one slot both seen
-   PASS  new subsection captured with its name
-   PASS  new signpost split into baseline/upside/downside
-   PASS  additions did not disturb existing items
+   PASS  its signposts were parsed from the Baseline:/Upside:/Downside: lines
+   PASS  new subsection captured with its first issue
+   PASS  signposts added to an existing issue read as an edit, not an addition
 TEST 3  Q2 — deleting:
-   PASS  emptied signpost reads as a retirement
-   PASS  tracked-changes deletion also reads as a retirement
+   PASS  emptying every box retires the issue
+   PASS  clearing only the three cells keeps the issue
+   PASS  half-cleared signposts are caught before validate() can refuse the import
    PASS  a box deleted outright is flagged as possibly accidental
-   PASS  losing only the title is a question, not a deletion
 TEST 4  Q3 — reprioritising:
    PASS  swapped issues report an order change, ids intact
    PASS  a reorder is not mistaken for an edit
    PASS  issue dragged to another subsection is reported as moved
-   PASS  driver group order ignored (page cannot reorder groups)
+   PASS  subsection order read from the document
+   PASS  driver group order ignored (the page cannot reorder groups)
 ```
 
 All seven economies round-trip with **zero spurious changes** — no phantom
-additions from unused slots, no phantom retirements, no edits reported on text
-nobody touched. That last property is what makes the review screen usable: if a
-clean round-trip produced even a handful of false diffs, nobody would trust the
-real ones.
-
----
+additions from unused slots or unused signpost cells, no phantom retirements, no
+edits reported on text nobody touched. That property is what makes the review
+screen usable: if a clean round-trip produced even a handful of false diffs,
+nobody would trust the real ones.
 
 ## 6. Where Ada fits
 
