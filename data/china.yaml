@@ -33,6 +33,9 @@ drivers:
               - CPI 0.8% in August with core at 1.0%; food prices falling for a fifth month and housing costs still negative; PPI has been in deflation for over three years
               - The oil shock is passing through to transport prices but not to core; China is exporting disinflation to the rest of the world through goods prices
               - Real rates remain too high for a deleveraging economy; this is the central policy failure and the reason nominal GDP growth lags real growth
+            baseline: "- CPI 0.5-1% and PPI slightly negative through 2027; nominal growth stays below real growth"
+            upside: "- Anti-involution enforcement and demand support lift core inflation above 1.5%; PPI turns positive and corporate profits recover"
+            downside: "- Renewed property deflation and yuan strength push CPI below zero; debt-deflation dynamics and a Japan-1990s narrative take hold"
   - id: policy
     name: Policy
     subsections:
@@ -45,6 +48,9 @@ drivers:
               - One-year LPR at 3.0% after the April cut; the central bank has preferred RRR cuts, structural lending facilities and bond purchases to headline rate moves, and has been protective of bank margins and the currency
               - With US-China relations in a truce and the Iran war raising import costs, the PBOC is holding firepower; expect 10-20bp of further cuts only if activity weakens visibly in Q4
               - Watch: the 7-day reverse repo, net bond purchases, and any shift to explicit inflation-targeting language
+            baseline: "- LPR cut to 2.8% by mid-2027, more RRR cuts and bond purchases; fiscal stays supply-side with incremental consumer measures"
+            upside: "- Beijing shifts to large direct household transfers and a housing inventory backstop after the 2027 Congress; the yuan strengthens on confidence"
+            downside: "- Policy stays reactive; capital outflow pressure forces a managed depreciation and tighter controls"
       - id: fiscal
         name: Fiscal
         issues:
@@ -65,6 +71,9 @@ drivers:
             text: |-
               - Property is 60-70% of household wealth and still falling; precautionary saving is elevated, youth unemployment near 17%, and consumption is running below income growth
               - Retail sales respond to subsidies then fade; the structural fix (social security, hukou, income redistribution) is acknowledged in the Plan but not funded
+            baseline: "- Prices keep falling at a slowing pace; starts flat at a low base; property subtracts 0.5-1pp from growth through 2027 and growth lands near 4.3-4.5%"
+            upside: "- Central-government inventory purchases and lower rates stabilise tier-1 and tier-2 prices by mid-2027; household confidence recovers and consumption growth exceeds 5%"
+            downside: "- A second leg down in prices, developer defaults spread to the state-linked sector, and local-government finances force spending cuts; growth below 3.5%"
       - id: external
         name: External
         issues:
@@ -73,6 +82,9 @@ drivers:
             text: |-
               - Exports to the US fell by double digits through 2025 while shipments to ASEAN, the EU and the Middle East surged; the surplus passed $1tn and is the source of a widening global backlash (EU, Brazil, India all adding measures)
               - The yuan has been managed firm to keep the trade truce and to lean against capital outflows; a weaker currency is the tail policy option
+            baseline: "- Export volumes keep growing mid-single digits with redirection to the Global South; the surplus stays near $1tn"
+            upside: "- A durable US deal plus EU market access keeps export growth high while domestic demand policy finally scales; nominal GDP growth back above 6%"
+            downside: "- Coordinated tariffs from the US, EU and major EMs cut export growth to zero; overcapacity turns into industrial bankruptcies and a localised financial event"
           - id: iss-cn-ex2
             title: Energy import exposure
             text: |-
@@ -107,50 +119,7 @@ drivers:
               - The edges are being tested: the US excess-capacity investigation, chip export controls, and Taiwan; either side can re-escalate quickly and the truce expires unless renewed
           - id: iss-cn-gi2
             title: Trade backlash beyond the US
-            text: |-
-              - The EU, Brazil, India, Mexico and Turkey have all added tariffs or investigations on Chinese autos, steel and chemicals; the surplus redirection strategy is running into limits in 2026-27
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-cn-sg1
-        title: Property stabilisation
-        baseline: |-
-          - Prices keep falling at a slowing pace; starts flat at a low base; property subtracts 0.5-1pp from growth through 2027 and growth lands near 4.3-4.5%
-        upside: |-
-          - Central-government inventory purchases and lower rates stabilise tier-1 and tier-2 prices by mid-2027; household confidence recovers and consumption growth exceeds 5%
-        downside: |-
-          - A second leg down in prices, developer defaults spread to the state-linked sector, and local-government finances force spending cuts; growth below 3.5%
-      - id: iss-cn-sg2
-        title: Export engine under backlash
-        baseline: |-
-          - Export volumes keep growing mid-single digits with redirection to the Global South; the surplus stays near $1tn
-        upside: |-
-          - A durable US deal plus EU market access keeps export growth high while domestic demand policy finally scales; nominal GDP growth back above 6%
-        downside: |-
-          - Coordinated tariffs from the US, EU and major EMs cut export growth to zero; overcapacity turns into industrial bankruptcies and a localised financial event
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-cn-si1
-        title: Exit from deflation
-        baseline: |-
-          - CPI 0.5-1% and PPI slightly negative through 2027; nominal growth stays below real growth
-        upside: |-
-          - Anti-involution enforcement and demand support lift core inflation above 1.5%; PPI turns positive and corporate profits recover
-        downside: |-
-          - Renewed property deflation and yuan strength push CPI below zero; debt-deflation dynamics and a Japan-1990s narrative take hold
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-cn-sp1
-        title: PBOC and fiscal response
-        baseline: |-
-          - LPR cut to 2.8% by mid-2027, more RRR cuts and bond purchases; fiscal stays supply-side with incremental consumer measures
-        upside: |-
-          - Beijing shifts to large direct household transfers and a housing inventory backstop after the 2027 Congress; the yuan strengthens on confidence
-        downside: |-
-          - Policy stays reactive; capital outflow pressure forces a managed depreciation and tighter controls
+            text: "- The EU, Brazil, India, Mexico and Turkey have all added tariffs or investigations on Chinese autos, steel and chemicals; the surplus redirection strategy is running into limits in 2026-27"
 implications:
   drivers/regime/trend-growth:
     sales_growth: down
@@ -182,13 +151,3 @@ implications:
     sales_growth: down
     margin_growth: down
     valuation: down
-  scenarios/growth:
-    sales_growth: down
-    dividend_yield: up
-  scenarios/inflation:
-    inflation_expectation: down
-    cash_rate: down
-  scenarios/policy:
-    cash_rate: down
-    liquidity: up
-    valuation: up
