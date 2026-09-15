@@ -1,7 +1,10 @@
 # Editing the thesis in Word, and getting it back
 
-A design note. Nothing in the tool has changed yet — this sets out a method, says
-which parts are proven and which are not, and gives a build order.
+A design note. **Export is now built** (step 2 below): the editor has a *Word
+copy* button that saves the selected economy as a `.docx`. Reading an edited
+document back is not built — everything from §8c onward is still a specification.
+This note sets out the method, says which parts are proven and which are not, and
+gives the build order.
 
 Written against the schema now on `main`: **one hierarchy** (drivers →
 subsections → issues) with a **signpost as three optional cells on an issue**,
@@ -582,12 +585,12 @@ which the Word cell layout makes plausible.
    Online and Word for Mac if the team uses them, and on the drag in particular,
    which is the gesture most likely to drop a control.
 1. Decide (a) or (b) from §1.
-2. Lift the ZIP codec and the docx writer from the prototype into the editor as
-   the `DOCX` module, and wire up **Word copy** only (§8a, §8b). Download path,
-   no write permission, no lock — about a day, and it cannot break anything,
-   because nothing reads the file back yet. Let people live with it for a week: a
-   Word export is useful on its own and tells you whether round-tripping is
-   really what anyone wants.
+2. **Done.** The `DOCX` module (write only) sits beside `YAML` in the editor,
+   `download()` takes bytes and a MIME type, and **Word copy** is in the
+   per-economy toolbar. Driven from the real page it produces a valid 8.9 KB
+   file — 107 content controls, 14 tables, all 6 parts deflated, opened by an
+   independent OOXML reader — which the prototype importer reads back with zero
+   spurious changes. Let people live with it for a week before going further.
 3. Add the Tier A reader and the manifest check, wired into the existing review
    screen behind the normal Import button (§8c, §8d). Refuse on problems for now
    (§8e).
