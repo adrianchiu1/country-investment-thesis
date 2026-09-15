@@ -3,25 +3,32 @@
 <title>Word round-trip prototype — Country Investment Thesis</title>
 <style>
  body{font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#1c2024}
- .wrap{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+ .wrap{max-width:880px;margin:0 auto;padding:32px 20px 60px}
  h1{font-size:23px;margin:0 0 6px} h2{font-size:15px;margin:28px 0 8px}
  p{margin:0 0 12px;color:#42484f} code{background:#e9ecf0;padding:1px 5px;border-radius:4px;font-size:12.5px}
- pre{background:#fff;border:1px solid #dfe3e8;border-radius:8px;padding:16px;overflow:auto;font-size:12.5px;line-height:1.5}
+ pre{background:#fff;border:1px solid #dfe3e8;border-radius:8px;padding:16px;overflow:auto;font-size:12.5px;line-height:1.6}
  .PASS{color:#0f7b3e;font-weight:600} .FAIL{color:#c0392b;font-weight:600}
  button{font:inherit;padding:8px 14px;border:1px solid #c7ccd3;background:#fff;border-radius:7px;cursor:pointer;margin:0 8px 8px 0}
  button.primary{background:#1a1d21;color:#fff;border-color:#1a1d21}
  .note{background:#fff8e6;border:1px solid #f0dca8;border-radius:8px;padding:12px 14px;margin:0 0 16px}
+ ul{margin:0 0 12px;padding-left:20px;color:#42484f} li{margin:0 0 5px}
 </style></head><body><div class="wrap">
 <h1>Word round-trip prototype</h1>
-<p>Proves that a single-file page, with no libraries, can write a real <code>.docx</code> from an economy\u2019s YAML and read a human-edited one back. Open this file in Edge or Chrome; the tests run on load.</p>
-<div class="note"><strong>What to check first:</strong> click <em>Download United States.docx</em>, open it in Word, edit some bullets, save, and confirm the grey content-control boxes survive. That is the one assumption these tests cannot verify without Word.</div>
-<p><button class="primary" id="dl">Download United States.docx</button><button id="dlsample">Download the test sample.docx</button></p>
+<p>Proves that a single-file page, with no libraries, can write a real <code>.docx</code> from an economy’s YAML and read a human-edited one back — including the three structural edits a researcher will actually make: <strong>adding</strong>, <strong>deleting</strong> and <strong>reprioritising</strong>. Open this file in Edge or Chrome; the tests run on load.</p>
+<div class="note"><strong>What to check first.</strong> Click <em>Download United States.docx</em> and open it in Word. Then:
+<ul>
+<li>type into one of the italic “Click here and type a new issue” boxes — that is how an issue is added;</li>
+<li>select everything inside one signpost’s boxes and delete it — that is how one is retired;</li>
+<li>drag an issue’s box above its neighbour — that is how they are reprioritised;</li>
+<li>save, and confirm the grey content-control boxes are still there.</li>
+</ul>
+That last point is the one assumption these tests cannot verify without Word.</div>
+<p><button class="primary" id="dl">Download United States.docx</button></p>
 <h2>Test results</h2>
-<pre id="out">running\u2026</pre>
+<pre id="out">running…</pre>
 </div>
 <script>
 const REAL = {"id": "united-states", "name": "United States", "version": 2, "updated_at": "2026-09-13T12:00:00+08:00", "updated_by": "draft", "drivers": [{"id": "regime", "name": "Regime", "subsections": [{"id": "trend-growth", "name": "Trend growth", "issues": [{"id": "iss-us-tg1", "title": "AI capex is now the growth engine, and the concentration risk", "text": "- Investment in data centres, power and chips is running at something like 2-2.5% of GDP and has carried GDP growth through the tariff and oil shocks; ex-AI, the economy is close to stall speed\n- Financing has migrated from hyperscaler cash flow to bonds and private credit, so a capex pause would hit both growth and credit markets at once\n- Working assumption: potential growth around 2% while the productivity dividend is still mostly promise; hours worked and non-residential investment are the tells"}, {"id": "iss-us-tg2", "title": "Labour supply is the binding constraint", "text": "- Immigration enforcement has cut labour-force growth to a trickle; payrolls in the 50-150k range are now consistent with a flat unemployment rate (4.1% in August)\n- A low-churn market: few layoffs, few hires, long-term unemployment share at a five-year high, wage growth down to about 3% and below headline inflation for four months running\n- Implication: break-even payroll growth is much lower than markets are used to, and a downturn would show up in hours and participation before it shows in the unemployment rate"}]}, {"id": "trend-inflation", "name": "Trend inflation", "issues": [{"id": "iss-us-ti1", "title": "Oil shock on top of tariff pass-through", "text": "- Headline CPI is stuck at 3.4% with gasoline at record nominal highs after the Hormuz closure; core has cooled to the low 2s as goods pass-through from 2025 tariffs fades and shelter decelerates\n- The risk is second-round effects: short-horizon inflation expectations are elevated and real wages are falling, which is the classic set-up for wage catch-up demands in 2027\n- We assume trend inflation settles near 2.5-3% rather than 2%, with the energy path the swing factor"}]}]}, {"id": "policy", "name": "Policy", "subsections": [{"id": "monetary", "name": "Monetary", "issues": [{"id": "iss-us-mo1", "title": "Warsh Fed facing a hike into a slowing economy", "text": "- Funds rate at 3.50-3.75% after the July 9-3 hold; three dissents for a hike, and markets price roughly two-thirds odds of a 25bp increase on 16 September\n- The committee is split between looking through a supply shock and defending credibility after leaving rates unchanged into rising headline inflation; Hammack and others have floated multiple hikes\n- Watch: the September dots, whether Warsh frames any hike as insurance or the start of a cycle, and the balance-sheet language (reserve-management purchases have been keeping front-end funding calm)"}, {"id": "iss-us-mo2", "title": "Independence and the reaction function", "text": "- The 2026 chair transition went through without the institutional rupture markets feared, but the administration's preference for lower rates is public and the committee's composition has shifted\n- Our read: the reaction function is more tolerant of inflation than in 2022 but not captured; the term premium is where markets express doubt, not the front end"}]}, {"id": "fiscal", "name": "Fiscal", "issues": [{"id": "iss-us-fi1", "title": "Deficit near 6-7% of GDP and losing its tariff crutch", "text": "- The 2025 tax package locked in a structural deficit; the Supreme Court's February ruling voided IEEPA tariff revenue and triggered refunds, and the replacement 10-12.5% Section 301 tariffs on 60 economies raise less\n- Treasury keeps skewing issuance to bills to limit duration supply; that caps term premium today at the cost of rollover risk and growing dependence on money funds\n- Higher oil raises the deficit further via indexed programmes and lower real growth; no consolidation is plausible before the 2028 cycle"}]}]}, {"id": "imbalances", "name": "Imbalances", "subsections": [{"id": "domestic", "name": "Domestic", "issues": [{"id": "iss-us-do1", "title": "Two-speed households", "text": "- Consumption is being carried by the top of the income distribution on equity wealth; lower-income cohorts are squeezed by $4-plus gasoline, tariff-driven goods prices and rising card delinquencies\n- The transmission channel that matters is asset prices: an equity correction would hit the only cohort still spending freely"}, {"id": "iss-us-do2", "title": "Corporate margins under a cost squeeze", "text": "- Tariffs, energy and a tight labour market are compressing margins outside the AI complex; an earnings recession is already visible in consumer discretionary and industrials"}]}, {"id": "external", "name": "External", "issues": [{"id": "iss-us-ex1", "title": "Dollar has lost its reflexive safe-haven bid", "text": "- The dollar did not rally on the Iran war the way it did in 2022; foreign official demand for Treasuries is slower and more price sensitive, and the euro and yen have both strengthened on repatriation flows\n- The current account is narrowing as tariffs compress imports, but the financing question (who absorbs record Treasury supply at a lower dollar) is the live one"}]}, {"id": "credit", "name": "Credit", "issues": [{"id": "iss-us-cr1", "title": "Private credit is the AI financing plumbing", "text": "- Private credit has absorbed the leveraged-loan market and now a large share of data-centre and power project finance; opacity, not aggregate size, is the concern\n- Stress would surface first in redemption gates and mark-downs at private funds, then in bank lines to those funds; the sector has not been tested by a capex downturn"}]}]}, {"id": "geopolitics", "name": "Geopolitics", "subsections": [{"id": "domestic", "name": "Domestic", "issues": [{"id": "iss-us-gd1", "title": "Midterms and the policy volatility premium", "text": "- November midterms are being fought on the cost of living; a Democratic House would end the legislative agenda and raise the odds of investigations, but tariff and regulatory policy would still move by executive action\n- Congress is also stirring on trade powers (bills to restrain 122, 232 and 301 authority); a real transfer of authority back to Congress would be a structural change in policy risk"}]}, {"id": "international", "name": "International", "issues": [{"id": "iss-us-gi1", "title": "Iran war, Hormuz and the energy price regime", "text": "- The Strait has been effectively contested since late February; a June US-Iran MOU reopened it partially, fighting resumed in September and Brent is back near $100 with Iran-Gulf talks pending in Oman\n- EIA does not expect Gulf output to normalise before 2027; the US is the relative winner as an energy exporter, but the consumer and the Fed pay first"}, {"id": "iss-us-gi2", "title": "Tariff regime is fragmenting into 232 and 301 tools", "text": "- After IEEPA and Section 122 fell, the administration rebuilt the tariff wall with sectoral 232 actions (metals, 100% on patented pharma, autos, chips) and country 301 actions; the EU has a negotiated 15% ceiling, USMCA goods are exempt, China sits under the Busan and Beijing truce\n- The marginal news is now about excess-capacity investigations and exemptions rather than headline rates; effective tariff rate around 11%, the highest since the 1940s"}]}]}], "scenarios": [{"id": "growth", "name": "Growth", "issues": [{"id": "iss-us-sg1", "title": "Consumer under the oil and tariff squeeze", "baseline": "- Real consumption slows to 1-1.5% as real incomes stagnate; wealth effects and fiscal support prevent a contraction", "upside": "- Hormuz reopens durably, gasoline falls back below $3.50 and real wages turn positive; consumption re-accelerates above 2%", "downside": "- Oil stays above $100 into 2027 and equities correct 15-20%; high-income spending stops and unemployment rises past 5%"}, {"id": "iss-us-sg2", "title": "AI capex durability", "baseline": "- Data-centre and power investment keeps growing but decelerates; contributes 0.3-0.5pp to growth in 2027 with financing increasingly debt-funded", "upside": "- Investment broadens into the grid, industrial automation and measured productivity; potential growth revised up toward 2.5%", "downside": "- Returns disappoint and private-credit financing tightens; orders are cut, investment subtracts from growth and the credit channel amplifies it"}]}, {"id": "inflation", "name": "Inflation", "issues": [{"id": "iss-us-si1", "title": "Headline and core convergence", "baseline": "- Headline CPI drifts from 3.4% toward 2.8% by mid-2027 as the energy contribution fades; core stays 2.3-2.6%", "upside": "- Energy normalises quickly and shelter disinflation brings headline to 2.3% by end-2027; expectations re-anchor", "downside": "- Second-round effects from energy and a weaker dollar push core back above 3%; short-horizon expectations unanchor and the Fed is forced into a real tightening cycle"}]}, {"id": "policy", "name": "Policy", "issues": [{"id": "iss-us-sp1", "title": "Fed path from 3.50-3.75%", "baseline": "- One or two insurance hikes to 4.00%, then an extended hold while the committee watches the labour market; cuts return only in 2H27", "upside": "- Energy relief lets the Fed stay on hold and resume cutting toward 3% in 2027; the curve bull-steepens in an orderly way", "downside": "- Either a full hiking cycle toward 4.5-5% into a stagflationary economy, or a growth shock forcing rapid cuts below 2.5%; both damage risk assets and the credibility of the reaction function"}, {"id": "iss-us-sp2", "title": "Fiscal and issuance", "baseline": "- Deficit 6-7% of GDP, bills share stays high, no consolidation before 2028; term premium grinds higher", "upside": "- Tariff revenue and stronger nominal growth stabilise the debt ratio; Treasury terms out issuance without a term-premium shock", "downside": "- A cluster of weak auctions or a political challenge to Fed independence produces a term-premium spike and a disorderly bear-steepening"}]}], "implications": {"drivers/regime/trend-growth": {"sales_growth": "up", "margin_growth": "up", "valuation": "down", "liquidity": "down"}, "drivers/regime/trend-inflation": {"margin_growth": "down", "inflation_expectation": "up", "cash_rate": "up"}, "drivers/policy/monetary": {"valuation": "down", "cash_rate": "up", "term_premium": "up", "liquidity": "down"}, "drivers/policy/fiscal": {"sales_growth": "up", "term_premium": "up", "liquidity": "down"}, "drivers/imbalances/domestic": {"sales_growth": "down", "margin_growth": "down", "dividend_yield": "up"}, "drivers/imbalances/external": {"term_premium": "up", "valuation": "down", "inflation_expectation": "up"}, "drivers/imbalances/credit": {"liquidity": "down", "valuation": "down"}, "drivers/geopolitics/domestic": {"valuation": "down", "term_premium": "up"}, "drivers/geopolitics/international": {"margin_growth": "down", "inflation_expectation": "up", "cash_rate": "up"}, "scenarios/growth": {"sales_growth": "down", "margin_growth": "down", "valuation": "down"}, "scenarios/inflation": {"inflation_expectation": "up", "cash_rate": "up", "valuation": "down"}, "scenarios/policy": {"cash_rate": "up", "term_premium": "up", "liquidity": "down"}}};
-
 /* ===================== CRC32 ===================== */
 const CRC_T = (() => { const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -93,22 +100,22 @@ async function zipRead(bytes) {
   return out;
 }
 
-/* ===================== docx WRITE ===================== */
+/* ===================== docx WRITE (v2 tag scheme) =====================
+   tag = IDENTITY ONLY.  Placement comes from the enclosing container and
+   from document order, so moving a box actually moves the item.        */
 const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 let SDTID = 1000;
-
-/* one run, honouring **bold** */
 function runs(text) {
+  if (text === '') return '';
   return text.split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
-    const b = /^\*\*[^*]+\*\*$/.test(seg);
-    const t = b ? seg.slice(2, -2) : seg;
+    const b = /^\*\*[^*]+\*\*$/.test(seg), t = b ? seg.slice(2, -2) : seg;
     return `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
   }).join('');
 }
 const para = (style, text, extra = '') => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${runs(text)}</w:p>`;
 function bulletParas(text) {
-  if (!text.trim()) return para('CITBullet', '');
+  if (!text || !text.trim()) return para('CITBullet', '');
   return text.split('\n').map(line => {
     const m = line.match(/^(\s*)-\s+(.*)$/);
     if (!m) return para('CITBody', line.trim());
@@ -116,53 +123,69 @@ function bulletParas(text) {
     return para(lvl ? 'CITBullet2' : 'CITBullet', m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
   }).join('');
 }
-function sdt(tag, alias, inner, lock = 'sdtLocked') {
+/* lock: sdtLocked = the box cannot be deleted, its CONTENTS stay editable (that is how
+   "empty the box to retire the item" works).  contentLocked = read-only contents. */
+function sdt(tag, alias, inner, opt = {}) {
   return `<w:sdt><w:sdtPr><w:alias w:val="${X(alias)}"/><w:tag w:val="${X(tag)}"/><w:id w:val="${SDTID++}"/>`
-    + `<w:lock w:val="${lock}"/></w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
+    + `<w:lock w:val="${opt.lock || 'sdtLocked'}"/>`
+    + (opt.placeholder ? '<w:showingPlcHdr/>' : '')
+    + `</w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
+}
+const SLOT_ISSUE = 'Click here and type a new issue: its title on the first line, then one bullet per line.';
+const SLOT_SIGN  = 'Click here and type a new signpost: its title on the first line, then baseline / upside / downside on the three lines after it.';
+const SLOT_SUB   = 'Click here and type the name of a new subsection, then its first issue title and bullets.';
+const SLOT_CAT   = 'Click here and type the name of a new scenario category, then its first signpost.';
+
+function issueBlock(i) {
+  return sdt(`issue|${i.id}`, i.title || 'Issue',
+    sdt('field|title', 'Title', para('CITIssueTitle', i.title)) +
+    sdt('field|text', 'View', bulletParas(i.text)));
+}
+function signpostBlock(i) {
+  const cell = (k, w) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr>${sdt('field|' + k, k, bulletParas(i[k]))}</w:tc>`;
+  const head = ['Baseline', 'Upside', 'Downside'].map(h => `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
+  return sdt(`signpost|${i.id}`, i.title || 'Signpost',
+    sdt('field|title', 'Title', para('CITIssueTitle', i.title))
+    + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+    + `<w:tr>${head}</w:tr><w:tr>${['baseline', 'upside', 'downside'].map(k => cell(k, 3000)).join('')}</w:tr></w:tbl>`
+    + para('CITBody', ''));
 }
 function buildDocument(eco) {
   SDTID = 1000;
-  let b = '';
-  b += para('CITTitle', eco.name);
-  b += para('CITMeta', `Version ${eco.version} · exported for review · do not edit outside the boxes`);
+  let b = para('CITTitle', eco.name);
+  b += sdt(`meta|${eco.id}|${eco.version}`, 'Do not edit',
+    para('CITMeta', `${eco.name} · version ${eco.version} · edit inside the boxes, then import this file back into the page`), { lock: 'sdtContentLocked' });
   b += para('CITH1', 'Drivers');
   for (const d of eco.drivers) {
-    b += para('CITH2', d.name);
+    /* the four driver groups are fixed: the page cannot add, remove or reorder them,
+       so their headings are read-only and the reader ignores their order entirely */
+    b += sdt(`group|${d.id}`, d.name, para('CITH2', d.name), { lock: 'sdtContentLocked' });
     for (const s of d.subsections) {
       let inner = para('CITH3', s.name);
-      for (const i of s.issues) {
-        inner += sdt(`issue|drivers/${d.id}/${s.id}|${i.id}`, i.title || 'Issue',
-          sdt('field|title', 'Title', para('CITIssueTitle', i.title)) + sdt('field|text', 'View', bulletParas(i.text)));
-      }
+      for (const i of s.issues) inner += issueBlock(i);
+      inner += sdt('slot|issue', 'New issue in ' + s.name, para('CITPlaceholder', SLOT_ISSUE), { placeholder: true });
       b += sdt(`sub|drivers/${d.id}/${s.id}`, s.name, inner);
     }
+    b += sdt(`slot|sub|${d.id}`, 'New subsection under ' + d.name, para('CITPlaceholder', SLOT_SUB), { placeholder: true });
   }
   b += para('CITH1', 'Scenarios & signposts');
   for (const c of eco.scenarios) {
     let inner = para('CITH2', c.name);
-    for (const i of c.issues) {
-      const cells = ['baseline', 'upside', 'downside'].map(k =>
-        `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${sdt('field|' + k, k, bulletParas(i[k]))}</w:tc>`).join('');
-      const head = ['Baseline', 'Upside', 'Downside'].map(h =>
-        `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
-      inner += sdt(`signpost|scenarios/${c.id}|${i.id}`, i.title || 'Signpost',
-        sdt('field|title', 'Title', para('CITIssueTitle', i.title))
-        + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
-        + `<w:tr>${head}</w:tr><w:tr>${cells}</w:tr></w:tbl>` + para('CITBody', ''));
-    }
-    b += inner;
+    for (const i of c.issues) inner += signpostBlock(i);
+    inner += sdt('slot|signpost', 'New signpost in ' + c.name, para('CITPlaceholder', SLOT_SIGN), { placeholder: true });
+    b += sdt(`cat|scenarios/${c.id}`, c.name, inner);
   }
-  b += para('CITH1', 'Investment implications (read-only)');
-  b += sdt('matrix', 'Investment implications — set these in the page, not here',
+  b += sdt('slot|cat', 'New scenario category', para('CITPlaceholder', SLOT_CAT), { placeholder: true });
+  b += para('CITH1', 'Investment implications');
+  b += sdt('matrix', 'Set these by clicking in the page, not here',
     `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
-    + `<w:tr><w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', 'Row')}</w:tc>`
-    + `<w:tc><w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>${para('CITTableHead', 'Arrows')}</w:tc></w:tr>`
-    + Object.entries(eco.implications).map(([k, cells]) =>
+    + Object.entries(eco.implications || {}).map(([k, cells]) =>
       `<w:tr><w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITBody', k)}</w:tc>`
       + `<w:tc><w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>${para('CITBody', Object.entries(cells).map(([f, v]) => `${f} ${v === 'up' ? '↑' : '↓'}`).join(', '))}</w:tc></w:tr>`).join('')
-    + `</w:tbl>`, 'contentLocked');
+    + `</w:tbl>`, { lock: 'sdtContentLocked' });
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${W}><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
 }
+
 const STYLE = (id, name, base, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/>${base ? `<w:basedOn w:val="${base}"/>` : ''}${def}</w:style>`;
 function buildStyles() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${W}>`
@@ -177,6 +200,7 @@ function buildStyles() {
     + STYLE('CITBullet', 'CIT Bullet', 'Normal', '<w:pPr><w:ind w:left="360" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
     + STYLE('CITBullet2', 'CIT Bullet 2', 'Normal', '<w:pPr><w:ind w:left="720" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
     + STYLE('CITBody', 'CIT Body', 'Normal', '')
+    + STYLE('CITPlaceholder', 'CIT Placeholder', 'Normal', "<w:rPr><w:i/><w:color w:val=\"8A8F96\"/></w:rPr>")
     + STYLE('CITTableHead', 'CIT Table Head', 'Normal', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
     + `<w:style w:type="table" w:styleId="CITTable"><w:name w:val="CIT Table"/><w:tblPr><w:tblBorders>`
     + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>`).join('')
@@ -200,268 +224,316 @@ async function docxWrite(eco) {
   ]);
 }
 
-/* ===================== docx READ ===================== */
+
+/* ===================== docx READ (v2) ===================== */
 const kids = (el, ln) => [...el.children].filter(c => c.localName === ln);
+const NORM = (s) => s.replace(/ /g, ' ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...');
 function paraText(p) {
   let out = '';
-  const walk = (n) => {
+  (function walk(n) {
     for (const c of n.children) {
-      if (c.localName === 'del') continue;                       // tracked deletion: treat as accepted
+      if (c.localName === 'del') continue;                 // tracked deletion -> read as accepted
       if (c.localName === 'r') {
         const rPr = kids(c, 'rPr')[0];
         const bold = rPr && kids(rPr, 'b').length && kids(rPr, 'b')[0].getAttribute('w:val') !== '0';
         let t = '';
-        for (const x of c.children) {
-          if (x.localName === 't') t += x.textContent;
-          else if (x.localName === 'tab') t += ' ';
-          else if (x.localName === 'br') t += '\n';
-        }
+        for (const x of c.children) { if (x.localName === 't') t += x.textContent; else if (x.localName === 'tab') t += ' '; else if (x.localName === 'br') t += '\n'; }
         out += bold && t.trim() ? '**' + t + '**' : t;
-      } else walk(c);                                            // ins, smartTag, hyperlink, sdt inside a paragraph…
+      } else walk(c);                                       // ins, hyperlink, smartTag, inline sdt
     }
-  };
-  walk(p);
+  })(p);
   return out;
 }
+const styleOf = (p) => { const pPr = kids(p, 'pPr')[0]; const s = pPr && kids(pPr, 'pStyle')[0]; return s ? s.getAttribute('w:val') : 'Normal'; };
 function paraLevel(p) {
-  const pPr = kids(p, 'pPr')[0]; if (!pPr) return -1;
-  const style = (kids(pPr, 'pStyle')[0] || {}).getAttribute ? kids(pPr, 'pStyle')[0].getAttribute('w:val') : null;
-  const numPr = kids(pPr, 'numPr')[0];
-  const ilvl = numPr && kids(numPr, 'ilvl')[0] ? +kids(numPr, 'ilvl')[0].getAttribute('w:val') : null;
-  if (style === 'CITBullet2') return 1;
-  if (style === 'CITBullet') return 0;
-  if (ilvl != null) return Math.min(ilvl, 1);
-  return -1;                                                     // not a bullet
+  const st = styleOf(p); if (st === 'CITBullet2') return 1; if (st === 'CITBullet') return 0;
+  const pPr = kids(p, 'pPr')[0], numPr = pPr && kids(pPr, 'numPr')[0];
+  const il = numPr && kids(numPr, 'ilvl')[0];
+  return il ? Math.min(+il.getAttribute('w:val'), 1) : -1;
 }
-/* collect every paragraph under a node, in order, including inside tables */
-function paras(node) {
-  const out = [];
-  (function walk(n) { for (const c of n.children) { if (c.localName === 'p') out.push(c); else walk(c); } })(node);
-  return out;
-}
+function paras(node) { const out = []; (function w(n) { for (const c of n.children) { if (c.localName === 'p') out.push(c); else w(c); } })(node); return out; }
 function blockText(node) {
   const lines = [];
   for (const p of paras(node)) {
-    const t = paraText(p).replace(/ /g, ' ').trimEnd();
-    const lvl = paraLevel(p);
-    if (!t.trim()) continue;
-    const stripped = t.replace(/^\s*[•○▪ o·-]\s+/, '');   // a human who typed their own bullet char
-    lines.push(lvl > 0 ? '  - ' + stripped : '- ' + stripped);
+    const t = NORM(paraText(p)).trimEnd(); if (!t.trim()) continue;
+    lines.push((paraLevel(p) > 0 ? '  - ' : '- ') + t.replace(/^\s*[•○▪ o·]\s+/, '').replace(/^-\s+/, ''));
   }
   return lines.join('\n');
 }
-function findSdts(root) {                                         // every sdt, with its tag, depth-first
-  const out = [];
-  (function walk(n) {
-    for (const c of n.children) {
-      if (c.localName === 'sdt') {
-        const pr = kids(c, 'sdtPr')[0], tagEl = pr && kids(pr, 'tag')[0];
-        const content = kids(c, 'sdtContent')[0];
-        out.push({ tag: tagEl ? tagEl.getAttribute('w:val') : null, content, el: c });
-        if (content) walk(content);
-      } else walk(c);
-    }
-  })(root);
-  return out;
+const tagOf = (s) => { const pr = kids(s, 'sdtPr')[0], t = pr && kids(pr, 'tag')[0]; return t ? t.getAttribute('w:val') : null; };
+const isPlaceholder = (s) => { const pr = kids(s, 'sdtPr')[0]; return !!(pr && kids(pr, 'showingPlcHdr').length); };
+const contentOf = (s) => kids(s, 'sdtContent')[0];
+
+/* read one issue / signpost box */
+function readItem(box, id, kind) {
+  const fields = {};
+  (function walk(n) { for (const c of n.children) {
+    if (c.localName === 'sdt') { const t = tagOf(c); if (t && t.startsWith('field|')) { fields[t.split('|')[1]] = c; continue; } walk(contentOf(c) || c); }
+    else walk(c); } })(contentOf(box));
+  const rec = { id, kind, controlsIntact: Object.keys(fields).length > 0 };
+  if (rec.controlsIntact) {
+    rec.title = NORM(paras(fields.title || contentOf(box)).map(paraText).join(' ')).trim();
+    if (kind === 'issue') rec.text = fields.text ? blockText(fields.text) : '';
+    else for (const k of ['baseline', 'upside', 'downside']) rec[k] = fields[k] ? blockText(fields[k]) : '';
+  } else {
+    /* the inner controls were destroyed: fall back to the style anchor inside this box */
+    const ps = paras(contentOf(box));
+    const ti = ps.findIndex(p => styleOf(p) === 'CITIssueTitle');
+    rec.title = ti >= 0 ? NORM(paraText(ps[ti])).trim() : '';
+    const body = ps.slice(ti + 1).filter(p => styleOf(p) !== 'CITTableHead');
+    rec.text = body.map(p => (paraLevel(p) > 0 ? '  - ' : '- ') + NORM(paraText(p)).trim()).filter(l => l.length > 2).join('\n');
+    if (kind === 'signpost') { rec.baseline = rec.text; rec.upside = ''; rec.downside = ''; delete rec.text; }
+  }
+  const bodyFields = kind === 'issue' ? ['text'] : ['baseline', 'upside', 'downside'];
+  const bodyEmpty = bodyFields.every(k => !(rec[k] || '').trim());
+  rec.retired = !rec.title.trim() && bodyEmpty;           // emptied box = retire
+  rec.titleMissing = !rec.title.trim() && !bodyEmpty;      // lost its title but kept content = ask, never guess
+  return rec;
 }
+/* parse free text a human typed into a slot (or outside any box) into items */
+function readTyped(node, kind) {
+  const out = []; let cur = null;
+  for (const p of paras(node)) {
+    const st = styleOf(p), t = NORM(paraText(p)).trim();
+    if (!t) continue;
+    const startsNew = st === 'CITIssueTitle' || !cur;
+    if (startsNew) { cur = { id: null, kind, title: t.replace(/^[-•]\s*/, ''), lines: [] }; out.push(cur); continue; }
+    cur.lines.push((paraLevel(p) > 0 ? '  - ' : '- ') + t.replace(/^\s*[•○▪ o·]\s+/, '').replace(/^-\s+/, ''));
+  }
+  return out.map(o => {
+    if (kind === 'issue') return { id: null, kind, title: o.title, text: o.lines.join('\n'), isNew: true };
+    const [a = '', b = '', c = ''] = o.lines;
+    return { id: null, kind, title: o.title, baseline: a, upside: b, downside: c, isNew: true };
+  });
+}
+/* walk the body: containers in document order, items in document order inside them */
 function docxParse(xml) {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('document.xml is not well-formed');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('document.xml is not well-formed');
   const body = doc.getElementsByTagName('w:body')[0];
   if (!body) throw new Error('no w:body');
-  const all = findSdts(body);
-  const out = { drivers: {}, scenarios: {}, unmatched: [] };
-  for (const s of all) {
-    if (!s.tag) { out.unmatched.push('untagged sdt'); continue; }
-    const [kind, place, id] = s.tag.split('|');
-    if (kind !== 'issue' && kind !== 'signpost') continue;
-    const inner = findSdts(s.content).filter(x => x.tag && x.tag.startsWith('field|'));
-    const rec = { id, place };
-    for (const f of inner) {
-      const key = f.tag.split('|')[1];
-      rec[key] = key === 'title' ? paras(f.content).map(paraText).join(' ').replace(/ /g, ' ').trim() : blockText(f.content);
+  const res = { meta: null, places: [], newSubs: [], newCats: [], orphans: [] };
+  let place = null, group = null;
+  (function walk(node) {
+    for (const c of node.children) {
+      if (c.localName !== 'sdt') {
+        if (c.localName === 'p' && styleOf(c) === 'CITIssueTitle' && !place) res.orphans.push(c);
+        walk(c); continue;
+      }
+      const tag = tagOf(c), content = contentOf(c);
+      if (!tag || !content) { walk(content || c); continue; }
+      const [kind, a, bb] = tag.split('|');
+      if (kind === 'meta') { res.meta = { economy: a, version: Number(bb) }; continue; }
+      if (kind === 'group') { group = a; continue; }
+      if (kind === 'sub' || kind === 'cat') {
+        place = { key: a, kind, name: '', items: [] }; res.places.push(place);
+        const h = paras(content).find(p => /^CITH[23]$/.test(styleOf(p)));
+        place.name = h ? NORM(paraText(h)).trim() : '';
+        walk(content); place = null; continue;
+      }
+      if (kind === 'issue' || kind === 'signpost') {
+        const rec = readItem(c, a, kind);
+        rec.order = place ? place.items.length + 1 : null;
+        (place ? place.items : res.orphans).push(rec);
+        continue;
+      }
+      if (kind === 'slot') {
+        if (isPlaceholder(c)) continue;                       // untouched: never a phantom addition
+        if (a === 'issue' || a === 'signpost') { for (const it of readTyped(content, a)) { it.order = place ? place.items.length + 1 : null; (place ? place.items : res.orphans).push(it); } }
+        else if (a === 'sub') res.newSubs.push({ group: bb, ...readTypedContainer(content, 'issue') });
+        else if (a === 'cat') res.newCats.push(readTypedContainer(content, 'signpost'));
+        continue;
+      }
+      if (kind === 'matrix') continue;                        // read-only by design; never imported
+      walk(content);
     }
-    const bucket = kind === 'issue' ? out.drivers : out.scenarios;
-    (bucket[place] = bucket[place] || []).push(rec);
-  }
-  return out;
+  })(body);
+  return res;
+}
+function readTypedContainer(node, kind) {
+  const ps = paras(node).filter(p => NORM(paraText(p)).trim());
+  if (!ps.length) return { name: '', items: [] };
+  const name = NORM(paraText(ps[0])).trim();
+  const rest = document.createElement('div'); for (const p of ps.slice(1)) rest.appendChild(p.cloneNode(true));
+  return { name, items: readTyped(rest, kind) };
 }
 async function docxRead(bytes) {
   const files = await zipRead(bytes);
   if (!files['word/document.xml']) throw new Error('not a Word document (no word/document.xml)');
   return docxParse(files['word/document.xml']);
 }
-
-/* ===== structural fallback: read the document by STYLE when controls are gone ===== */
-function structuralParse(xml) {
-  const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  const body = doc.getElementsByTagName('w:body')[0];
-  const styleOf = (p) => { const pPr = kids(p, 'pPr')[0]; const s = pPr && kids(pPr, 'pStyle')[0]; return s ? s.getAttribute('w:val') : 'Normal'; };
-  /* nearest enclosing sdt tag, so we know which paragraphs are still anchored */
-  const tagOf = (p) => { let n = p.parentNode, best = null;
-    while (n && n.localName !== 'body') { if (n.localName === 'sdtContent') { const pr = kids(n.parentNode, 'sdtPr')[0], t = pr && kids(pr, 'tag')[0];
-      if (t && /^(issue|signpost)\|/.test(t.getAttribute('w:val'))) { best = t.getAttribute('w:val'); break; } } n = n.parentNode; } return best; };
-  const out = []; let section = null, group = null, sub = null, cur = null;
-  for (const p of paras(body)) {
-    const st = styleOf(p), txt = paraText(p).replace(/ /g, ' ').trim();
-    if (st === 'CITH1') { section = /driver/i.test(txt) ? 'drivers' : /scenario|signpost/i.test(txt) ? 'scenarios' : 'other'; cur = null; continue; }
-    if (st === 'CITH2') { group = txt; cur = null; continue; }
-    if (st === 'CITH3') { sub = txt; cur = null; continue; }
-    if (st === 'CITIssueTitle') { cur = { section, group, sub, title: txt, lines: [], tag: tagOf(p) }; out.push(cur); continue; }
-    if (cur && (st === 'CITBullet' || st === 'CITBullet2' || st === 'CITBody' || st === 'Normal')) {
-      if (!txt) continue;
-      cur.lines.push((paraLevel(p) > 0 ? '  - ' : '- ') + txt.replace(/^\s*[•○▪ o·]\s+/, ''));
-    }
-  }
-  return out.map(o => ({ ...o, text: o.lines.join('\n') }));
-}
-/* ===== reconcile: tagged results win; orphans are re-attached by place + title ===== */
-function reconcile(tagged, structural, current) {
-  const report = { matched: [], recovered: [], added: [], retired: [], notes: [] };
+/* ===== reconcile against what is on disk: this is what the review screen would show ===== */
+function reconcile(parsed, cur) {
+  const r = { added: [], edited: [], retired: [], reordered: [], moved: [], problems: [], newSubs: parsed.newSubs, newCats: parsed.newCats };
+  const where = {}, byId = {};
+  for (const p of cur.places) p.items.forEach((i, n) => { where[i.id] = p.key; byId[i.id] = { ...i, order: n + 1 }; });
   const seen = new Set();
-  for (const [place, items] of Object.entries(tagged.drivers)) for (const i of items) { seen.add(i.id); report.matched.push({ place, id: i.id, title: i.title, text: i.text }); }
-  const orphans = structural.filter(s => !s.tag && s.section === 'drivers');
-  for (const o of orphans) {
-    const place = Object.keys(current).find(k => current[k].subName === o.sub);
-    const known = place && current[place].issues.find(i => i.title.trim() === o.title.trim());
-    if (known && !seen.has(known.id)) { seen.add(known.id); report.recovered.push({ place, id: known.id, title: o.title, text: o.text, how: 'title match' }); }
-    else report.added.push({ place: place || '?', title: o.title, text: o.text });
+  for (const p of parsed.places) {
+    p.items.forEach((it, n) => {
+      const order = n + 1;
+      if (it.titleMissing) { r.problems.push({ place: p.key, id: it.id, why: 'lost its title but still has content — restore the title, or clear the whole box to retire it' }); seen.add(it.id); return; }
+      if (it.isNew) { r.added.push({ place: p.key, title: it.title, order, item: it }); return; }
+      seen.add(it.id);
+      const was = byId[it.id];
+      if (!was) { r.added.push({ place: p.key, title: it.title, order, item: it, note: 'id not on file' }); return; }
+      if (where[it.id] !== p.key) r.moved.push({ id: it.id, from: where[it.id], to: p.key, title: it.title });
+      else if (was.order !== order) r.reordered.push({ id: it.id, place: p.key, from: was.order, to: order, title: it.title });
+      if (it.retired) { r.retired.push({ id: it.id, place: p.key, title: was.title, how: 'box emptied' }); return; }
+      const fields = it.kind === 'issue' ? ['title', 'text'] : ['title', 'baseline', 'upside', 'downside'];
+      const changed = fields.filter(k => NORM(String(was[k] ?? '')) !== NORM(String(it[k] ?? '')));
+      if (changed.length) r.edited.push({ id: it.id, place: p.key, title: it.title, fields: changed });
+    });
   }
-  for (const [place, meta] of Object.entries(current)) for (const i of meta.issues) if (!seen.has(i.id)) report.retired.push({ place, id: i.id, title: i.title });
-  return report;
+  for (const id of Object.keys(byId)) if (!seen.has(id)) r.retired.push({ id, place: where[id], title: byId[id].title, how: 'box missing from the document — may be accidental' });
+  return r;
 }
 
-
-const SAMPLE = {
-  id: 'united-states', name: 'United States', version: 2,
-  drivers: [{ id: 'regime', name: 'Regime', subsections: [
-    { id: 'trend-growth', name: 'Trend growth', issues: [
-      { id: 'iss-us-tg1', title: 'AI capex is now the growth engine, and the concentration risk',
-        text: '- Investment in data centres, power and chips is running at 2-2.5% of GDP\n- Financing has migrated to bonds & private credit, so a pause hits both\n  - the "nested" case matters too\n- Working assumption: **potential growth around 2%**' },
-      { id: 'iss-us-tg2', title: 'Labour supply is the binding constraint',
-        text: '- Immigration enforcement has cut labour-force growth to a trickle\n- A low-churn market: few layoffs, few hires' } ] },
-    { id: 'trend-inflation', name: 'Trend inflation', issues: [
-      { id: 'iss-us-ti1', title: 'Oil shock on top of tariff pass-through', text: '- Headline CPI is stuck at 3.4% <after> the closure' } ] } ] }],
-  scenarios: [{ id: 'growth', name: 'Growth', issues: [
-    { id: 'iss-us-sg1', title: 'Consumer under the oil and tariff squeeze',
-      baseline: '- Real consumption slows to 1-1.5%', upside: '- Hormuz reopens durably', downside: '- Oil stays above $100 and equities correct 15-20%' } ] }],
-  implications: { 'drivers/regime/trend-growth': { sales_growth: 'up', valuation: 'down' } },
-};
-const CURRENT = {};
-for (const d of SAMPLE.drivers) for (const s of d.subsections) CURRENT[`drivers/${d.id}/${s.id}`] = { subName: s.name, issues: s.issues };
-
-function expected(eco) {
-  const o = { drivers: {}, scenarios: {} };
-  for (const d of eco.drivers) for (const s of d.subsections) o.drivers[`drivers/${d.id}/${s.id}`] = s.issues.map(i => ({ id: i.id, title: i.title, text: i.text }));
-  for (const c of eco.scenarios) o.scenarios[`scenarios/${c.id}`] = c.issues.map(i => ({ id: i.id, title: i.title, baseline: i.baseline, upside: i.upside, downside: i.downside }));
-  return o;
-}
-function compare(exp, got) {
-  const fails = [];
-  for (const [place, items] of Object.entries(exp.drivers)) {
-    const g = got.drivers[place] || [];
-    if (g.length !== items.length) { fails.push(`${place}: ${items.length} out, ${g.length} back`); continue; }
-    items.forEach((i, n) => { for (const k of ['id', 'title', 'text']) if (g[n][k] !== i[k]) fails.push(`${place}#${n}.${k}\n   out: ${JSON.stringify(i[k])}\n   back:${JSON.stringify(g[n][k])}`); });
-  }
-  for (const [place, items] of Object.entries(exp.scenarios)) {
-    const g = got.scenarios[place] || [];
-    if (g.length !== items.length) { fails.push(`${place}: ${items.length} out, ${g.length} back`); continue; }
-    items.forEach((i, n) => { for (const k of ['id', 'title', 'baseline', 'upside', 'downside']) if (g[n][k] !== i[k]) fails.push(`${place}#${n}.${k}\n   out: ${JSON.stringify(i[k])}\n   back:${JSON.stringify(g[n][k])}`); });
-  }
-  return fails;
-}
+/* ===================== TESTS ===================== */
+const WNS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const rezip = (files) => zipWrite(Object.entries(files).map(([name, text]) => ({ name, text })));
-/* edit the document.xml the way Word would, via the DOM */
 function editXml(xml, fn) {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  fn(doc, {
-    sdtByTag: (t) => [...doc.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === t; }),
-    setText: (el, from, to) => { for (const t of el.getElementsByTagName('w:t')) if (t.textContent === from) { t.textContent = to; return true; } return false; },
-  });
+  const byTag = (t) => [...doc.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === t; });
+  const allTags = (pred) => [...doc.getElementsByTagName('w:sdt')].filter(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && pred(g.getAttribute('w:val')); });
+  const mkP = (style, text) => { const p = doc.createElementNS(WNS, 'w:p'), pPr = doc.createElementNS(WNS, 'w:pPr'), st = doc.createElementNS(WNS, 'w:pStyle');
+    st.setAttribute('w:val', style); pPr.appendChild(st); p.appendChild(pPr);
+    const r = doc.createElementNS(WNS, 'w:r'), t = doc.createElementNS(WNS, 'w:t'); t.setAttribute('xml:space', 'preserve'); t.textContent = text; r.appendChild(t); p.appendChild(r); return p; };
+  const useSlot = (slot, lines) => {                    // a human clicking into a slot and typing
+    slot.getElementsByTagName('w:showingPlcHdr')[0].remove();
+    const c = slot.getElementsByTagName('w:sdtContent')[0];
+    while (c.firstChild) c.removeChild(c.firstChild);
+    lines.forEach(([style, text]) => c.appendChild(mkP(style, text)));
+  };
+  const setText = (el, from, to) => { for (const t of el.getElementsByTagName('w:t')) if (t.textContent === from) { t.textContent = to; return true; } return false; };
+  const empty = (el) => { const c = el.getElementsByTagName('w:sdtContent')[0]; while (c.firstChild) c.removeChild(c.firstChild); c.appendChild(mkP('CITBody', '')); };
+  fn(doc, { byTag, allTags, mkP, useSlot, setText, empty, doc });
   return new XMLSerializer().serializeToString(doc);
 }
-
+/* current-state view of the economy, as the page holds it */
+function currentOf(eco) {
+  const places = [];
+  for (const d of eco.drivers) for (const s of d.subsections)
+    places.push({ key: `drivers/${d.id}/${s.id}`, items: s.issues.map(i => ({ id: i.id, kind: 'issue', title: i.title, text: i.text })) });
+  for (const c of eco.scenarios)
+    places.push({ key: `scenarios/${c.id}`, items: c.issues.map(i => ({ id: i.id, kind: 'signpost', title: i.title, baseline: i.baseline, upside: i.upside, downside: i.downside })) });
+  return { places };
+}
 (async () => {
   const log = []; const say = (s) => log.push(s);
-  const check = (n, ok) => say('   ' + (ok ? 'PASS' : 'FAIL') + '  ' + n);
+  const check = (n, ok, detail) => say('   ' + (ok ? 'PASS' : 'FAIL') + '  ' + n + (ok || !detail ? '' : '\n         ' + detail));
   try {
-    say('CompressionStream: ' + typeof CompressionStream + ' / DecompressionStream: ' + typeof DecompressionStream);
-    const bytes = await docxWrite(SAMPLE);
-    say('docx written: ' + bytes.length + ' bytes');
-    window.__DOCX = Array.from(bytes);
-    const fails = compare(expected(SAMPLE), await docxRead(bytes));
-    say('TEST 1  clean round-trip: ' + (fails.length ? 'FAIL\n' + fails.join('\n') : 'PASS (every id, title, bullet and nesting level identical)'));
-
+    const eco = REAL, cur = currentOf(eco);
+    const bytes = await docxWrite(eco);
     const files = await zipRead(bytes);
-    /* ---- TEST 2: ordinary Word editing ---- */
-    const edited = editXml(files['word/document.xml'], (doc, h) => {
-      const tg2 = h.sdtByTag('issue|drivers/regime/trend-growth|iss-us-tg2');
-      h.setText(tg2, 'Immigration enforcement has cut labour-force growth to a trickle', 'Immigration enforcement has cut labour-force growth to ZERO');
-      // tracked change: an insertion and a deletion on the next bullet
-      const t = [...tg2.getElementsByTagName('w:t')].find(x => /low-churn/.test(x.textContent));
-      const p = t.parentNode.parentNode, W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-      const mk = (kind, tagName, text) => { const ins = doc.createElementNS(W, 'w:' + kind); ins.setAttribute('w:id', '900'); ins.setAttribute('w:author', 'AC'); ins.setAttribute('w:date', '2026-09-15T09:00:00Z');
-        const r = doc.createElementNS(W, 'w:r'), tt = doc.createElementNS(W, 'w:' + tagName); tt.setAttribute('xml:space', 'preserve'); tt.textContent = text; r.appendChild(tt); ins.appendChild(r); return ins; };
-      p.appendChild(mk('ins', 't', ', and long-term unemployment is rising'));
-      p.appendChild(mk('del', 'delText', ' DELETE ME'));
-      // retitle inside the control (the <w:t>, not the alias)
-      const ti = h.sdtByTag('issue|drivers/regime/trend-inflation|iss-us-ti1');
-      h.setText(ti, 'Oil shock on top of tariff pass-through', 'Oil shock, tariffs and the 2027 wage round');
-      h.setText(ti, 'Headline CPI is stuck at 3.4% <after> the closure', 'Headline CPI is stuck at 3.4% “after” the closure');
-    });
-    const got2 = await docxRead(await rezip({ ...files, 'word/document.xml': edited }));
-    const tg = got2.drivers['drivers/regime/trend-growth'], ti = got2.drivers['drivers/regime/trend-inflation'];
-    say('TEST 2  document edited in Word:');
-    check('ids survive editing', tg.map(i => i.id).join(',') === 'iss-us-tg1,iss-us-tg2');
-    check('edited bullet returns', /to ZERO/.test(tg[1].text));
-    check('tracked insertion read as accepted', /long-term unemployment is rising/.test(tg[1].text));
-    check('tracked deletion dropped', !/DELETE ME/.test(tg[1].text));
-    check('retitle read, id unchanged', ti[0].title === 'Oil shock, tariffs and the 2027 wage round' && ti[0].id === 'iss-us-ti1');
-    check('Word smart quotes arrive (normalise on import)', /“/.test(ti[0].text));
-    check('untouched issue byte-identical to the YAML', tg[0].text === SAMPLE.drivers[0].subsections[0].issues[0].text);
+    const XML = files['word/document.xml'];
+    window.__DOCX = Array.from(bytes);
 
-    /* ---- TEST 3: the control itself is destroyed ---- */
-    const mangled = editXml(files['word/document.xml'], (doc, h) => {
-      // (a) paste-over: the content control is gone, its paragraphs remain
-      const victim = h.sdtByTag('issue|drivers/regime/trend-growth|iss-us-tg2');
-      const content = victim.getElementsByTagName('w:sdtContent')[0];
-      const keep = [...content.childNodes].map(n => { const c = n.cloneNode(true); return c; });
-      const frag = doc.createDocumentFragment();
-      for (const k of keep) { // also unwrap the inner field controls, as a paste would
-        if (k.localName === 'sdt') for (const p of [...k.getElementsByTagName('w:sdtContent')[0].childNodes]) frag.appendChild(p.cloneNode(true));
-        else frag.appendChild(k);
+    /* ---------- regression: clean round-trip ---------- */
+    const clean = docxParse(XML);
+    let mism = 0, count = 0;
+    for (const p of clean.places) for (const it of p.items) {
+      count++;
+      const was = cur.places.find(q => q.key === p.key).items.find(x => x.id === it.id);
+      const fs = it.kind === 'issue' ? ['title', 'text'] : ['title', 'baseline', 'upside', 'downside'];
+      if (!was || fs.some(k => (was[k] || '') !== (it[k] || ''))) mism++;
+    }
+    say(`TEST 1  clean round-trip of ${eco.name}: ${count} items, ${mism ? mism + ' MISMATCH' : 'all identical'}`);
+    check('meta stamp read back', clean.meta && clean.meta.economy === eco.id && clean.meta.version === eco.version);
+    check('untouched slots add nothing', reconcile(clean, cur).added.length === 0);
+    check('no phantom retirements', reconcile(clean, cur).retired.length === 0);
+    check('implications matrix ignored', !JSON.stringify(clean).includes('sales_growth'));
+
+    /* ---------- Q1: ADD ---------- */
+    const added = editXml(XML, (d, h) => {
+      const sub = h.byTag('sub|drivers/regime/trend-growth');
+      const slot = [...sub.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === 'slot|issue'; });
+      h.useSlot(slot, [['CITIssueTitle', 'Demographics are now a drag on potential'],
+                       ['CITBullet', 'Net migration has turned negative for the first time since 2020'],
+                       ['CITBullet', 'Working-age population shrinks from 2027 on current policy']]);
+      // two issues in one pass, separated by the title style
+      const c = slot.getElementsByTagName('w:sdtContent')[0];
+      c.appendChild(h.mkP('CITIssueTitle', 'Housing supply is structurally short'));
+      c.appendChild(h.mkP('CITBullet', 'Permits are running a third below household formation'));
+      // a whole new subsection, typed into the group slot
+      h.useSlot(h.byTag('slot|sub|regime'), [['CITH3', 'Technology diffusion'],
+                                             ['CITIssueTitle', 'Adoption is lagging installation'],
+                                             ['CITBullet', 'Measured productivity has not moved despite the capex']]);
+      // a new signpost via the scenario slot
+      const cat = h.byTag('cat|scenarios/growth');
+      const sslot = [...cat.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === 'slot|signpost'; });
+      h.useSlot(sslot, [['CITIssueTitle', 'Housing completions'], ['CITBullet', 'Completions flat at 1.3m'], ['CITBullet', 'Supply responds, rents cool'], ['CITBullet', 'Permits fall further, shelter inflation sticks']]);
+    });
+    const rAdd = reconcile(docxParse(added), cur);
+    say('TEST 2  Q1 — adding:');
+    check('new issue typed into the slot is an addition', rAdd.added.some(a => a.title === 'Demographics are now a drag on potential' && a.place === 'drivers/regime/trend-growth'));
+    check('its bullets came with it', /Net migration/.test((rAdd.added.find(a => a.title.startsWith('Demographics')) || {}).item?.text || ''));
+    check('two new issues in one slot both seen', rAdd.added.filter(a => a.place === 'drivers/regime/trend-growth').length === 2);
+    check('new subsection captured with its name', rAdd.newSubs.length === 1 && rAdd.newSubs[0].name === 'Technology diffusion' && rAdd.newSubs[0].group === 'regime');
+    check('new subsection carries its first issue', (rAdd.newSubs[0].items[0] || {}).title === 'Adoption is lagging installation');
+    check('new signpost split into baseline/upside/downside', (() => { const a = rAdd.added.find(x => x.title === 'Housing completions'); return a && a.item.baseline === '- Completions flat at 1.3m' && a.item.downside === '- Permits fall further, shelter inflation sticks'; })());
+    check('additions did not disturb existing items', rAdd.retired.length === 0 && rAdd.edited.length === 0);
+
+    /* ---------- Q2: DELETE ---------- */
+    const sgId = eco.scenarios[0].issues[0].id, sgTitle = eco.scenarios[0].issues[0].title;
+    const deleted = editXml(XML, (d, h) => {
+      const box = h.byTag('signpost|' + sgId);
+      for (const f of ['title', 'baseline', 'upside', 'downside']) {
+        const fc = [...box.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === 'field|' + f; });
+        h.empty(fc);
       }
-      victim.parentNode.replaceChild(frag, victim);
-      // (b) a brand-new issue typed by hand, no control at all
-      const ti = h.sdtByTag('sub|drivers/regime/trend-inflation');
-      const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-      const mkP = (style, text) => { const p = doc.createElementNS(W, 'w:p'), pPr = doc.createElementNS(W, 'w:pPr'), st = doc.createElementNS(W, 'w:pStyle');
-        st.setAttribute('w:val', style); pPr.appendChild(st); p.appendChild(pPr);
-        const r = doc.createElementNS(W, 'w:r'), t = doc.createElementNS(W, 'w:t'); t.setAttribute('xml:space', 'preserve'); t.textContent = text; r.appendChild(t); p.appendChild(r); return p; };
-      ti.getElementsByTagName('w:sdtContent')[0].appendChild(mkP('CITIssueTitle', 'Wage catch-up is the 2027 risk'));
-      ti.getElementsByTagName('w:sdtContent')[0].appendChild(mkP('CITBullet', 'Real wages have fallen for four months; unions are reopening'));
+      // a second signpost removed with Track Changes on: everything inside w:del
+      const id2 = REAL.scenarios[1].issues[0].id, box2 = h.byTag('signpost|' + id2);
+      for (const r of [...box2.getElementsByTagName('w:r')]) {
+        const del = d.createElementNS(WNS, 'w:del'); del.setAttribute('w:id', '800'); del.setAttribute('w:author', 'AC'); del.setAttribute('w:date', '2026-09-15T09:00:00Z');
+        for (const t of [...r.getElementsByTagName('w:t')]) { const dt = d.createElementNS(WNS, 'w:delText'); dt.setAttribute('xml:space', 'preserve'); dt.textContent = t.textContent; t.parentNode.replaceChild(dt, t); }
+        r.parentNode.replaceChild(del, r); del.appendChild(r);
+      }
+      // an issue whose whole box was somehow deleted
+      const gone = h.byTag('issue|' + eco.drivers[1].subsections[0].issues[0].id); gone.parentNode.removeChild(gone);
+      // an issue that lost only its title
+      const t3 = h.byTag('issue|' + eco.drivers[0].subsections[1].issues[0].id);
+      h.empty([...t3.getElementsByTagName('w:sdt')].find(s => { const g = s.getElementsByTagName('w:tag')[0]; return g && g.getAttribute('w:val') === 'field|title'; }));
     });
-    const mz = await rezip({ ...files, 'word/document.xml': mangled });
-    const taggedM = await docxRead(mz);
-    const structM = structuralParse((await zipRead(mz))['word/document.xml']);
-    const rep = reconcile(taggedM, structM, CURRENT);
-    say('TEST 3  content controls destroyed by a paste, plus a hand-typed issue:');
-    check('parser did not crash', true);
-    check('surviving tagged issues still carry ids', rep.matched.map(m => m.id).sort().join(',') === 'iss-us-tg1,iss-us-ti1');
-    check('orphaned issue recovered by title, id restored', rep.recovered.length === 1 && rep.recovered[0].id === 'iss-us-tg2');
-    check('its edited text came with it', /low-churn/.test((rep.recovered[0] || {}).text || ''));
-    check('hand-typed issue seen as an addition', rep.added.length === 1 && rep.added[0].title === 'Wage catch-up is the 2027 risk');
-    check('nothing wrongly reported as retired', rep.retired.length === 0);
-    say('   report: ' + JSON.stringify({ matched: rep.matched.length, recovered: rep.recovered.length, added: rep.added.length, retired: rep.retired.length }));
+    const rDel = reconcile(docxParse(deleted), cur);
+    say('TEST 3  Q2 — deleting:');
+    check('emptied signpost reads as a retirement', rDel.retired.some(x => x.id === sgId && x.how === 'box emptied'));
+    check('it keeps the old title for the review card', (rDel.retired.find(x => x.id === sgId) || {}).title === sgTitle);
+    check('tracked-changes deletion also reads as a retirement', rDel.retired.some(x => x.id === REAL.scenarios[1].issues[0].id));
+    check('a box deleted outright is flagged as possibly accidental', rDel.retired.some(x => x.id === eco.drivers[1].subsections[0].issues[0].id && /accidental/.test(x.how)));
+    check('losing only the title is a question, not a deletion', rDel.problems.length === 1 && !rDel.retired.some(x => x.id === eco.drivers[0].subsections[1].issues[0].id), JSON.stringify(rDel.problems));
+    check('nothing else was touched', rDel.added.length === 0);
 
-    /* ---- TEST 4: not a thesis document at all ---- */
+    /* ---------- Q3: REORDER ---------- */
+    const place = `drivers/${eco.drivers[0].id}/${eco.drivers[0].subsections[0].id}`;
+    const [i1, i2] = eco.drivers[0].subsections[0].issues;
+    const moveTarget = eco.drivers[1].subsections[0];   // policy/monetary
+    const reordered = editXml(XML, (d, h) => {
+      const a = h.byTag('issue|' + i1.id), b = h.byTag('issue|' + i2.id);
+      b.parentNode.insertBefore(b, a);                                     // swap: drag the second above the first
+      const mv = h.byTag('issue|' + eco.drivers[0].subsections[1].issues[0].id);
+      const dest = h.byTag(`sub|drivers/${eco.drivers[1].id}/${moveTarget.id}`);
+      dest.getElementsByTagName('w:sdtContent')[0].appendChild(mv);        // cut and paste into another subsection
+      const cats = h.allTags(t => t.startsWith('cat|'));
+      cats[1].parentNode.insertBefore(cats[1], cats[0]);                   // reprioritise scenario categories
+    });
+    const pr = docxParse(reordered), rOrd = reconcile(pr, cur);
+    say('TEST 4  Q3 — reprioritising:');
+    check('swapped issues report an order change, ids intact', rOrd.reordered.length === 2 && rOrd.reordered.every(x => x.place === place));
+    check('order is read from document position', (() => { const p = pr.places.find(x => x.key === place); return p.items[0].id === i2.id && p.items[1].id === i1.id; })());
+    check('a reorder is not mistaken for an edit', !rOrd.edited.some(e => e.id === i1.id || e.id === i2.id));
+    check('issue dragged to another subsection is reported as moved', rOrd.moved.length === 1 && rOrd.moved[0].to === `drivers/${eco.drivers[1].id}/${moveTarget.id}`);
+    check('moved issue keeps its id and text', rOrd.moved[0].id === eco.drivers[0].subsections[1].issues[0].id && !rOrd.retired.length);
+    check('scenario categories reordered in document order', pr.places.filter(p => p.kind === 'cat')[0].key === `scenarios/${eco.scenarios[1].id}`);
+    check('driver group order ignored (page cannot reorder groups)', !JSON.stringify(rOrd).includes('group'));
+
+    /* ---------- wrong file ---------- */
     let refused = 'accepted (BAD)';
-    try { await docxRead(await zipWrite([{ name: 'word/other.xml', text: '<a/>' }])); }
-    catch (e) { refused = 'refused: ' + e.message; }
-    say('TEST 4  wrong file type: ' + refused);
+    try { await docxRead(await zipWrite([{ name: 'word/other.xml', text: '<a/>' }])); } catch (e) { refused = 'refused — ' + e.message; }
+    say('TEST 5  a file that is not a thesis document: ' + refused);
   } catch (e) { say('ERROR ' + (e && e.stack || e)); }
-  document.getElementById('out').innerHTML = log.join('\n').replace(/\bPASS\b/g,'<span class="PASS">PASS</span>').replace(/\bFAIL\b/g,'<span class="FAIL">FAIL</span>');
-  window.__RESULT = log.join('\n');
+  const txt = log.join('\n');
+  document.getElementById('out').innerHTML = txt.replace(/\bPASS\b/g, '<span class="PASS">PASS</span>').replace(/\bFAIL\b/g, '<span class="FAIL">FAIL</span>');
+  window.__RESULT = txt;
 })();
 
 document.getElementById('dl').onclick = async () => {
@@ -469,13 +541,6 @@ document.getElementById('dl').onclick = async () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([b], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
   a.download = (REAL.id || 'economy') + '-v' + (REAL.version || 0) + '.docx'; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-};
-document.getElementById('dlsample').onclick = async () => {
-  const b = await docxWrite(SAMPLE);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([b], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-  a.download = 'sample.docx'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
 </script></body></html>

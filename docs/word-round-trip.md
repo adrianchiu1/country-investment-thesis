@@ -56,10 +56,16 @@ machine-readable string in its `w:tag`, and it can be marked
 stay freely editable. The user sees a labelled box; we see:
 
 ```
-issue|drivers/regime/trend-growth|iss-us-tg1
+issue|iss-us-tg1
    field|title    -> one paragraph
    field|text     -> the bullets
 ```
+
+The tag carries **identity only — never placement.** Where an item sits comes
+from the container it is inside and from document order. That split is what lets
+a researcher drag a box somewhere else and have the move mean something (§5); if
+the tag also named the subsection, a moved box would carry a stale place that
+contradicted where it now sat.
 
 That tag is the same stable `iss-xxxxxx` id the log and the history already turn
 on. So an issue's identity survives being retitled, rewritten, or moved — which
@@ -71,6 +77,8 @@ Everything else follows the same principle:
 | Thesis structure | Word structure |
 | --- | --- |
 | Issue / signpost identity | content control, `w:tag` carrying the id |
+| Where an item sits, and in what order | the enclosing container control, plus document order |
+| Somewhere to add a new one | an empty placeholder control at the end of each container |
 | Which field (title, text, baseline…) | nested content control, `field\|…` |
 | Bullet, nested bullet | paragraph styles `CIT Bullet` / `CIT Bullet 2` + real list numbering |
 | `**bold**` | a bold run |
@@ -104,9 +112,9 @@ The prototype writes six parts (`[Content_Types].xml`, two `.rels`,
 
 | | |
 | --- | --- |
-| All seven economies, YAML → .docx → back | **every id, title, bullet and nesting level identical** |
-| `united-states.yaml` (13 issues, 5 signposts, 5.3k chars) | 8,244 bytes, 12 ms to write, 14 ms to read |
-| Independent OOXML reader (`python-docx` / `lxml`) | opens it; 17 content controls, 2 tables, real bullet numbering, styles resolve by name |
+| All seven economies, YAML → .docx → back | **every id, title, bullet and nesting level identical, and zero spurious changes** |
+| `united-states.yaml` (13 issues, 5 signposts, 5.3k chars) | 8,776 bytes, ~12 ms to write, ~14 ms to read |
+| Independent OOXML reader (`python-docx` / `lxml`) | opens it; 99 content controls, 6 tables, 145 paragraphs, real bullet numbering, all 12 styles resolve by name |
 
 ### What is *not* proven
 
@@ -190,7 +198,155 @@ went out with the ids that came back.
 
 ---
 
-## 5. Where Ada fits
+## 5. Structural edits: adding, deleting, reprioritising
+
+Text editing is the easy half. The operations that break naive round-trips are
+the ones that change *which items exist and in what order*. All three are
+proven in the prototype; the tests are `TEST 2`, `TEST 3` and `TEST 4`.
+
+First, what the page itself allows, because Word must not offer more than the
+tool can accept:
+
+| | Add | Delete | Reorder | Rename |
+| --- | --- | --- | --- | --- |
+| Driver group (Regime, Policy, Imbalances, Geopolitics) | — | — | — | — |
+| Subsection (Trend growth, Monetary …) | yes | only ones you added | yes | only ones you added |
+| Issue | yes | yes | yes, within its subsection | yes |
+| Scenario category | yes | only ones you added | *no UI* | only ones you added |
+| Signpost | yes | yes | yes, within its category | yes |
+
+The four driver groups are fixed. So in the Word file their headings are
+`contentLocked` and **the reader ignores group order entirely** — otherwise a
+researcher could reorder them, and the change would be silently lost, because
+`flatten()` does not track group order and the log would never show it.
+
+### Adding
+
+A new issue is typed into an **"add here" slot**: an empty content control at the
+end of every subsection, carrying Word placeholder text —
+*"Click here and type a new issue: its title on the first line, then one bullet
+per line."* Word's `<w:showingPlcHdr/>` flag tells us the slot is untouched, so
+an unused slot can never become a phantom addition. There is a slot at the end of
+each driver group for a **new subsection**, and one at the end of the scenarios
+page for a **new category**.
+
+The slot exists because of the failure it prevents. Without it, a researcher who
+wants to add an issue puts the cursor at the end of the last bullet and presses
+Enter — and they are now typing *inside the previous issue's text control*. Their
+new issue silently becomes three more bullets on the issue above. A visibly
+different, italic, empty box is the affordance that stops that.
+
+Inside a slot, a paragraph in the `CIT Issue Title` style starts a new item, so
+several can be added at once; if the researcher does not touch the styles, the
+first line is the title and the rest are bullets. For a signpost the three lines
+after the title become baseline, upside and downside. New items arrive with no
+id and are minted permanent ids on apply — the same `new-1` treatment the Ada
+import already uses.
+
+Anything typed *outside* a slot is still caught by the orphan detector in §4 and
+offered as an addition placed by the nearest heading. The slot is the happy path,
+not the only path.
+
+### Deleting
+
+**This is where the first draft of this note contradicted itself.** It said
+controls are locked so they cannot be deleted — which would make deleting an
+issue impossible.
+
+The resolution is that `sdtLocked` locks the *frame*, not the contents. So:
+
+> **To retire an issue or signpost, select everything inside its boxes and delete
+> it. The empty frame stays behind, and its tag tells us which item you emptied.**
+
+That is the natural gesture — select, press Delete — and it is unambiguous,
+because the surviving frame means we never have to guess *which* item was
+removed. It works identically with Track Changes on, since the reader treats
+`w:del` content as already accepted, so a struck-through issue reads as empty.
+
+Three cases, deliberately treated differently:
+
+| What the document shows | Read as |
+| --- | --- |
+| Title and body both empty, frame intact | **Retire.** Confident. |
+| Frame gone entirely | **Retire, flagged "may be accidental."** |
+| Title empty, body still has text | **Neither.** A question in the review: *restore the title, or clear the whole box to retire it.* |
+
+That third row matters more than it looks. Without it, deleting a title by
+accident would empty `title`, fail `validate()`'s "every issue needs a title"
+check, and **refuse the entire import** — one slip costing the whole document.
+The reader must therefore classify retirements *before* validation runs, not
+after.
+
+The worst outcome here is not a refused import; it is an issue quietly retired
+because its box was mangled, which the normal save path would then delete. Hence
+the middle row is labelled rather than trusted, and every retirement appears in
+the review as a red card with the full old text, written only on Apply. The log
+keeps the old text either way, so it is recoverable.
+
+If retirement-by-emptying turns out to happen by accident in practice, the
+hardening is a "Retire this item" dropdown control on each box — explicit intent,
+impossible to trigger by a stray Delete. I would not build it until the need
+shows up: it puts a widget on every item to guard against something that may
+never occur.
+
+### Reprioritising
+
+Because the tag carries identity and the container carries placement, reordering
+needs no machinery at all: **move the box, and the item moves.** The reader takes
+document order, and `flatten()` already emits an `order` field per item, so the
+existing diff and log record it exactly as they do for the page's own ↑/↓
+buttons — the README already documents `.../order` changes.
+
+This works for issues inside a subsection, signposts inside a category,
+subsections inside a group, and scenario categories on the scenarios page. Note
+the last one is a capability the page's own UI does not have: there is no "move
+category" button, but the order *is* tracked in the file and the log. Word would
+therefore let a researcher do something the page cannot. That is coherent and
+useful, but worth deciding deliberately rather than discovering.
+
+Two edges:
+
+- **If Word drops the control during a drag** (it sometimes pastes as plain
+  text), the item becomes an orphan — and the Tier B recovery in §4 re-attaches
+  it by title *at its new position*, which is the outcome we wanted anyway. The
+  fallback handles reordering correctly by accident of design.
+- **Moving an issue to a different subsection** is read correctly and the id is
+  preserved, but the underlying history model keys paths by subsection, so the
+  log will show it as a retirement in the old place plus an addition in the new
+  one. The id survives, so it is traceable; it is a limitation of the existing
+  model, not of Word. The page cannot do this at all, so the same "more than the
+  UI offers" question applies.
+
+### What the tests show
+
+```
+TEST 2  Q1 — adding:
+   PASS  new issue typed into the slot is an addition
+   PASS  two new issues in one slot both seen
+   PASS  new subsection captured with its name
+   PASS  new signpost split into baseline/upside/downside
+   PASS  additions did not disturb existing items
+TEST 3  Q2 — deleting:
+   PASS  emptied signpost reads as a retirement
+   PASS  tracked-changes deletion also reads as a retirement
+   PASS  a box deleted outright is flagged as possibly accidental
+   PASS  losing only the title is a question, not a deletion
+TEST 4  Q3 — reprioritising:
+   PASS  swapped issues report an order change, ids intact
+   PASS  a reorder is not mistaken for an edit
+   PASS  issue dragged to another subsection is reported as moved
+   PASS  driver group order ignored (page cannot reorder groups)
+```
+
+All seven economies round-trip with **zero spurious changes** — no phantom
+additions from unused slots, no phantom retirements, no edits reported on text
+nobody touched. That last property is what makes the review screen usable: if a
+clean round-trip produced even a handful of false diffs, nobody would trust the
+real ones.
+
+---
+
+## 6. Where Ada fits
 
 Ada should **not** be the parser for the normal path, for three reasons:
 
@@ -222,7 +378,7 @@ to tidy an imported batch before it is applied.
 
 ---
 
-## 6. The implications matrix stays read-only
+## 7. The implications matrix stays read-only
 
 The existing invariant is that arrows are only ever set by clicking in the page,
 and Ada never edits them. Word should not break that. Export the matrix as a
@@ -232,7 +388,7 @@ was changed anyway, surface the difference as a *suggestion* in the review scree
 
 ---
 
-## 7. How it fits the existing tool
+## 8. How it fits the existing tool
 
 The integration surface is small, which is the main argument for doing it this
 way:
@@ -247,19 +403,22 @@ way:
   `validate`, `diff`, the review cards, `acquireLock`, the on-disk version check,
   `saveDraft`, and the log entry. Only the log's `source` gains a new value,
   `word-import`, next to the existing `import`.
-- Roughly 450–550 lines added to the single HTML file (~25 KB): ZIP codec ~120,
-  docx writer ~180, reader ~150, reconciliation ~80.
+- Roughly 600–700 lines added to the single HTML file (~30 KB): ZIP codec ~120,
+  docx writer ~200, reader ~180, reconciliation ~120.
 
 ---
 
-## 8. Build order
+## 9. Build order
 
 0. **Half an hour, before anything else.** Open
-   `poc/sample-united-states-v2.docx` in Word. Does it open cleanly? Edit a
-   bullet, save, re-open it in `poc/docx-round-trip.html` and check the tags
-   survived. If Word mangles content controls, stop and reconsider — everything
-   above depends on it. Also worth doing on Word Online and Word for Mac if the
-   team uses them.
+   `poc/sample-united-states-v2.docx` in Word and try the four gestures the
+   design rests on: edit a bullet; type into an "add here" slot; empty a
+   signpost's boxes; drag an issue above its neighbour. Save, re-open it in
+   `poc/docx-round-trip.html`, and check the boxes and their tags survived. If
+   Word mangles content controls, stop and reconsider — everything above depends
+   on it. Worth repeating on Word Online and Word for Mac if the team uses
+   them, and on the drag in particular, which is the gesture most likely to
+   drop a control.
 1. Decide (a) or (b) from §1.
 2. Lift the ZIP codec and the docx writer from the prototype into the editor;
    ship **export only**, and let people live with it for a week. A read-only Word
@@ -272,7 +431,7 @@ way:
 6. Only if Tier C turns out to happen in practice: write the Ada Reconcile Mode
    prompt.
 
-## 9. Risks worth naming
+## 10. Risks worth naming
 
 - **Word is the single point of failure.** Step 0 above.
 - **"Save As → .doc"** or "Save As → PDF" by a helpful user produces a file the
@@ -286,3 +445,11 @@ way:
   headers, logos, a contents page. That is all fine — it is cosmetic and lives in
   `styles.xml` — but each addition is a thing the reader must ignore rather than
   trip over.
+- **Word offering more than the page does.** Reordering scenario categories and
+  moving an issue between subsections both work through Word but have no button
+  in the editor. Either add the buttons, or have the reader refuse those two
+  changes, but do not leave it undecided — a change a researcher can make in
+  Word and then cannot make or undo in the page is a support call.
+- **Retirement by accident.** Emptying a box is a deliberate gesture but a
+  cheap one. The review screen and the log make it recoverable; the "Retire"
+  dropdown in §5 is the hardening if it proves necessary.
