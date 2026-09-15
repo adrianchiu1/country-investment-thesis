@@ -127,9 +127,9 @@ The prototype writes six parts (`[Content_Types].xml`, two `.rels`,
 
 | | |
 | --- | --- |
-| All seven economies, YAML → .docx → back | **every id, title, bullet and nesting level identical, and zero spurious changes** |
-| `united-states.yaml` (13 issues, 5 signposts, 5.3k chars) | 8,776 bytes, ~12 ms to write, ~14 ms to read |
-| Independent OOXML reader (`python-docx` / `lxml`) | opens it; 99 content controls, 6 tables, 145 paragraphs, real bullet numbering, all 12 styles resolve by name |
+| All seven economies (78 issues), YAML → .docx → back | **every id, title, bullet, cell and nesting level identical, and zero spurious changes** |
+| `united-states.yaml` (13 issues, 5 of them with signposts) | ~8.9 KB, ~12 ms to write, ~14 ms to read |
+| Independent OOXML reader (`python-docx` / `lxml`) | opens it; 106 content controls, 14 tables, 181 paragraphs, real bullet numbering, all 12 styles resolve by name |
 
 ### What is *not* proven
 
@@ -573,21 +573,24 @@ which the Word cell layout makes plausible.
 ## 9. Build order
 
 0. **Half an hour, before anything else.** Open
-   `poc/sample-united-states-v2.docx` in Word and try the four gestures the
-   design rests on: edit a bullet; type into an "add here" slot; empty a
-   signpost's boxes; drag an issue above its neighbour. Save, re-open it in
-   `poc/docx-round-trip.html`, and check the boxes and their tags survived. If
-   Word mangles content controls, stop and reconsider — everything above depends
-   on it. Worth repeating on Word Online and Word for Mac if the team uses
-   them, and on the drag in particular, which is the gesture most likely to
-   drop a control.
+   `poc/sample-united-states-v2.docx` in Word and try the five gestures the
+   design rests on: edit a bullet; type into an "add here" slot; type over the
+   italic hints in an issue's three signpost cells; clear an issue's boxes; drag
+   an issue above its neighbour. Save, re-open it in `poc/docx-round-trip.html`,
+   and check the boxes and their tags survived. If Word mangles content controls,
+   stop and reconsider — everything above depends on it. Worth repeating on Word
+   Online and Word for Mac if the team uses them, and on the drag in particular,
+   which is the gesture most likely to drop a control.
 1. Decide (a) or (b) from §1.
-2. Lift the ZIP codec and the docx writer from the prototype into the editor;
-   ship **export only**, and let people live with it for a week. A read-only Word
-   export is useful on its own and tells you whether Word round-tripping is
+2. Lift the ZIP codec and the docx writer from the prototype into the editor as
+   the `DOCX` module, and wire up **Word copy** only (§8a, §8b). Download path,
+   no write permission, no lock — about a day, and it cannot break anything,
+   because nothing reads the file back yet. Let people live with it for a week: a
+   Word export is useful on its own and tells you whether round-tripping is
    really what anyone wants.
-3. Add the Tier A reader, wired into the existing review screen. Ship behind the
-   normal Import button.
+3. Add the Tier A reader and the manifest check, wired into the existing review
+   screen behind the normal Import button (§8c, §8d). Refuse on problems for now
+   (§8e).
 4. Add Tier B recovery and the typographic noise suppression.
 5. Add tracked changes and comments as review annotations.
 6. Only if Tier C turns out to happen in practice: write the Ada Reconcile Mode
@@ -599,19 +602,24 @@ which the Word cell layout makes plausible.
 - **"Save As → .doc"** or "Save As → PDF" by a helpful user produces a file the
   reader cannot use. Detect the extension and say so plainly.
 - **Two people editing the same economy in Word** for a week each, then both
-  importing. The lock does not span that; the version check catches the second
-  one and forces a reload, but the second person's Word work is then stranded.
-  This is the strongest argument for keeping Word sessions short and for the
-  `meta|economy|version` stamp so the staleness warning is loud.
+  importing. No lock spans that. The manifest and the per-issue deltas (§8c, §8d)
+  mean the second import no longer silently undoes the first, but where both
+  edited the *same* issue the second still wins, and the version check plus the
+  on-disk conflict check are what force a reload. Keep Word sessions short.
 - **Scope creep in the document.** Once it is a Word file, people will want
   headers, logos, a contents page. That is all fine — it is cosmetic and lives in
   `styles.xml` — but each addition is a thing the reader must ignore rather than
   trip over.
-- **Word offering more than the page does.** Reordering scenario categories and
-  moving an issue between subsections both work through Word but have no button
-  in the editor. Either add the buttons, or have the reader refuse those two
-  changes, but do not leave it undecided — a change a researcher can make in
-  Word and then cannot make or undo in the page is a support call.
+- **Word offering more than the page does.** Moving an issue between
+  subsections works through Word but has no button in the editor. Either add the
+  button or have the reader refuse the move, but do not leave it undecided — a
+  change a researcher can make in Word and then cannot undo in the page is a
+  support call. (An earlier version of this risk also covered reordering scenario
+  categories; the one-hierarchy schema removed that case.)
+- **The schema is still moving.** This design has been retargeted once already,
+  when `main` merged the scenarios section into the drivers tree. The mapping is
+  about thirty lines of `buildDocument`, so retargeting is cheap — but do not
+  build the Word path into the editor while the shape of the file is in flux.
 - **Retirement by accident.** Emptying a box is a deliberate gesture but a
   cheap one. The review screen and the log make it recoverable; the "Retire"
   dropdown in §5 is the hardening if it proves necessary.
