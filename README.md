@@ -75,9 +75,9 @@ The researcher opens the page, selects the economy, clicks **Import**, and eithe
 
 If the change note lists matrix suggestions, click **Edit** afterwards and set the arrows on the Investment implications page.
 
-## Taking a Word copy
+## Cloning the thesis into Word
 
-**Word copy** (next to *Ada prompt*) saves the selected economy as a Word document —
+**Clone .docx** (next to *Ada prompt*) saves the selected economy as a Word document —
 `united-states-v2.docx` — to your downloads. It is a read-only operation: unlike *Export
 snapshot* it needs no write access to the folder and no entry in `editors:`, so anyone
 who can open the page can take a copy away to read, circulate or mark up, including from

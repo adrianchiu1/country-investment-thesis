@@ -1170,7 +1170,7 @@ async function exportWord() {
     toast(`Saved ${eco.id}-v${eco.version}.docx to your downloads`);
   } catch (e) {
     dialog('Could not build the Word file', '<p>' + esc(e.message || e) + '</p>', [['Close']]);
-  } finally { if (btn) { btn.disabled = false; btn.textContent = 'Word copy'; } }
+  } finally { if (btn) { btn.disabled = false; btn.textContent = 'Clone .docx'; } }
 }
 
 /* ====================================================================
@@ -1298,7 +1298,7 @@ function renderToolbar() {
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
     const wordBtn = eco && !S.loadError[S.current]
-      ? `<button type="button" class="btn quiet" id="btn-word" title="Save this economy as a Word document to edit and circulate">Word copy</button>` : '';
+      ? `<button type="button" class="btn quiet" id="btn-word" title="Save this economy as a Word document to edit and circulate">Clone .docx</button>` : '';
     if (SNAPSHOT_AT) { a.innerHTML = wordBtn; if (eco && !S.loadError[S.current]) $('btn-word').addEventListener('click', exportWord); return; }
     const allowed = canEditHere();
     const can = (Store.connected || Store.fallback) && !S.loadError[S.current] && eco && allowed;
