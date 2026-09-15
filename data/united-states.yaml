@@ -25,6 +25,17 @@ drivers:
               - Immigration enforcement has cut labour-force growth to a trickle; payrolls in the 50-150k range are now consistent with a flat unemployment rate (4.1% in August)
               - A low-churn market: few layoffs, few hires, long-term unemployment share at a five-year high, wage growth down to about 3% and below headline inflation for four months running
               - Implication: break-even payroll growth is much lower than markets are used to, and a downturn would show up in hours and participation before it shows in the unemployment rate
+        signposts:
+          - id: iss-us-sg1
+            title: Consumer under the oil and tariff squeeze
+            baseline: "- Real consumption slows to 1-1.5% as real incomes stagnate; wealth effects and fiscal support prevent a contraction"
+            upside: "- Hormuz reopens durably, gasoline falls back below $3.50 and real wages turn positive; consumption re-accelerates above 2%"
+            downside: "- Oil stays above $100 into 2027 and equities correct 15-20%; high-income spending stops and unemployment rises past 5%"
+          - id: iss-us-sg2
+            title: AI capex durability
+            baseline: "- Data-centre and power investment keeps growing but decelerates; contributes 0.3-0.5pp to growth in 2027 with financing increasingly debt-funded"
+            upside: "- Investment broadens into the grid, industrial automation and measured productivity; potential growth revised up toward 2.5%"
+            downside: "- Returns disappoint and private-credit financing tightens; orders are cut, investment subtracts from growth and the credit channel amplifies it"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -34,6 +45,12 @@ drivers:
               - Headline CPI is stuck at 3.4% with gasoline at record nominal highs after the Hormuz closure; core has cooled to the low 2s as goods pass-through from 2025 tariffs fades and shelter decelerates
               - The risk is second-round effects: short-horizon inflation expectations are elevated and real wages are falling, which is the classic set-up for wage catch-up demands in 2027
               - We assume trend inflation settles near 2.5-3% rather than 2%, with the energy path the swing factor
+        signposts:
+          - id: iss-us-si1
+            title: Headline and core convergence
+            baseline: "- Headline CPI drifts from 3.4% toward 2.8% by mid-2027 as the energy contribution fades; core stays 2.3-2.6%"
+            upside: "- Energy normalises quickly and shelter disinflation brings headline to 2.3% by end-2027; expectations re-anchor"
+            downside: "- Second-round effects from energy and a weaker dollar push core back above 3%; short-horizon expectations unanchor and the Fed is forced into a real tightening cycle"
   - id: policy
     name: Policy
     subsections:
@@ -51,6 +68,12 @@ drivers:
             text: |-
               - The 2026 chair transition went through without the institutional rupture markets feared, but the administration's preference for lower rates is public and the committee's composition has shifted
               - Our read: the reaction function is more tolerant of inflation than in 2022 but not captured; the term premium is where markets express doubt, not the front end
+        signposts:
+          - id: iss-us-sp1
+            title: Fed path from 3.50-3.75%
+            baseline: "- One or two insurance hikes to 4.00%, then an extended hold while the committee watches the labour market; cuts return only in 2H27"
+            upside: "- Energy relief lets the Fed stay on hold and resume cutting toward 3% in 2027; the curve bull-steepens in an orderly way"
+            downside: "- Either a full hiking cycle toward 4.5-5% into a stagflationary economy, or a growth shock forcing rapid cuts below 2.5%; both damage risk assets and the credibility of the reaction function"
       - id: fiscal
         name: Fiscal
         issues:
@@ -60,6 +83,12 @@ drivers:
               - The 2025 tax package locked in a structural deficit; the Supreme Court's February ruling voided IEEPA tariff revenue and triggered refunds, and the replacement 10-12.5% Section 301 tariffs on 60 economies raise less
               - Treasury keeps skewing issuance to bills to limit duration supply; that caps term premium today at the cost of rollover risk and growing dependence on money funds
               - Higher oil raises the deficit further via indexed programmes and lower real growth; no consolidation is plausible before the 2028 cycle
+        signposts:
+          - id: iss-us-sp2
+            title: Fiscal and issuance
+            baseline: "- Deficit 6-7% of GDP, bills share stays high, no consolidation before 2028; term premium grinds higher"
+            upside: "- Tariff revenue and stronger nominal growth stabilise the debt ratio; Treasury terms out issuance without a term-premium shock"
+            downside: "- A cluster of weak auctions or a political challenge to Fed independence produces a term-premium spike and a disorderly bear-steepening"
   - id: imbalances
     name: Imbalances
     subsections:
@@ -73,8 +102,8 @@ drivers:
               - The transmission channel that matters is asset prices: an equity correction would hit the only cohort still spending freely
           - id: iss-us-do2
             title: Corporate margins under a cost squeeze
-            text: |-
-              - Tariffs, energy and a tight labour market are compressing margins outside the AI complex; an earnings recession is already visible in consumer discretionary and industrials
+            text: "- Tariffs, energy and a tight labour market are compressing margins outside the AI complex; an earnings recession is already visible in consumer discretionary and industrials"
+        signposts: []
       - id: external
         name: External
         issues:
@@ -83,6 +112,7 @@ drivers:
             text: |-
               - The dollar did not rally on the Iran war the way it did in 2022; foreign official demand for Treasuries is slower and more price sensitive, and the euro and yen have both strengthened on repatriation flows
               - The current account is narrowing as tariffs compress imports, but the financing question (who absorbs record Treasury supply at a lower dollar) is the live one
+        signposts: []
       - id: credit
         name: Credit
         issues:
@@ -91,6 +121,7 @@ drivers:
             text: |-
               - Private credit has absorbed the leveraged-loan market and now a large share of data-centre and power project finance; opacity, not aggregate size, is the concern
               - Stress would surface first in redemption gates and mark-downs at private funds, then in bank lines to those funds; the sector has not been tested by a capex downturn
+        signposts: []
   - id: geopolitics
     name: Geopolitics
     subsections:
@@ -102,6 +133,7 @@ drivers:
             text: |-
               - November midterms are being fought on the cost of living; a Democratic House would end the legislative agenda and raise the odds of investigations, but tariff and regulatory policy would still move by executive action
               - Congress is also stirring on trade powers (bills to restrain 122, 232 and 301 authority); a real transfer of authority back to Congress would be a structural change in policy risk
+        signposts: []
       - id: international
         name: International
         issues:
@@ -115,56 +147,7 @@ drivers:
             text: |-
               - After IEEPA and Section 122 fell, the administration rebuilt the tariff wall with sectoral 232 actions (metals, 100% on patented pharma, autos, chips) and country 301 actions; the EU has a negotiated 15% ceiling, USMCA goods are exempt, China sits under the Busan and Beijing truce
               - The marginal news is now about excess-capacity investigations and exemptions rather than headline rates; effective tariff rate around 11%, the highest since the 1940s
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-us-sg1
-        title: Consumer under the oil and tariff squeeze
-        baseline: |-
-          - Real consumption slows to 1-1.5% as real incomes stagnate; wealth effects and fiscal support prevent a contraction
-        upside: |-
-          - Hormuz reopens durably, gasoline falls back below $3.50 and real wages turn positive; consumption re-accelerates above 2%
-        downside: |-
-          - Oil stays above $100 into 2027 and equities correct 15-20%; high-income spending stops and unemployment rises past 5%
-      - id: iss-us-sg2
-        title: AI capex durability
-        baseline: |-
-          - Data-centre and power investment keeps growing but decelerates; contributes 0.3-0.5pp to growth in 2027 with financing increasingly debt-funded
-        upside: |-
-          - Investment broadens into the grid, industrial automation and measured productivity; potential growth revised up toward 2.5%
-        downside: |-
-          - Returns disappoint and private-credit financing tightens; orders are cut, investment subtracts from growth and the credit channel amplifies it
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-us-si1
-        title: Headline and core convergence
-        baseline: |-
-          - Headline CPI drifts from 3.4% toward 2.8% by mid-2027 as the energy contribution fades; core stays 2.3-2.6%
-        upside: |-
-          - Energy normalises quickly and shelter disinflation brings headline to 2.3% by end-2027; expectations re-anchor
-        downside: |-
-          - Second-round effects from energy and a weaker dollar push core back above 3%; short-horizon expectations unanchor and the Fed is forced into a real tightening cycle
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-us-sp1
-        title: Fed path from 3.50-3.75%
-        baseline: |-
-          - One or two insurance hikes to 4.00%, then an extended hold while the committee watches the labour market; cuts return only in 2H27
-        upside: |-
-          - Energy relief lets the Fed stay on hold and resume cutting toward 3% in 2027; the curve bull-steepens in an orderly way
-        downside: |-
-          - Either a full hiking cycle toward 4.5-5% into a stagflationary economy, or a growth shock forcing rapid cuts below 2.5%; both damage risk assets and the credibility of the reaction function
-      - id: iss-us-sp2
-        title: Fiscal and issuance
-        baseline: |-
-          - Deficit 6-7% of GDP, bills share stays high, no consolidation before 2028; term premium grinds higher
-        upside: |-
-          - Tariff revenue and stronger nominal growth stabilise the debt ratio; Treasury terms out issuance without a term-premium shock
-        downside: |-
-          - A cluster of weak auctions or a political challenge to Fed independence produces a term-premium spike and a disorderly bear-steepening
+        signposts: []
 implications:
   drivers/regime/trend-growth:
     sales_growth: up
@@ -202,15 +185,3 @@ implications:
     margin_growth: down
     inflation_expectation: up
     cash_rate: up
-  scenarios/growth:
-    sales_growth: down
-    margin_growth: down
-    valuation: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-    valuation: down
-  scenarios/policy:
-    cash_rate: up
-    term_premium: up
-    liquidity: down

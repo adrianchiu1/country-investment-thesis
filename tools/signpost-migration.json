@@ -1,0 +1,10 @@
+{
+  "_comment": "Where each pre-September-2026 signpost (top-level scenario categories) now lives: driver/subsection. Edit and re-run tools/migrate-signposts.mjs before merging if a home is wrong.",
+  "brazil":         { "iss-br-sg1": "regime/trend-growth", "iss-br-si1": "regime/trend-inflation", "iss-br-sp1": "policy/monetary" },
+  "china":          { "iss-cn-sg1": "regime/trend-growth", "iss-cn-sg2": "regime/trend-growth", "iss-cn-si1": "regime/trend-inflation", "iss-cn-sp1": "policy/monetary" },
+  "eurozone":       { "iss-ez-sg1": "regime/trend-growth", "iss-ez-si1": "regime/trend-inflation", "iss-ez-sp1": "policy/monetary", "iss-ez-sp2": "policy/fiscal" },
+  "india":          { "iss-in-sg1": "regime/trend-growth", "iss-in-si1": "regime/trend-inflation", "iss-in-sp1": "policy/monetary" },
+  "japan":          { "iss-jp-sg1": "regime/trend-growth", "iss-jp-si1": "regime/trend-inflation", "iss-jp-sp1": "policy/monetary", "iss-jp-sp2": "policy/fiscal" },
+  "united-kingdom": { "iss-uk-sg1": "regime/trend-growth", "iss-uk-si1": "regime/trend-inflation", "iss-uk-sp1": "policy/monetary", "iss-uk-sp2": "policy/fiscal" },
+  "united-states":  { "iss-us-sg1": "regime/trend-growth", "iss-us-sg2": "regime/trend-growth", "iss-us-si1": "regime/trend-inflation", "iss-us-sp1": "policy/monetary", "iss-us-sp2": "policy/fiscal" }
+}

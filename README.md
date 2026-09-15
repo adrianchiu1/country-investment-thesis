@@ -34,7 +34,7 @@ On the first visit the page runs a short walkthrough that dims the page and poin
 ## How a save works
 
 1. **Edit** — the page reads `locks/<economy>.lock.yaml`. If another person holds an unexpired lock you are told who and since when, and can cancel or take over. It then writes a lock with your name, an expiry (`lock_minutes` in `config.yaml`, default 30) and renews it every 5 minutes while the page stays open.
-2. You edit text, add/remove/reorder issues, add subsections or scenario categories, and click cells in the implications matrix. All three sections can be edited in one session.
+2. You edit text, add/remove/reorder issues and signposts, add subsections, and click cells in the implications matrix. All three sections can be edited in one session.
 3. **Save changes** — the page validates (every issue needs a title; every signpost needs baseline, upside and downside), then re-reads `data/<economy>.yaml` from disk. If its `version` no longer matches the one you started from, the save is refused and you are asked to reload — this is the last line of defence when two people edit the same economy despite the lock.
 4. If clear, it writes the new state to `data/<economy>.yaml` with `version + 1`, `updated_at` and `updated_by`, appends one entry to `log/<economy>.log.yaml`, and deletes the lock.
 
@@ -83,6 +83,12 @@ If the change note lists matrix suggestions, click **Edit** afterwards and set t
 - **The log file is append-only** from the page's point of view; OneDrive still uploads the whole file each time, which is fine at this size.
 - **Reading YAML on the web.** The `data/` files are plain text, so anyone can read (or, in an emergency, edit) an economy's views from the SharePoint web UI without the HTML. Hand edits are not logged and do not bump `version`, but they are safe: a save from the page is refused whenever the file on disk differs from what that page loaded, whoever changed it, and the person saving is asked to Reload first. If a hand edit leaves the file in a form the page cannot read, that economy shows the parse error instead of its content and cannot be edited until the file is fixed (or restored from SharePoint version history); the page never writes over a file it could not read.
 - The `.html` file itself cannot be opened from the SharePoint web UI (SharePoint serves it as a download). Use the synced folder.
+
+## How an economy is structured
+
+One hierarchy runs through all three pages. Four **drivers** (Regime, Policy, Imbalances, Geopolitics) each hold **subsections** (Trend growth, Trend inflation, Monetary, Fiscal, Domestic, External, Credit, International). The structure is defined on the **Drivers** page, where each subsection holds **issues**: the house view as a title and bullets. The **Scenarios & signposts** page shows the same drivers and subsections, and under each lists the **signposts** we track for it: a title with baseline, upside and downside. The **Investment implications** matrix has one row per subsection. The sidebar is the same tree on all three pages, and every driver card carries a Views | Signposts toggle plus a footer line naming what the other page holds for that subsection.
+
+In the YAML this is `drivers[].subsections[]` with `issues[]` and `signposts[]` side by side; there is no separate `scenarios` section. Files from before September 2026 that still carry one are folded into the drivers on load (Growth → Trend growth, Inflation → Trend inflation, Policy → Monetary, or Fiscal when the title says so) and the layout is kept on the next save; `tools/migrate-signposts.mjs` did this once for the committed files.
 
 ## Adding an economy
 

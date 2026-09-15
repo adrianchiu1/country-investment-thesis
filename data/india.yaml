@@ -24,6 +24,12 @@ drivers:
             text: |-
               - Corporate balance sheets are clean and capacity utilisation high; the interim US trade agreement (in force since February) has reopened the export channel after the punitive 2025 tariffs
               - Electronics assembly and pharma are scaling; the constraint is land, logistics and state-level execution rather than demand
+        signposts:
+          - id: iss-in-sg1
+            title: Domestic demand under the oil shock
+            baseline: "- FY27 growth 6.5% as public capex and the consumption tax cut offset the energy drag; private capex continues at a moderate pace"
+            upside: "- Hormuz normalises, oil back below $75; consumption and private capex lift growth above 7% with the current account back near 1% of GDP"
+            downside: "- Oil above $100 through 2027; current-account deficit above 2.5%, rupee overshoots, RBI forced to hike and growth falls below 5.5%"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -32,6 +38,12 @@ drivers:
             text: |-
               - Headline inflation fell to 1-2% in late 2025 on food; the RBI now projects 5.0% for FY27 with core near 4.3%, so the whole move is fuel and pass-through
               - Food remains the swing factor: monsoon outcomes and vegetable prices dominate the headline, and the RBI is learning to look through them
+        signposts:
+          - id: iss-in-si1
+            title: Energy pass-through versus food
+            baseline: "- Headline 4.5-5% in FY27, core 4-4.5%; food benign on a normal monsoon"
+            upside: "- Energy relief and a strong monsoon bring headline back to 3.5-4%; the RBI can resume cutting"
+            downside: "- Fuel pass-through plus a weak monsoon push headline above 6% and core above 5%; expectations rise and the RBI hikes 50-75bp"
   - id: policy
     name: Policy
     subsections:
@@ -44,6 +56,12 @@ drivers:
               - After 125bp of cuts in 2025 the RBI has held at 5.25% with a neutral stance through 2026; the August vote was unanimous and Governor Malhotra wants a clearer inflation signal before moving either way
               - The rupee has weakened beyond 95 per dollar and the RBI has chosen FX swaps, reserve sales and liquidity tools over a defensive hike; that is the right call as long as inflation expectations hold
               - Watch: core inflation above 4.5%, further rupee depreciation, and the liquidity stance (OMOs and swaps) which is doing more work than the policy rate
+        signposts:
+          - id: iss-in-sp1
+            title: RBI path from 5.25%
+            baseline: "- On hold through FY27 with liquidity and FX tools doing the work; rupee drifts to 96-98"
+            upside: "- Two cuts to 4.75% in 2027 as inflation returns to 4% and the current account narrows; rupee stabilises below 95"
+            downside: "- Defensive hikes to 6% to stop a rupee run; growth and credit slow sharply"
       - id: fiscal
         name: Fiscal
         issues:
@@ -52,6 +70,7 @@ drivers:
             text: |-
               - The centre has shifted from a deficit target to a debt-to-GDP anchor; FY27 budget keeps capex high and the deficit near 4.3-4.5% of GDP
               - Fuel subsidies and excise cuts to cushion the oil shock are the fiscal risk; states are the softer link on revenue and welfare spending
+        signposts: []
   - id: imbalances
     name: Imbalances
     subsections:
@@ -63,6 +82,7 @@ drivers:
             text: |-
               - Urban middle-class consumption is running on credit (unsecured personal loans, cards) while rural demand has recovered on good monsoons and food-price relief
               - The GST cut lifted mass consumption in 2H25; the oil shock is now eroding real incomes at the bottom
+        signposts: []
       - id: external
         name: External
         issues:
@@ -71,6 +91,7 @@ drivers:
             text: |-
               - Oil at $90-100 pushes the current-account deficit toward 1.5-2% of GDP; services exports and remittances remain strong but portfolio flows have been volatile and FDI net of repatriation is weak
               - Reserves are ample but the RBI has spent them; the rupee's depreciation is orderly so far, which is the objective
+        signposts: []
       - id: credit
         name: Credit
         issues:
@@ -79,6 +100,7 @@ drivers:
             text: |-
               - Bank NPAs are at multi-decade lows and capital is strong; the RBI tightened risk weights on unsecured retail and NBFC lending in 2024-25 and asset quality in small-ticket loans is deteriorating at the margin
               - Credit growth has slowed to the low teens, which is healthy; deposit growth is the constraint on banks
+        signposts: []
   - id: geopolitics
     name: Geopolitics
     subsections:
@@ -87,8 +109,8 @@ drivers:
         issues:
           - id: iss-in-gd1
             title: Reform momentum with state-election noise
-            text: |-
-              - The GST overhaul, labour codes and the new income-tax framework show the coalition can still legislate; the 2026-27 state election cycle (including large states) will bring welfare spending and pauses in reform
+            text: "- The GST overhaul, labour codes and the new income-tax framework show the coalition can still legislate; the 2026-27 state election cycle (including large states) will bring welfare spending and pauses in reform"
+        signposts: []
       - id: international
         name: International
         issues:
@@ -97,40 +119,7 @@ drivers:
             text: |-
               - The interim trade agreement with the US removed the 2025 tariff penalty tied to Russian oil purchases; India now sits at the standard Section 301 rate and keeps buying discounted Russian crude, which has been a buffer in the Gulf shock
               - The Gulf war is a direct security and energy issue (shipping, diaspora, Chabahar); relations with China have thawed at the margin, and border stability is being bought with trade openness
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-in-sg1
-        title: Domestic demand under the oil shock
-        baseline: |-
-          - FY27 growth 6.5% as public capex and the consumption tax cut offset the energy drag; private capex continues at a moderate pace
-        upside: |-
-          - Hormuz normalises, oil back below $75; consumption and private capex lift growth above 7% with the current account back near 1% of GDP
-        downside: |-
-          - Oil above $100 through 2027; current-account deficit above 2.5%, rupee overshoots, RBI forced to hike and growth falls below 5.5%
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-in-si1
-        title: Energy pass-through versus food
-        baseline: |-
-          - Headline 4.5-5% in FY27, core 4-4.5%; food benign on a normal monsoon
-        upside: |-
-          - Energy relief and a strong monsoon bring headline back to 3.5-4%; the RBI can resume cutting
-        downside: |-
-          - Fuel pass-through plus a weak monsoon push headline above 6% and core above 5%; expectations rise and the RBI hikes 50-75bp
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-in-sp1
-        title: RBI path from 5.25%
-        baseline: |-
-          - On hold through FY27 with liquidity and FX tools doing the work; rupee drifts to 96-98
-        upside: |-
-          - Two cuts to 4.75% in 2027 as inflation returns to 4% and the current account narrows; rupee stabilises below 95
-        downside: |-
-          - Defensive hikes to 6% to stop a rupee run; growth and credit slow sharply
+        signposts: []
 implications:
   drivers/regime/trend-growth:
     sales_growth: up
@@ -161,12 +150,3 @@ implications:
   drivers/geopolitics/international:
     margin_growth: down
     inflation_expectation: up
-  scenarios/growth:
-    sales_growth: up
-    valuation: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-  scenarios/policy:
-    cash_rate: up
-    liquidity: down

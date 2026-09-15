@@ -24,6 +24,12 @@ drivers:
             text: |-
               - The UK sets electricity prices off gas at the margin and is a net importer; the 2026 Gulf shock has flowed straight through Ofgem price caps into the CPI and into industrial costs
               - Two cap increases in 2026 (July and October) are why the Bank sees inflation peaking in Q4 rather than Q2
+        signposts:
+          - id: iss-uk-sg1
+            title: Consumer and labour market
+            baseline: "- Growth around 1% in 2027; unemployment peaks near 5.5%; real incomes flat as energy prices ease slowly"
+            upside: "- Energy relief and lower gilt yields support housing and consumption; growth 1.5-2% and unemployment stabilises"
+            downside: "- Energy shock persists, tax rises in the autumn budget and rising unemployment tip the economy into recession; unemployment above 6%"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -32,6 +38,12 @@ drivers:
             text: |-
               - CPI 2.9% in July with core at 2.6% and services at 3.4%; before the war the Bank expected 2% from April, and now projects a peak around 3.2% in Q4 2026 with risks to the upside
               - Underlying disinflation has continued: pay growth is slowing with the loosening labour market, and food inflation is the lowest since 2021; the question is whether households' elevated short-term expectations feed 2027 pay rounds
+        signposts:
+          - id: iss-uk-si1
+            title: Energy pass-through and pay
+            baseline: "- CPI peaks near 3.2% in Q4 2026 and returns toward 2.5% by end-2027; services inflation keeps easing with the labour market"
+            upside: "- Energy normalises and services inflation falls below 3%; CPI back at 2% by mid-2027"
+            downside: "- Second Ofgem cap increase plus renewed wage push keep CPI above 3.5%; expectations de-anchor and the Bank has to hike twice or more"
   - id: policy
     name: Policy
     subsections:
@@ -46,8 +58,13 @@ drivers:
               - Watch: the September 17 decision and the QT annual decision on gilt sales, which has fiscal consequences
           - id: iss-uk-mo2
             title: QT and the gilt supply overhang
-            text: |-
-              - Active gilt sales plus record DMO issuance have kept long gilt yields among the highest in the G7; the Bank has been shifting sales toward shorter maturities to relieve the long end
+            text: "- Active gilt sales plus record DMO issuance have kept long gilt yields among the highest in the G7; the Bank has been shifting sales toward shorter maturities to relieve the long end"
+        signposts:
+          - id: iss-uk-sp1
+            title: Bank Rate path from 3.75%
+            baseline: "- One insurance hike to 4% or an extended hold; cuts resume in 2H27 as slack builds"
+            upside: "- No hikes, cuts to 3.25% by end-2027 as inflation falls back with energy; gilt curve rallies"
+            downside: "- Two or three hikes into a weakening economy, then a sharp reversal; policy error debate and curve volatility"
       - id: fiscal
         name: Fiscal
         issues:
@@ -56,6 +73,12 @@ drivers:
             text: |-
               - Headroom against the fiscal rules is thin; the 2025 budget raised taxes and the OBR pushed borrowing up; energy-support demands and a weak political position push the other way
               - The autumn 2026 budget is the test: further tax rises would hit growth, loosening would hit gilts; markets fear a leadership change toward a higher-spending chancellor more than they fear Reeves
+        signposts:
+          - id: iss-uk-sp2
+            title: Fiscal and gilts
+            baseline: "- Autumn budget balances modest tax rises and energy support; 10-year gilt 4.25-4.75%; headroom stays thin"
+            upside: "- Credible medium-term consolidation and lower issuance; 10-year gilt back below 4%"
+            downside: "- Leadership change or a loosened fiscal rule; 10-year above 5%, sterling under pressure and an LDI-style liquidity episode"
   - id: imbalances
     name: Imbalances
     subsections:
@@ -64,8 +87,8 @@ drivers:
         issues:
           - id: iss-uk-do1
             title: High saving rate and a housing market on the turn
-            text: |-
-              - Household saving rate is elevated and consumer confidence weak; the mortgage refinancing wave has largely passed, but a housing market that had started recovering is now facing higher gilt-driven mortgage rates again
+            text: "- Household saving rate is elevated and consumer confidence weak; the mortgage refinancing wave has largely passed, but a housing market that had started recovering is now facing higher gilt-driven mortgage rates again"
+        signposts: []
       - id: external
         name: External
         issues:
@@ -74,13 +97,14 @@ drivers:
             text: |-
               - The UK runs a persistent deficit near 3% of GDP and depends on portfolio inflows; sterling has been stable but gilts are the pressure valve whenever politics or fiscal credibility wobbles
               - Trade: the US deal (10% baseline, 25% on steel rather than 50%) has held; the EU reset is incremental
+        signposts: []
       - id: credit
         name: Credit
         issues:
           - id: iss-uk-cr1
             title: Banks strong, non-bank leverage the watch item
-            text: |-
-              - Banks are well capitalised and profitable; the 2022 LDI episode and the pension-fund shift out of gilts remain the template for how a gilt sell-off transmits, and the Bank now has a standing repo facility for that purpose
+            text: "- Banks are well capitalised and profitable; the 2022 LDI episode and the pension-fund shift out of gilts remain the template for how a gilt sell-off transmits, and the Bank now has a standing repo facility for that purpose"
+        signposts: []
   - id: geopolitics
     name: Geopolitics
     subsections:
@@ -92,6 +116,7 @@ drivers:
             text: |-
               - Starmer's authority has been eroded by the Mandelson affair, by-election losses to Greens and Reform, and internal calls to step down; Reform UK leads polls with a platform that markets read as fiscally expansionary
               - The next general election is not due until 2029, but a leadership change or a shift to spending-led politics is the gilt market's main political risk
+        signposts: []
       - id: international
         name: International
         issues:
@@ -100,48 +125,7 @@ drivers:
             text: |-
               - North Sea decline, LNG dependence and the Gulf war have put energy security back at the centre of policy; defence spending toward 3% of GDP is another claim on a budget with no room
               - Closer EU alignment on defence and energy is the direction of travel, but slower than the market would like
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-uk-sg1
-        title: Consumer and labour market
-        baseline: |-
-          - Growth around 1% in 2027; unemployment peaks near 5.5%; real incomes flat as energy prices ease slowly
-        upside: |-
-          - Energy relief and lower gilt yields support housing and consumption; growth 1.5-2% and unemployment stabilises
-        downside: |-
-          - Energy shock persists, tax rises in the autumn budget and rising unemployment tip the economy into recession; unemployment above 6%
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-uk-si1
-        title: Energy pass-through and pay
-        baseline: |-
-          - CPI peaks near 3.2% in Q4 2026 and returns toward 2.5% by end-2027; services inflation keeps easing with the labour market
-        upside: |-
-          - Energy normalises and services inflation falls below 3%; CPI back at 2% by mid-2027
-        downside: |-
-          - Second Ofgem cap increase plus renewed wage push keep CPI above 3.5%; expectations de-anchor and the Bank has to hike twice or more
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-uk-sp1
-        title: Bank Rate path from 3.75%
-        baseline: |-
-          - One insurance hike to 4% or an extended hold; cuts resume in 2H27 as slack builds
-        upside: |-
-          - No hikes, cuts to 3.25% by end-2027 as inflation falls back with energy; gilt curve rallies
-        downside: |-
-          - Two or three hikes into a weakening economy, then a sharp reversal; policy error debate and curve volatility
-      - id: iss-uk-sp2
-        title: Fiscal and gilts
-        baseline: |-
-          - Autumn budget balances modest tax rises and energy support; 10-year gilt 4.25-4.75%; headroom stays thin
-        upside: |-
-          - Credible medium-term consolidation and lower issuance; 10-year gilt back below 4%
-        downside: |-
-          - Leadership change or a loosened fiscal rule; 10-year above 5%, sterling under pressure and an LDI-style liquidity episode
+        signposts: []
 implications:
   drivers/regime/trend-growth:
     sales_growth: down
@@ -170,12 +154,3 @@ implications:
   drivers/geopolitics/international:
     margin_growth: down
     inflation_expectation: up
-  scenarios/growth:
-    sales_growth: down
-    cash_rate: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-  scenarios/policy:
-    term_premium: up
-    valuation: down

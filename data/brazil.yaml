@@ -23,6 +23,12 @@ drivers:
             text: |-
               - Brazil is a net oil exporter and a food and iron-ore exporter into a Chinese economy that is slowing; the 2026 oil shock is a net positive for the external accounts and Petrobras but a negative for inflation and the consumer
               - Agricultural exports have benefited from China's redirection away from US suppliers
+        signposts:
+          - id: iss-br-sg1
+            title: Election-year economy
+            baseline: "- Growth 1.5-2% in 2026 and 1.5% in 2027; unemployment low, consumption sustained by transfers, investment weak on high real rates"
+            upside: "- Market-friendly election outcome and credible fiscal plan; real rates fall fast, capex recovers, growth back toward 2.5-3% in 2027"
+            downside: "- Fiscal drift continues, the BRL sells off and Copom stops easing; growth below 1% with rising unemployment"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -31,6 +37,12 @@ drivers:
             text: |-
               - IPCA expectations for 2026 sit near 5%, above the 4.5% ceiling of the 3% target band, and 2027 near 4.2%; core has slowed to just below the ceiling
               - The problem is fiscal-monetary: expansionary fiscal policy (income-tax exemption, transfers, new federal hiring) plus a tight labour market keep services inflation sticky; the BRL is the transmission channel to headline
+        signposts:
+          - id: iss-br-si1
+            title: Back inside the band
+            baseline: "- IPCA near 5% in 2026 easing to about 4.2% in 2027; services inflation sticky, food and fuel volatile"
+            upside: "- BRL appreciation on a market-friendly outcome and easing food prices bring IPCA toward 3.5% in 2027"
+            downside: "- Fiscal loosening and a weaker real push IPCA back toward 6% and expectations de-anchor further"
   - id: policy
     name: Policy
     subsections:
@@ -43,6 +55,12 @@ drivers:
               - Selic at 14.00% after four consecutive 25bp cuts (unanimous in August), with the committee refusing to pre-commit to more while headline is above the band; the Focus survey sees 13.75% at year-end and 12% at end-2027
               - Galípolo has established credibility (275bp of hikes in his first year, then a slow easing) under a government that wants faster cuts; the election is the test of whether the reaction function survives
               - Watch: the September meeting, fiscal news that pushes rate expectations up rather than down, and any change to the BCB's inflation-target or governance framework after the election
+        signposts:
+          - id: iss-br-sp1
+            title: Selic path from 14%
+            baseline: "- One more cut to 13.75% in 2026, then 12% by end-2027 as inflation edges back into the band; real rate stays near 8-9%"
+            upside: "- Post-election credibility allows cuts to 10-11% by end-2027; curve bull-flattens and the real rallies toward 4.8"
+            downside: "- Easing halted or reversed; questions over central-bank independence after the election; Selic back above 15%"
       - id: fiscal
         name: Fiscal
         issues:
@@ -51,6 +69,7 @@ drivers:
             text: |-
               - Gross debt near 82% of GDP and rising, nominal deficit near 8% of GDP with debt service around R$1tn; the primary target is being met on accounting rather than structural adjustment
               - The 2026 election-year package (transfers, tax exemption up to R$5k, hiring) adds demand; the next government's first budget is what markets are pricing
+        signposts: []
   - id: imbalances
     name: Imbalances
     subsections:
@@ -62,6 +81,7 @@ drivers:
             text: |-
               - Household debt-service ratios are at record highs; the expansion of payroll-deducted credit to private-sector workers in 2025 pushed leverage further just as rates peaked
               - Delinquencies are rising in unsecured credit; consumption is being sustained by transfers and a strong labour market rather than balance sheets
+        signposts: []
       - id: external
         name: External
         issues:
@@ -70,6 +90,7 @@ drivers:
             text: |-
               - Current-account deficit around 2-3% of GDP financed by FDI; reserves ample; the real has traded around 5.2-5.5 per dollar with a 10% real rate providing carry support
               - The 25% US Section 301 tariff on Brazilian goods (after the IEEPA measures fell) is a nuisance more than a macro event; trade is redirected to China and Europe
+        signposts: []
       - id: credit
         name: Credit
         issues:
@@ -78,6 +99,7 @@ drivers:
             text: |-
               - Bank credit growth has slowed to the mid-single digits in real terms; NPLs are rising from a low base in retail and small-business books
               - Public banks (BNDES, Caixa) are again being used for directed credit, which blunts monetary transmission and adds fiscal risk
+        signposts: []
   - id: geopolitics
     name: Geopolitics
     subsections:
@@ -89,6 +111,7 @@ drivers:
             text: |-
               - Lula is running for re-election on the economy just as growth decelerates; polls show him competitive but the centre-right opposition is consolidating, and his age and health add tail risk
               - A market-friendly outcome would compress real rates and spreads quickly; a Lula win with a weak Congress means more of the same fiscal drift and a slower easing cycle
+        signposts: []
       - id: international
         name: International
         issues:
@@ -97,40 +120,7 @@ drivers:
             text: |-
               - The Lula-Trump relationship stabilised after the 2025 tariff episode; Brazil is a beneficiary of China's diversification away from US agriculture and of Gulf-shock oil prices
               - Brazil's own tariffs on Chinese steel and autos show the backlash is global; Mercosur-EU implementation is the medium-term trade upside
-scenarios:
-  - id: growth
-    name: Growth
-    issues:
-      - id: iss-br-sg1
-        title: Election-year economy
-        baseline: |-
-          - Growth 1.5-2% in 2026 and 1.5% in 2027; unemployment low, consumption sustained by transfers, investment weak on high real rates
-        upside: |-
-          - Market-friendly election outcome and credible fiscal plan; real rates fall fast, capex recovers, growth back toward 2.5-3% in 2027
-        downside: |-
-          - Fiscal drift continues, the BRL sells off and Copom stops easing; growth below 1% with rising unemployment
-  - id: inflation
-    name: Inflation
-    issues:
-      - id: iss-br-si1
-        title: Back inside the band
-        baseline: |-
-          - IPCA near 5% in 2026 easing to about 4.2% in 2027; services inflation sticky, food and fuel volatile
-        upside: |-
-          - BRL appreciation on a market-friendly outcome and easing food prices bring IPCA toward 3.5% in 2027
-        downside: |-
-          - Fiscal loosening and a weaker real push IPCA back toward 6% and expectations de-anchor further
-  - id: policy
-    name: Policy
-    issues:
-      - id: iss-br-sp1
-        title: Selic path from 14%
-        baseline: |-
-          - One more cut to 13.75% in 2026, then 12% by end-2027 as inflation edges back into the band; real rate stays near 8-9%
-        upside: |-
-          - Post-election credibility allows cuts to 10-11% by end-2027; curve bull-flattens and the real rallies toward 4.8
-        downside: |-
-          - Easing halted or reversed; questions over central-bank independence after the election; Selic back above 15%
+        signposts: []
 implications:
   drivers/regime/trend-growth:
     sales_growth: down
@@ -162,13 +152,3 @@ implications:
   drivers/geopolitics/international:
     sales_growth: up
     dividend_yield: up
-  scenarios/growth:
-    sales_growth: down
-    cash_rate: down
-  scenarios/inflation:
-    inflation_expectation: up
-    cash_rate: up
-  scenarios/policy:
-    cash_rate: down
-    term_premium: down
-    valuation: up
