@@ -1,5 +1,6 @@
-// One-off migration, September 2026: signposts move from top-level scenario categories
-// (growth / inflation / policy) to the driver subsection they track, per signpost-migration.json.
+// One-off migration, September 2026: the old top-level signposts (scenario categories growth /
+// inflation / policy) become the baseline, upside and downside cells of the issue they track,
+// per signpost-migration.json (signpost id -> [issue id, old signpost title]).
 // Also refreshes the built-in sample data (DEMO_YAML) in the editor page.
 // Run from the repository root:  node tools/migrate-signposts.mjs
 import fs from 'node:fs';
@@ -14,13 +15,12 @@ for (const f of fs.readdirSync('data').filter(x => x.endsWith('.yaml')).sort()) 
   const eco = YAML.parse(text);
   if (!eco.scenarios) { console.log(f, 'already migrated'); continue; }
   const homes = map[eco.id] || {};
-  for (const d of eco.drivers) for (const s of d.subsections) s.signposts = s.signposts || [];
+  const issues = {}; for (const d of eco.drivers) for (const s of d.subsections) for (const i of s.issues) issues[i.id] = i;
   for (const c of eco.scenarios) for (const sp of c.issues || []) {
     const home = homes[sp.id]; if (!home) throw new Error(`${f}: no home for signpost ${sp.id} in tools/signpost-migration.json`);
-    const [dId, sId] = home.split('/');
-    const sub = eco.drivers.find(d => d.id === dId)?.subsections.find(s => s.id === sId);
-    if (!sub) throw new Error(`${f}: ${home} does not exist`);
-    sub.signposts.push({ id: sp.id, title: sp.title, baseline: sp.baseline, upside: sp.upside, downside: sp.downside });
+    const issue = issues[home[0]]; if (!issue) throw new Error(`${f}: issue ${home[0]} does not exist`);
+    if (issue.baseline) throw new Error(`${f}: issue ${home[0]} would receive two signposts`);
+    issue.baseline = sp.baseline; issue.upside = sp.upside; issue.downside = sp.downside;
   }
   for (const [k, v] of Object.entries(eco.implications || {})) if (k.startsWith('scenarios/')) { dropped.push(`${eco.id}: ${k} ${JSON.stringify(v)}`); delete eco.implications[k]; }
   delete eco.scenarios;
@@ -29,7 +29,6 @@ for (const f of fs.readdirSync('data').filter(x => x.endsWith('.yaml')).sort()) 
   fs.writeFileSync('data/' + f, (header ? header + '\n\n' : '') + body);
   console.log(f, 'migrated');
 }
-// refresh the page's embedded sample data from the migrated files
 const yamlById = {};
 for (const f of fs.readdirSync('data').filter(x => x.endsWith('.yaml'))) yamlById[f.replace('.yaml', '')] = fs.readFileSync('data/' + f, 'utf8');
 let n = 0;

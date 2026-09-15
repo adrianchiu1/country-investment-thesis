@@ -1,10 +1,10 @@
 {
-  "_comment": "Where each pre-September-2026 signpost (top-level scenario categories) now lives: driver/subsection. Edit and re-run tools/migrate-signposts.mjs before merging if a home is wrong.",
-  "brazil":         { "iss-br-sg1": "regime/trend-growth", "iss-br-si1": "regime/trend-inflation", "iss-br-sp1": "policy/monetary" },
-  "china":          { "iss-cn-sg1": "regime/trend-growth", "iss-cn-sg2": "regime/trend-growth", "iss-cn-si1": "regime/trend-inflation", "iss-cn-sp1": "policy/monetary" },
-  "eurozone":       { "iss-ez-sg1": "regime/trend-growth", "iss-ez-si1": "regime/trend-inflation", "iss-ez-sp1": "policy/monetary", "iss-ez-sp2": "policy/fiscal" },
-  "india":          { "iss-in-sg1": "regime/trend-growth", "iss-in-si1": "regime/trend-inflation", "iss-in-sp1": "policy/monetary" },
-  "japan":          { "iss-jp-sg1": "regime/trend-growth", "iss-jp-si1": "regime/trend-inflation", "iss-jp-sp1": "policy/monetary", "iss-jp-sp2": "policy/fiscal" },
-  "united-kingdom": { "iss-uk-sg1": "regime/trend-growth", "iss-uk-si1": "regime/trend-inflation", "iss-uk-sp1": "policy/monetary", "iss-uk-sp2": "policy/fiscal" },
-  "united-states":  { "iss-us-sg1": "regime/trend-growth", "iss-us-sg2": "regime/trend-growth", "iss-us-si1": "regime/trend-inflation", "iss-us-sp1": "policy/monetary", "iss-us-sp2": "policy/fiscal" }
+  "_comment": "Migration, September 2026: the old top-level signposts (growth / inflation / policy categories) became the baseline, upside and downside cells of the issue that they track. signpost id -> issue id. The old signpost title is kept here for the record; it is not in the data any more. Edit and re-run tools/migrate-signposts.mjs before merging if a home is wrong.",
+  "brazil":         { "iss-br-sg1": ["iss-br-tg1", "Election-year economy"], "iss-br-si1": ["iss-br-ti1", "Back inside the band"], "iss-br-sp1": ["iss-br-mo1", "Selic path from 14%"] },
+  "china":          { "iss-cn-sg1": ["iss-cn-do1", "Property stabilisation"], "iss-cn-sg2": ["iss-cn-ex1", "Export engine under backlash"], "iss-cn-si1": ["iss-cn-ti1", "Exit from deflation"], "iss-cn-sp1": ["iss-cn-mo1", "PBOC and fiscal response"] },
+  "eurozone":       { "iss-ez-sg1": ["iss-ez-tg1", "Fiscal impulse versus energy drag"], "iss-ez-si1": ["iss-ez-ti1", "Headline versus ex-energy"], "iss-ez-sp1": ["iss-ez-mo1", "ECB path from 2.50%"], "iss-ez-sp2": ["iss-ez-gd1", "French fiscal and political path"] },
+  "india":          { "iss-in-sg1": ["iss-in-tg1", "Domestic demand under the oil shock"], "iss-in-si1": ["iss-in-ti1", "Energy pass-through versus food"], "iss-in-sp1": ["iss-in-mo1", "RBI path from 5.25%"] },
+  "japan":          { "iss-jp-sg1": ["iss-jp-do1", "Consumption recovery versus energy squeeze"], "iss-jp-si1": ["iss-jp-ti1", "Underlying inflation at 2%"], "iss-jp-sp1": ["iss-jp-mo1", "BOJ path from 1.00-1.25%"], "iss-jp-sp2": ["iss-jp-fi1", "Fiscal credibility"] },
+  "united-kingdom": { "iss-uk-sg1": ["iss-uk-tg1", "Consumer and labour market"], "iss-uk-si1": ["iss-uk-ti1", "Energy pass-through and pay"], "iss-uk-sp1": ["iss-uk-mo1", "Bank Rate path from 3.75%"], "iss-uk-sp2": ["iss-uk-fi1", "Fiscal and gilts"] },
+  "united-states":  { "iss-us-sg1": ["iss-us-do1", "Consumer under the oil and tariff squeeze"], "iss-us-sg2": ["iss-us-tg1", "AI capex durability"], "iss-us-si1": ["iss-us-ti1", "Headline and core convergence"], "iss-us-sp1": ["iss-us-mo1", "Fed path from 3.50-3.75%"], "iss-us-sp2": ["iss-us-fi1", "Fiscal and issuance"] }
 }

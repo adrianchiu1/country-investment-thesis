@@ -19,17 +19,14 @@ drivers:
               - Potential growth is still around 1%, but the German infrastructure and defence programme (deficit near 4.75% of GDP, the largest stimulus since the 1970s) is the first sustained upward force in a decade and is finally showing up in orders and construction
               - Growth has surprised to the upside in 2026 (Q2 at 0.6% q/q, flattered by Ireland) and the ECB now projects 0.9% this year and 1.4% in 2027
               - The offset is energy: the Gulf war re-opened the competitiveness gap with the US just as it had started to close, and energy-intensive industry is shedding capacity again
+            baseline: "- Growth 1.0-1.4% in 2027 as German spending ramps and energy prices ease gradually; consumption recovers modestly"
+            upside: "- Hormuz normalises, the saving rate falls and German capex crowds in private investment; growth near 2% in 2027"
+            downside: "- Oil above $100 through 2027, French politics tighten financial conditions, Chinese competition intensifies; growth back toward 0.5%"
           - id: iss-ez-tg2
             title: Productivity and the savings glut
             text: |-
               - Household saving rate remains several points above pre-2020 norms; the fiscal impulse is partly saved rather than spent, which caps the multiplier
               - Capital-market union and pension reform (the Dutch transition, EU savings and investment agenda) are slow-moving but matter for whether the region's surplus is recycled at home
-        signposts:
-          - id: iss-ez-sg1
-            title: Fiscal impulse versus energy drag
-            baseline: "- Growth 1.0-1.4% in 2027 as German spending ramps and energy prices ease gradually; consumption recovers modestly"
-            upside: "- Hormuz normalises, the saving rate falls and German capex crowds in private investment; growth near 2% in 2027"
-            downside: "- Oil above $100 through 2027, French politics tighten financial conditions, Chinese competition intensifies; growth back toward 0.5%"
       - id: trend-inflation
         name: Trend inflation
         issues:
@@ -39,9 +36,6 @@ drivers:
               - Headline inflation is 3.3% (August) with energy up 14% y/y; excluding energy it is 2.2%, which is the number that will decide the cycle
               - Staff projections put headline at 3.0% in 2026, 2.5% in 2027 and 2.1% in 2028; core is projected at 2.5-2.6% through 2027, so the ECB sees a longer road back to target than in March
               - Second-round risk is lower than in 2022 because wage growth has already decelerated and the euro is firm, but negotiated wages for 2027 are the key check
-        signposts:
-          - id: iss-ez-si1
-            title: Headline versus ex-energy
             baseline: "- Headline averages 3.0% in 2026 and 2.5% in 2027; ex-energy inflation stays close to 2.2-2.5% and wage growth keeps decelerating"
             upside: "- Energy relief brings headline below 2% by late 2027; the firm euro and Chinese goods prices push core toward 1.8%"
             downside: "- Second-round effects in 2027 wage rounds keep core above 2.5%; the ECB has to hike beyond 3%"
@@ -57,17 +51,14 @@ drivers:
               - Deposit rate 2.50% after 25bp hikes in June and on 10 September, described as unanimous; the Council is explicit that the moves are about the energy shock and are robust across scenarios, not a new cycle
               - Markets price more tightening than the ECB's own baseline needs; if energy falls, the front end has room to rally, which is the asymmetric trade
               - Watch: the October 29 meeting, negotiated wage data, and whether Lagarde starts to distinguish between headline and ex-energy inflation more forcefully
+            baseline: "- One more hike at most, then a hold through mid-2027; cuts resume once ex-energy inflation is clearly at 2%"
+            upside: "- Energy relief lets the ECB stop at 2.50% and cut back toward 2% in 2027; Bund curve bull-steepens"
+            downside: "- Deposit rate to 3.25% or higher; TPI activated if French spreads gap wider around the election"
           - id: iss-ez-mo2
             title: Balance sheet and the fragmentation backstop
             text: |-
               - APP and PEPP run off passively; there is no Eurosystem bid for French paper, which is why the OAT spread now trades on fundamentals and politics
               - TPI has not been needed, but its credibility is what keeps a French episode from becoming a euro-area episode
-        signposts:
-          - id: iss-ez-sp1
-            title: ECB path from 2.50%
-            baseline: "- One more hike at most, then a hold through mid-2027; cuts resume once ex-energy inflation is clearly at 2%"
-            upside: "- Energy relief lets the ECB stop at 2.50% and cut back toward 2% in 2027; Bund curve bull-steepens"
-            downside: "- Deposit rate to 3.25% or higher; TPI activated if French spreads gap wider around the election"
       - id: fiscal
         name: Fiscal
         issues:
@@ -76,12 +67,6 @@ drivers:
             text: |-
               - Germany is spending (record issuance above €500bn in 2026); France cannot consolidate (deficit 5.1%, debt 118% of GDP, another budget standoff over the 2027 finance law); Italy and Spain are the surprising fiscal good pupils
               - Defence at 3-3.5% of GDP is the new common denominator and is debt-financed nearly everywhere; the revised EU rules are being interpreted flexibly
-        signposts:
-          - id: iss-ez-sp2
-            title: French fiscal and political path
-            baseline: "- The 2027 budget passes with difficulty, deficit stays near 5%, spread 75-95bp; the presidential election dominates 1H27"
-            upside: "- A working fiscal majority passes a credible budget; spread compresses toward 60bp"
-            downside: "- Budget fails, rating cross-over to single-A, spread above 120bp and contagion to the periphery"
   - id: imbalances
     name: Imbalances
     subsections:
@@ -93,7 +78,6 @@ drivers:
             text: |-
               - Unemployment is near record lows and real incomes have been rising, yet consumption remains subdued; the energy shock has reset confidence just as it was recovering
               - Upside if the stock of savings is drawn down once energy prices settle; the German programme provides the confidence trigger
-        signposts: []
       - id: external
         name: External
         issues:
@@ -102,7 +86,6 @@ drivers:
             text: |-
               - Current account surplus near 3% of GDP and increasingly invested at home as US allocations are trimmed; the euro is firm around 1.16 despite the energy shock and has been a disinflationary force on goods
               - The EU-US deal's 15% ceiling has removed the tariff tail risk; the larger medium-term threat is Chinese competition in autos, machinery and chemicals
-        signposts: []
       - id: credit
         name: Credit
         issues:
@@ -111,7 +94,6 @@ drivers:
             text: |-
               - Loan growth is modest but positive, banks are well capitalised and profitable on the steeper curve; higher policy rates pass through quickly to floating-rate mortgages in the south
               - Commercial real estate remains the main pocket of stress, concentrated in Germany; no systemic read-through
-        signposts: []
   - id: geopolitics
     name: Geopolitics
     subsections:
@@ -123,7 +105,9 @@ drivers:
             text: |-
               - OAT-Bund spread near 85bp, 10-year OAT above 4.1% and the widest sustained premium since the euro crisis; the 2027 budget and the May 2027 presidential election are the catalysts, with Le Pen leading and markets doubting any candidate's appetite for consolidation
               - Contagion has been limited because Italian fundamentals have improved; the risk is a rating cross-over that forces index-driven selling
-        signposts: []
+            baseline: "- The 2027 budget passes with difficulty, deficit stays near 5%, spread 75-95bp; the presidential election dominates 1H27"
+            upside: "- A working fiscal majority passes a credible budget; spread compresses toward 60bp"
+            downside: "- Budget fails, rating cross-over to single-A, spread above 120bp and contagion to the periphery"
       - id: international
         name: International
         issues:
@@ -132,7 +116,6 @@ drivers:
             text: |-
               - Europe is the region most exposed to Hormuz: LNG and crude import bills are up sharply, and the fiscal cost of new energy relief measures is being added to already-stretched budgets
               - Ukraine ceasefire scenarios still matter for gas prices and reconstruction demand; the defence build-up is now a permanent feature of the fiscal picture
-        signposts: []
 implications:
   drivers/regime/trend-growth:
     sales_growth: up
