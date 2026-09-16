@@ -107,10 +107,16 @@ it, the import checks the document when it comes back and **refuses, naming the 
 anything does not add up** — a missing or duplicated reference, a card with no title,
 signposts filled in one or two cells instead of three.
 
-Reading an edited document back into the page is **not built yet**: *Workflow → Import
-.docx* is greyed out, and *Import Ada YAML* still takes only the YAML Ada hands back.
-`docs/word-round-trip.md` sets out how that would work and what remains to be tested;
-open `docs/poc/word-round-trip.html` in Edge or Chrome to try the round-trip end to end.
+**Workflow → Import .docx** reads an edited document back. It goes through the same
+review screen as an Ada import: every change is listed, nothing is written until you
+click **Apply import**, and the log records it with `source: word-import`. If anything
+does not add up — a missing or duplicated reference, a card with no title, signposts
+filled in one or two cells instead of three — the import stops, names the card and
+changes nothing.
+
+`docs/word-round-trip.md` explains the design and what is still unverified;
+`node docs/poc/word-round-trip-tests.mjs` runs the round-trip tests against the page
+itself.
 
 ## Who can write to the data folder
 
