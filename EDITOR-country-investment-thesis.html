@@ -441,23 +441,24 @@ const DEFAULT_ECONOMIES = [
   { id: 'brazil', name: 'Brazil' },
 ];
 /* Each group carries the question it exists to answer, shown beside its name on the
-   Drivers and Signposts pages and on the implications matrix. {economy} is filled in
-   with the selected economy.
+   Drivers and Signposts pages and on the implications matrix. A tagline may include
+   {economy}, which is filled in with the selected economy ("the United States", "China");
+   none currently do, since the page heading already says which economy this is.
    The ids are frozen: history, the log and the implications keys are all keyed on them,
    so a renamed group or subsection keeps the id it was created with. That is why the
    Politics group is still `geopolitics` and the Financial subsection still `credit`. */
 const DRIVER_TEMPLATE = [
   { id: 'regime', name: 'Economic Regime',
-    tagline: 'What would drive growth or inflation in {economy} sustainably higher or lower?',
+    tagline: 'What shifts the growth-inflation regime?',
     subsections: [['trend-growth', 'Growth'], ['trend-inflation', 'Inflation']] },
   { id: 'policy', name: 'Policy',
-    tagline: 'How will policy changes drive investment returns?',
+    tagline: 'Are policies a help or a hindrance to returns?',
     subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal'], ['reforms', 'Reforms']] },
   { id: 'imbalances', name: 'Imbalances',
-    tagline: 'Where are the critical imbalances in {economy}?',
+    tagline: 'Where is stress building?',
     subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Financial']] },
   { id: 'geopolitics', name: 'Politics',
-    tagline: 'What political events could meaningfully affect investment returns?',
+    tagline: 'Which political risks are not priced?',
     subsections: [['domestic', 'Domestic'], ['international', 'Geopolitics']] },
 ];
 const SCENARIO_COLS = ['baseline', 'upside', 'downside'];
