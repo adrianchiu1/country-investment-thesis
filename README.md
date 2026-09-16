@@ -77,7 +77,7 @@ If the change note lists matrix suggestions, click **Edit** afterwards and set t
 
 ## Cloning the thesis into Word
 
-**Clone .docx** (next to *Ada prompt*) saves the selected economy as a Word document —
+**Workflow → Get .docx** saves the selected economy as a Word document —
 `united-states-v2.docx` — to your downloads. It is a read-only operation: unlike *Export
 snapshot* it needs no write access to the folder and no entry in `editors:`, so anyone
 who can open the page can take a copy away to read, circulate or mark up, including from
@@ -88,8 +88,8 @@ view bullets and its three signpost cells. Empty cells show a grey hint rather t
 so an issue that has no signposts still shows where they would go. The boxes are there so an
 edited document can be matched back up against the thesis.
 
-Reading an edited document back into the page is **not built yet** — the Import button still
-takes only the YAML Ada hands back. `docs/word-round-trip.md` sets out how that would work
+Reading an edited document back into the page is **not built yet**: *Workflow → Import .docx*
+is greyed out, and *Import Ada YAML* still takes only the YAML Ada hands back. `docs/word-round-trip.md` sets out how that would work
 and what remains to be tested; open `docs/poc/docx-round-trip.html` in Edge or Chrome to try
 the round-trip end to end.
 

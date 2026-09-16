@@ -444,15 +444,15 @@ Then five small edits to existing code:
 | Where | Change |
 | --- | --- |
 | `download()` (`:989`) | takes `text` and hardcodes `type: 'text/yaml'`. Generalise to accept bytes and a MIME type. One line. |
-| `renderToolbar()` (`:1104`) | add a **Clone .docx** button to the `actions` row, beside *Ada prompt* |
+| `renderToolbar()` (`:1104`) | a **Workflow** dropdown holding the Ada and Docx actions, beside **Edit** |
 | `startImport()` (`:1436`) | accept `.docx` in the file input and branch on the extension |
 | `renderReview()` (`:1487`) | render the reader's `problems` and `untouched` lists as cards |
 | `saveDraft()` (`:1593`) | `entry.source = S.review.source \|\| 'import'`, so the log says `word-import` |
 
 ### 8b. Getting the Word document out
 
-**Clone .docx** goes in the per-economy toolbar, not in the header next to
-*Export snapshot*: a snapshot is the whole folder, a clone is the selected
+**Workflow → Get .docx** goes in the per-economy toolbar, not in the header next
+to *Export snapshot*: a snapshot is the whole folder, a clone is the selected
 economy.
 
 It is deliberately gated differently from everything else on that row:
@@ -475,7 +475,7 @@ A `.docx` written into `data/` would sync to everyone, go stale the moment the
 economy is saved, and invite a second person to pick up the stale copy. The file
 name carries the version — `united-states-v2.docx` — which is the staleness cue.
 
-So the researcher's path out is: pick the economy → **Clone .docx** → the file is
+So the researcher's path out is: pick the economy → **Workflow → Get .docx** → the file is
 in Downloads → email it, or open it.
 
 ### 8c. Loading it back
@@ -561,7 +561,7 @@ which the Word cell layout makes plausible.
 
 ### 8f. End to end
 
-1. Researcher picks the economy, clicks **Clone .docx**, gets
+1. Researcher picks the economy, chooses **Workflow → Get .docx**, gets
    `united-states-v2.docx`. No permissions, no lock, nobody is blocked.
 2. They — or a PM who has never opened the tool — edit it in Word, with Track
    Changes and comments if they like.
@@ -587,8 +587,8 @@ which the Word cell layout makes plausible.
    which is the gesture most likely to drop a control.
 1. Decide (a) or (b) from §1.
 2. **Done.** The `DOCX` module (write only) sits beside `YAML` in the editor,
-   `download()` takes bytes and a MIME type, and **Clone .docx** is in the
-   per-economy toolbar. Driven from the real page it produces a valid 8.9 KB
+   `download()` takes bytes and a MIME type, and **Get .docx** sits in the
+   per-economy **Workflow** menu (with *Import .docx* shown but disabled). Driven from the real page it produces a valid 8.9 KB
    file — 107 content controls, 14 tables, all 6 parts deflated, opened by an
    independent OOXML reader — which the prototype importer reads back with zero
    spurious changes. Let people live with it for a week before going further.

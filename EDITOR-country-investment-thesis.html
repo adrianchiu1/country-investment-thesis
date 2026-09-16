@@ -104,6 +104,27 @@
   .btn.small { padding: 3px 9px; font-size: 12.5px; }
   .btn.danger:hover { border-color: var(--down); color: var(--down); }
   .btn:disabled, .btn:disabled:hover { opacity: 0.45; cursor: not-allowed; }
+  /* Dropdown menu (the per-economy Workflow menu; reusable) */
+  .menu { position: relative; display: inline-flex; }
+  .menu > .btn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  .caret { margin-left: 7px; font-size: 10px; opacity: 0.65; }
+  .menu-panel {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; min-width: 216px;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(16, 24, 40, 0.14); padding: 6px;
+  }
+  .menu-panel .menu-group {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); padding: 7px 10px 4px;
+  }
+  .menu-panel button[role="menuitem"] {
+    display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit;
+    padding: 7px 10px; border-radius: 5px; cursor: pointer; color: var(--ink);
+  }
+  .menu-panel button[role="menuitem"]:hover:not(:disabled),
+  .menu-panel button[role="menuitem"]:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+  .menu-panel button[role="menuitem"]:disabled { opacity: 0.45; cursor: not-allowed; }
+  .menu-sep { height: 1px; background: var(--rule); margin: 5px 4px; }
 
   body.editing .toolbar { border-bottom: 3px solid var(--edit); }
   .edit-banner {
@@ -1163,14 +1184,13 @@ function download(name, body, type = 'text/yaml') {
 async function exportWord() {
   const eco = S.data[S.current];
   if (!eco) return;
-  const btn = $('btn-word'); if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
   try {
     const bytes = await DOCX.write(eco);
     download(`${eco.id}-v${eco.version}.docx`, bytes, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     toast(`Saved ${eco.id}-v${eco.version}.docx to your downloads`);
   } catch (e) {
     dialog('Could not build the Word file', '<p>' + esc(e.message || e) + '</p>', [['Close']]);
-  } finally { if (btn) { btn.disabled = false; btn.textContent = 'Clone .docx'; } }
+  }
 }
 
 /* ====================================================================
@@ -1281,6 +1301,35 @@ function switchEconomy(id) {
   if (S.draft) { toast('Save or cancel your edits before switching economy'); return; }
   S.current = id; render();
 }
+/* Dropdown menus. One document-level listener closes whatever is open, so re-rendering
+   the toolbar never stacks up handlers. */
+function closeMenus(except) {
+  document.querySelectorAll('.menu-panel:not([hidden])').forEach(p => {
+    if (p === except) return;
+    p.hidden = true;
+    const b = p.previousElementSibling; if (b) b.setAttribute('aria-expanded', 'false');
+  });
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenus(); });
+function wireMenu(btn, panel) {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = panel.hidden;
+    closeMenus(panel);
+    panel.hidden = !opening;
+    btn.setAttribute('aria-expanded', String(opening));
+    if (opening) { const f = panel.querySelector('button[role="menuitem"]:not(:disabled)'); if (f) f.focus(); }
+  });
+  panel.addEventListener('keydown', (e) => {
+    const items = [...panel.querySelectorAll('button[role="menuitem"]:not(:disabled)')];
+    if (!items.length) return;
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    else if (e.key === 'Escape') { closeMenus(); btn.focus(); }
+  });
+}
 function renderToolbar() {
   $('sections').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.section === S.section));
   const eco = S.data[S.current];
@@ -1297,18 +1346,34 @@ function renderToolbar() {
     $('btn-cancel').addEventListener('click', cancelDraft);
     $('edit-banner-text').textContent = `You are editing ${S.data[S.current].name}. The economy is locked for others until you save or cancel (lock renews while this page is open, and expires after ${S.config.lock_minutes} minutes if it is not).`;
   } else {
-    const wordBtn = eco && !S.loadError[S.current]
-      ? `<button type="button" class="btn quiet" id="btn-word" title="Save this economy as a Word document to edit and circulate">Clone .docx</button>` : '';
-    if (SNAPSHOT_AT) { a.innerHTML = wordBtn; if (eco && !S.loadError[S.current]) $('btn-word').addEventListener('click', exportWord); return; }
+    const snap = !!SNAPSHOT_AT;
+    const hasEco = !!eco && !S.loadError[S.current];
     const allowed = canEditHere();
-    const can = (Store.connected || Store.fallback) && !S.loadError[S.current] && eco && allowed;
+    const can = (Store.connected || Store.fallback) && hasEco && allowed;
     const why = S.loadError[S.current] ? ' title="The data file could not be read; fix it and click Reload"' : !allowed ? ` title="${esc(editorsHint())}"` : '';
-    a.innerHTML = `<button type="button" class="btn quiet" id="btn-ada" title="How to update this economy with Ada, and the prompt to paste">Ada prompt</button>${wordBtn}<button type="button" class="btn" id="btn-import" ${can ? '' : 'disabled'}${why} title="Import a file handed back by Ada">Import</button><button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`;
-    $('btn-ada').addEventListener('click', showAdaPrompt);
-    if (wordBtn) $('btn-word').addEventListener('click', exportWord);
-    $('btn-import').addEventListener('click', startImport);
-    $('btn-edit').addEventListener('click', startEdit);
-    showLockHolder();
+    const item = (act, label, on, tip) =>
+      `<button type="button" role="menuitem" data-act="${act}"${on ? '' : ' disabled'}${tip ? ` title="${esc(tip)}"` : ''}>${esc(label)}</button>`;
+    a.innerHTML = `<div class="menu">
+        <button type="button" class="btn" id="btn-workflow" aria-haspopup="true" aria-expanded="false" title="Update this economy with Ada, or take it into Word">Workflow<span class="caret" aria-hidden="true">▾</span></button>
+        <div class="menu-panel" id="menu-workflow" role="menu" aria-labelledby="btn-workflow" hidden>
+          <div class="menu-group" role="presentation">Ada</div>
+          ${item('ada-prompt', 'Get Ada prompt', !snap, 'How to update this economy with Ada, and the prompt to paste')}
+          ${item('ada-import', 'Import Ada YAML', can && !snap, snap ? 'Not available in a snapshot' : !allowed ? editorsHint() : 'Import a file handed back by Ada')}
+          <div class="menu-sep" role="separator"></div>
+          <div class="menu-group" role="presentation">Docx</div>
+          ${item('docx-get', 'Get .docx', hasEco, 'Save this economy as a Word document to edit and circulate')}
+          ${item('docx-import', 'Import .docx', false, 'Not built yet — the page still imports only the YAML Ada hands back')}
+        </div>
+      </div>` + (snap ? '' : `<button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`);
+    const acts = { 'ada-prompt': showAdaPrompt, 'ada-import': startImport, 'docx-get': exportWord };
+    $('menu-workflow').addEventListener('click', (e) => {
+      const b = e.target.closest('button[role="menuitem"]');
+      if (!b || b.disabled) return;
+      closeMenus();
+      const fn = acts[b.dataset.act]; if (fn) fn();
+    });
+    wireMenu($('btn-workflow'), $('menu-workflow'));
+    if (!snap) { $('btn-edit').addEventListener('click', startEdit); showLockHolder(); }
   }
 }
 /* Appends "being edited by X" to the toolbar when someone else holds an unexpired lock. */
