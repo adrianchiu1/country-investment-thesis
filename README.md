@@ -88,10 +88,15 @@ snapshot* it needs no write access to the folder and no entry in `editors:`, so 
 who can open the page can take a copy away to read, circulate or mark up, including from
 a snapshot.
 
-Each issue sits in its own bordered box (a Word content control) carrying its id, with its
-view bullets and its three signpost cells. Empty cells show a grey hint rather than nothing,
-so an issue that has no signposts still shows where they would go. The boxes are there so an
-edited document can be matched back up against the thesis.
+The document opens with a read-only **How to edit this document** panel: the few rules the
+boxes cannot enforce by themselves — add through the dashed slot, retire by emptying a box
+rather than deleting it, move the whole box to reorder, fill all three signpost cells or
+none, and paste as plain text so an ordinary paste does not destroy a box.
+
+Below it, each issue sits in its own bordered box (a Word content control) carrying its id,
+with its view bullets and its three signpost cells. Empty cells show a grey hint rather than
+nothing, so an issue that has no signposts still shows where they would go. The boxes are
+there so an edited document can be matched back up against the thesis.
 
 Reading an edited document back into the page is **not built yet**: *Workflow → Import .docx*
 is greyed out, and *Import Ada YAML* still takes only the YAML Ada hands back. `docs/word-round-trip.md` sets out how that would work

@@ -110,7 +110,7 @@ function docxParse(xml) {
       const [kind, a, bb] = tag.split('|');
       if (kind === 'meta') { res.meta = { economy: a, version: Number(bb) }; continue; }
       if (kind === 'manifest') { res.manifest = NORM(paras(content).map(paraText).join(' ')).trim().split(/\s+/).filter(Boolean); continue; }
-      if (kind === 'group' || kind === 'matrix') continue;   // fixed / read-only by design
+      if (kind === 'group' || kind === 'matrix' || kind === 'readme') continue;   // fixed / read-only by design
       if (kind === 'sub') {
         place = { key: a, name: '', items: [] }; res.places.push(place);
         const h = paras(content).find(p => /^CITH[23]$/.test(styleOf(p)));

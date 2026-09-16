@@ -22,7 +22,14 @@ const ALL = {};
 for (const id of ids) ALL[id] = YAML.parse(readFileSync(join(root, 'data', `${id}.yaml`), 'utf8'));
 const REAL = ALL[ids[0]];
 
-const modules = ['zip.js', 'docx-write.js', 'docx-parts.js', 'docx-read.js'].map(src).join('\n');
+/* The writer is NOT kept in src/: it is lifted out of the editor, so the prototype can
+   never test a document builder that has drifted from the one the tool actually ships. */
+const w = editor.indexOf('const DOCX = (() => {');
+const wEnd = editor.indexOf('  return { write };\n})();', w);
+if (w < 0 || wEnd < 0) throw new Error('could not find the DOCX module in the editor');
+const writer = editor.slice(w, wEnd) + '  return { write };\n})();\nconst docxWrite = (eco) => DOCX.write(eco);\n';
+
+const modules = [src('zip.js'), writer, src('docx-read.js')].join('\n');
 
 /* 1. the test runner */
 writeFileSync(join(here, 'docx-round-trip.html'),

@@ -78,132 +78,191 @@ async function zipRead(bytes) {
   return out;
 }
 
-/* ===================== docx WRITE (v3 — one hierarchy) =====================
-   Main now has a single tree: drivers > subsections > issues, and a signpost is
-   three optional cells ON an issue, not a separate item.  So the document has
-   exactly one kind of editable box: the issue.
-   A tag carries IDENTITY ONLY; placement comes from the enclosing container and
-   document order, so moving a box moves the item.                            */
-const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
-const CELLS = ['baseline', 'upside', 'downside'];
-let SDTID = 1000;
-function runs(text) {
-  if (text === '') return '';
-  return text.split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
+const DOCX = (() => {
+  const CRC = (() => { const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  const enc = new TextEncoder();
+  const canDeflate = typeof CompressionStream === 'function';
+  async function deflate(bytes) {
+    const s = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  /* Minimal zip writer: one entry per part, deflated where the browser can. */
+  async function zip(files) {
+    const parts = [], central = []; let offset = 0;
+    for (const f of files) {
+      const data = enc.encode(f.text), crc = crc32(data);
+      const body = canDeflate ? await deflate(data) : data, method = canDeflate ? 8 : 0;
+      const nm = enc.encode(f.name);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+      lh.setUint16(8, method, true); lh.setUint16(12, 0x2821, true);
+      lh.setUint32(14, crc, true); lh.setUint32(18, body.length, true); lh.setUint32(22, data.length, true);
+      lh.setUint16(26, nm.length, true);
+      parts.push(new Uint8Array(lh.buffer), nm, body);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+      ch.setUint16(8, 0x0800, true); ch.setUint16(10, method, true); ch.setUint16(14, 0x2821, true);
+      ch.setUint32(16, crc, true); ch.setUint32(20, body.length, true); ch.setUint32(24, data.length, true);
+      ch.setUint16(28, nm.length, true); ch.setUint32(42, offset, true);
+      central.push(new Uint8Array(ch.buffer), nm);
+      offset += 30 + nm.length + body.length;
+    }
+    const cdSize = central.reduce((a, b) => a + b.length, 0);
+    const eo = new DataView(new ArrayBuffer(22));
+    eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, files.length, true); eo.setUint16(10, files.length, true);
+    eo.setUint32(12, cdSize, true); eo.setUint32(16, offset, true);
+    const all = [...parts, ...central, new Uint8Array(eo.buffer)];
+    const out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
+    let p = 0; for (const b of all) { out.set(b, p); p += b.length; }
+    return out;
+  }
+
+  const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const WNS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const CELLS = ['baseline', 'upside', 'downside'];
+  const HINT = {
+    baseline: 'Baseline — what we expect. Leave all three empty if this issue has no signposts.',
+    upside: 'Upside — what would make it better.',
+    downside: 'Downside — what would make it worse.',
+  };
+  const SLOT_ISSUE = 'Click here and type a new issue: its title on the first line, then one bullet per line. To give it signposts, add lines beginning Baseline:, Upside: and Downside:.';
+  const SLOT_SUB = 'Click here and type the name of a new subsection, then its first issue title and bullets.';
+  let uid = 1000;
+
+  const runs = (text) => text === '' ? '' : String(text).split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
     const b = /^\*\*[^*]+\*\*$/.test(seg), t = b ? seg.slice(2, -2) : seg;
     return `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
   }).join('');
-}
-const para = (style, text, extra = '') => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${runs(text)}</w:p>`;
-function bulletParas(text) {
-  if (!text || !text.trim()) return para('CITBullet', '');
-  return text.split('\n').map(line => {
-    const m = line.match(/^(\s*)-\s+(.*)$/);
-    if (!m) return para('CITBody', line.trim());
-    const lvl = Math.min(Math.floor(m[1].length / 2), 1);
-    return para(lvl ? 'CITBullet2' : 'CITBullet', m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
-  }).join('');
-}
-/* sdtLocked locks the FRAME, not the contents: the box cannot be deleted, but it can be
-   emptied — which is how "retire this issue" and "remove these signposts" are expressed. */
-function sdt(tag, alias, inner, opt = {}) {
-  return `<w:sdt><w:sdtPr><w:alias w:val="${X(alias)}"/><w:tag w:val="${X(tag)}"/><w:id w:val="${SDTID++}"/>`
-    + `<w:lock w:val="${opt.lock || 'sdtLocked'}"/>` + (opt.placeholder ? '<w:showingPlcHdr/>' : '')
-    + `</w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
-}
-const SLOT_ISSUE = 'Click here and type a new issue: its title on the first line, then one bullet per line. To give it signposts, add lines beginning Baseline:, Upside: and Downside:.';
-const SLOT_SUB = 'Click here and type the name of a new subsection, then its first issue title and bullets.';
-const CELL_HINT = { baseline: 'Baseline — what we expect. Leave all three empty if this issue has no signposts.', upside: 'Upside — what would make it better.', downside: 'Downside — what would make it worse.' };
-
-function issueBlock(i) {
-  const cell = (k) => {
-    const filled = (i[k] || '').trim();
-    return `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>`
-      + sdt('field|' + k, k[0].toUpperCase() + k.slice(1),
-          filled ? bulletParas(i[k]) : para('CITPlaceholder', CELL_HINT[k]), { placeholder: !filled })
-      + `</w:tc>`;
-  };
-  const head = ['Baseline', 'Upside', 'Downside'].map(h => `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
-  return sdt(`issue|${i.id}`, i.title || 'Issue',
-    sdt('field|title', 'Title', para('CITIssueTitle', i.title))
-    + sdt('field|text', 'View', bulletParas(i.text))
-    + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
-    + `<w:tr>${head}</w:tr><w:tr>${CELLS.map(cell).join('')}</w:tr></w:tbl>`
-    + para('CITBody', ''));
-}
-function buildDocument(eco) {
-  SDTID = 1000;
-  let b = para('CITTitle', eco.name);
-  b += sdt(`meta|${eco.id}|${eco.version}`, 'Do not edit',
-    para('CITMeta', `${eco.name} · version ${eco.version} · edit inside the boxes, then import this file back into the page`), { lock: 'sdtContentLocked' });
-  /* The manifest records which issues existed when this file was exported. Without it, an issue
-     a colleague adds while the document is out would be absent here and read as a deletion. */
-  const exported = eco.drivers.flatMap(d => d.subsections.flatMap(s => s.issues.map(i => i.id)));
-  b += sdt('manifest', 'Do not edit — records what this file was exported from',
-    `<w:p><w:pPr><w:pStyle w:val="CITMeta"/><w:rPr><w:vanish/></w:rPr></w:pPr>`
-    + `<w:r><w:rPr><w:vanish/></w:rPr><w:t xml:space="preserve">${X(exported.join(' '))}</w:t></w:r></w:p>`,
-    { lock: 'sdtContentLocked' });
-  for (const d of eco.drivers) {
-    /* the four driver groups are fixed: the page cannot add, remove or reorder them,
-       so the heading is read-only and the reader ignores group order entirely */
-    b += sdt(`group|${d.id}`, d.name, para('CITH1', d.name), { lock: 'sdtContentLocked' });
-    for (const s of d.subsections) {
-      let inner = para('CITH3', s.name);
-      for (const i of s.issues) inner += issueBlock(i);
-      inner += sdt('slot|issue', 'New issue in ' + s.name, para('CITPlaceholder', SLOT_ISSUE), { placeholder: true });
-      b += sdt(`sub|drivers/${d.id}/${s.id}`, s.name, inner);
-    }
-    b += sdt(`slot|sub|${d.id}`, 'New subsection under ' + d.name, para('CITPlaceholder', SLOT_SUB), { placeholder: true });
+  const para = (style, text, extra = '') => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${runs(text)}</w:p>`;
+  function bullets(text) {
+    if (!text || !text.trim()) return para('CITBullet', '');
+    return text.split('\n').map(line => {
+      const m = line.match(/^(\s*)-\s+(.*)$/);
+      if (!m) return para('CITBody', line.trim());
+      const lvl = Math.min(Math.floor(m[1].length / 2), 1);
+      return para(lvl ? 'CITBullet2' : 'CITBullet', m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
+    }).join('');
   }
-  b += para('CITH1', 'Investment implications');
-  b += sdt('matrix', 'Set these by clicking in the page, not here',
-    `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
-    + Object.entries(eco.implications || {}).map(([k, cells]) =>
-      `<w:tr><w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITBody', k)}</w:tc>`
-      + `<w:tc><w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>${para('CITBody', Object.entries(cells).map(([f, v]) => `${f} ${v === 'up' ? '↑' : '↓'}`).join(', '))}</w:tc></w:tr>`).join('')
-    + `</w:tbl>`, { lock: 'sdtContentLocked' });
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${W}><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
-}
+  /* sdtLocked locks the frame, not the contents: the box cannot be deleted, but it can be
+     emptied — which is how "retire this issue" is expressed when the file comes back. */
+  const sdt = (tag, alias, inner, opt = {}) =>
+    `<w:sdt><w:sdtPr><w:alias w:val="${X(alias)}"/><w:tag w:val="${X(tag)}"/><w:id w:val="${uid++}"/>`
+    + `<w:lock w:val="${opt.lock || 'sdtLocked'}"/>${opt.placeholder ? '<w:showingPlcHdr/>' : ''}`
+    + `</w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
 
-const STYLE = (id, name, base, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/>${base ? `<w:basedOn w:val="${base}"/>` : ''}${def}</w:style>`;
-function buildStyles() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${W}>`
+  /* A read-only box at the top of the document. It is what stands between a researcher
+     who has never seen this file and a mis-import, so it states the few rules that the
+     content controls cannot enforce by themselves. Tagged so the reader skips it, and
+     locked so it cannot be edited away. */
+  const noteBullet = (text) => para('CITNote', '\u2022  ' + text, '<w:ind w:left="300" w:hanging="300"/>');
+  function readmeBox(eco) {
+    const shade = '<w:shd w:val="clear" w:color="auto" w:fill="F2F6FA"/>';
+    const body = para('CITNoteHead', 'How to edit this document')
+      + para('CITNote', `This is a copy of the ${eco.name} thesis, version ${eco.version}. Every issue sits in its own bordered box, and each box carries a hidden label tying it back to the thesis \u2014 so edit **inside** the boxes rather than around them.`)
+      + noteBullet('**Change the wording** \u2014 type in any box. Bold is kept. Track Changes and comments are welcome.')
+      + noteBullet('**Add an issue** \u2014 use the dashed \u201cClick here and type a new issue\u201d box at the end of a section. Title on the first line, then one bullet per line. For signposts, add lines starting Baseline:, Upside: and Downside:.')
+      + noteBullet('**Retire an issue** \u2014 select everything inside its boxes and delete it. Leave the empty box where it is; do not delete the box itself.')
+      + noteBullet('**Reorder** \u2014 move the whole box, not just the text inside it.')
+      + noteBullet('**Signposts go in threes** \u2014 fill all three cells or leave all three showing their grey hint. One or two filled will be queried rather than imported.')
+      + noteBullet('**Paste as plain text** (Ctrl+Shift+V). An ordinary paste can destroy a box and lose the link back to the thesis.')
+      + noteBullet('**Leave alone**: the headings, and the investment implications table \u2014 those arrows are only ever set by clicking in the page.')
+      + para('CITNote', 'Nothing here changes the thesis until someone reviews every change in the page and applies it. When you are finished, save the file, keeping it as .docx, and send it back.');
+    return sdt('readme', 'How to edit this document \u2014 do not edit this box',
+      `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>`
+      + ['top', 'left', 'bottom', 'right'].map(x => `<w:${x} w:val="single" w:sz="6" w:space="0" w:color="C6D2E0"/>`).join('')
+      + `</w:tblBorders>${shade}<w:tblCellMar><w:top w:w="160" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tblCellMar></w:tblPr>`
+      + `<w:tr><w:tc><w:tcPr><w:tcW w:w="9000" w:type="dxa"/>${shade}</w:tcPr>${body}</w:tc></w:tr></w:tbl>`
+      + para('CITBody', ''), { lock: 'sdtContentLocked' });
+  }
+  function issueBox(i) {
+    const cell = (k) => {
+      const filled = (i[k] || '').trim();
+      return `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>`
+        + sdt('field|' + k, k[0].toUpperCase() + k.slice(1), filled ? bullets(i[k]) : para('CITPlaceholder', HINT[k]), { placeholder: !filled })
+        + `</w:tc>`;
+    };
+    const head = ['Baseline', 'Upside', 'Downside'].map(h => `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
+    return sdt(`issue|${i.id}`, i.title || 'Issue',
+      sdt('field|title', 'Title', para('CITIssueTitle', i.title))
+      + sdt('field|text', 'View', bullets(i.text))
+      + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr><w:tr>${head}</w:tr><w:tr>${CELLS.map(cell).join('')}</w:tr></w:tbl>`
+      + para('CITBody', ''));
+  }
+  function documentXml(eco) {
+    uid = 1000;
+    let b = para('CITTitle', eco.name);
+    b += sdt(`meta|${eco.id}|${eco.version}`, 'Do not edit',
+      para('CITMeta', `${eco.name} · version ${eco.version} · edit inside the boxes, then import this file back into the page`), { lock: 'sdtContentLocked' });
+    /* Which issues existed when this file was written. Without it, an issue a colleague adds
+       while the document is out would be absent here and read as a deletion. */
+    const ids = eco.drivers.flatMap(d => d.subsections.flatMap(s => s.issues.map(i => i.id)));
+    b += sdt('manifest', 'Do not edit — records what this file was exported from',
+      `<w:p><w:pPr><w:pStyle w:val="CITMeta"/><w:rPr><w:vanish/></w:rPr></w:pPr><w:r><w:rPr><w:vanish/></w:rPr><w:t xml:space="preserve">${X(ids.join(' '))}</w:t></w:r></w:p>`,
+      { lock: 'sdtContentLocked' });
+    b += readmeBox(eco);
+    for (const d of eco.drivers) {
+      // the four driver groups are fixed in the page, so the heading is read-only
+      b += sdt(`group|${d.id}`, d.name, para('CITH1', d.name), { lock: 'sdtContentLocked' });
+      for (const s of d.subsections) {
+        let inner = para('CITH3', s.name);
+        for (const i of s.issues) inner += issueBox(i);
+        inner += sdt('slot|issue', 'New issue in ' + s.name, para('CITPlaceholder', SLOT_ISSUE), { placeholder: true });
+        b += sdt(`sub|drivers/${d.id}/${s.id}`, s.name, inner);
+      }
+      b += sdt(`slot|sub|${d.id}`, 'New subsection under ' + d.name, para('CITPlaceholder', SLOT_SUB), { placeholder: true });
+    }
+    b += para('CITH1', 'Investment implications');
+    b += sdt('matrix', 'Set these by clicking in the page, not here',
+      `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+      + Object.entries(eco.implications || {}).map(([k, cells]) =>
+        `<w:tr><w:tc><w:tcPr><w:tcW w:w="3600" w:type="dxa"/></w:tcPr>${para('CITBody', k.replace(/^drivers\//, '').replace(/\//g, ' › '))}</w:tc>`
+        + `<w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/></w:tcPr>${para('CITBody', Object.entries(cells).map(([f, v]) => `${f.replace(/_/g, ' ')} ${v === 'up' ? '↑' : '↓'}`).join(', '))}</w:tc></w:tr>`).join('')
+      + `</w:tbl>`, { lock: 'sdtContentLocked' });
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${WNS}><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
+  }
+  const STYLE = (id, name, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${def}</w:style>`;
+  const stylesXml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${WNS}>`
     + `<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>`
-    + STYLE('Normal', 'Normal', '', '<w:pPr><w:spacing w:after="120"/></w:pPr>')
-    + STYLE('CITTitle', 'CIT Title', 'Normal', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
-    + STYLE('CITMeta', 'CIT Meta', 'Normal', '<w:rPr><w:i/><w:color w:val="767676"/></w:rPr>')
-    + STYLE('CITH1', 'CIT Heading 1', 'Normal', '<w:pPr><w:spacing w:before="320" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/></w:rPr>')
-    + STYLE('CITH2', 'CIT Heading 2', 'Normal', '<w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr>')
-    + STYLE('CITH3', 'CIT Heading 3', 'Normal', '<w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITIssueTitle', 'CIT Issue Title', 'Normal', '<w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITBullet', 'CIT Bullet', 'Normal', '<w:pPr><w:ind w:left="360" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
-    + STYLE('CITBullet2', 'CIT Bullet 2', 'Normal', '<w:pPr><w:ind w:left="720" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
-    + STYLE('CITBody', 'CIT Body', 'Normal', '')
-    + STYLE('CITPlaceholder', 'CIT Placeholder', 'Normal', "<w:rPr><w:i/><w:color w:val=\"8A8F96\"/></w:rPr>")
-    + STYLE('CITTableHead', 'CIT Table Head', 'Normal', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
+    + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="120"/></w:pPr></w:style>`
+    + STYLE('CITTitle', 'CIT Title', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
+    + STYLE('CITMeta', 'CIT Meta', '<w:rPr><w:i/><w:color w:val="767676"/></w:rPr>')
+    + STYLE('CITH1', 'CIT Heading 1', '<w:pPr><w:spacing w:before="320" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/></w:rPr>')
+    + STYLE('CITH3', 'CIT Heading 3', '<w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="24"/></w:rPr>')
+    + STYLE('CITIssueTitle', 'CIT Issue Title', '<w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CITBullet', 'CIT Bullet', '<w:pPr><w:ind w:left="360" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
+    + STYLE('CITBullet2', 'CIT Bullet 2', '<w:pPr><w:ind w:left="720" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
+    + STYLE('CITBody', 'CIT Body', '')
+    + STYLE('CITTableHead', 'CIT Table Head', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
+    + STYLE('CITPlaceholder', 'CIT Placeholder', '<w:rPr><w:i/><w:color w:val="8A8F96"/></w:rPr>')
+    + STYLE('CITNoteHead', 'CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CITNote', 'CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
     + `<w:style w:type="table" w:styleId="CITTable"><w:name w:val="CIT Table"/><w:tblPr><w:tblBorders>`
     + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>`).join('')
     + `</w:tblBorders><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
     + `</w:styles>`;
-}
-function buildNumbering() {
-  const lvl = (i, ch, ind) => `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${ch}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${ind}" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl>`;
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering ${W}>`
-    + `<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${lvl(0, '', 360)}${lvl(1, 'o', 720)}</w:abstractNum>`
-    + `<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
-}
-async function docxWrite(eco) {
-  return zipWrite([
-    { name: '[Content_Types].xml', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>` },
-    { name: '_rels/.rels', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
-    { name: 'word/_rels/document.xml.rels', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>` },
-    { name: 'word/document.xml', text: buildDocument(eco) },
-    { name: 'word/styles.xml', text: buildStyles() },
-    { name: 'word/numbering.xml', text: buildNumbering() },
-  ]);
-}
+  const numberingXml = () => {
+    const lvl = (i, ch, ind) => `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${ch}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${ind}" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering ${WNS}>`
+      + `<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${lvl(0, '', 360)}${lvl(1, 'o', 720)}</w:abstractNum>`
+      + `<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+  };
+  const CT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>`;
+  const RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const DRELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>`;
 
+  const write = (eco) => zip([
+    { name: '[Content_Types].xml', text: CT },
+    { name: '_rels/.rels', text: RELS },
+    { name: 'word/_rels/document.xml.rels', text: DRELS },
+    { name: 'word/document.xml', text: documentXml(eco) },
+    { name: 'word/styles.xml', text: stylesXml() },
+    { name: 'word/numbering.xml', text: numberingXml() },
+  ]);
+  return { write };
+})();
+const docxWrite = (eco) => DOCX.write(eco);
 
 /* ===================== docx READ (v3) ===================== */
 const kids = (el, ln) => [...el.children].filter(c => c.localName === ln);
@@ -317,7 +376,7 @@ function docxParse(xml) {
       const [kind, a, bb] = tag.split('|');
       if (kind === 'meta') { res.meta = { economy: a, version: Number(bb) }; continue; }
       if (kind === 'manifest') { res.manifest = NORM(paras(content).map(paraText).join(' ')).trim().split(/\s+/).filter(Boolean); continue; }
-      if (kind === 'group' || kind === 'matrix') continue;   // fixed / read-only by design
+      if (kind === 'group' || kind === 'matrix' || kind === 'readme') continue;   // fixed / read-only by design
       if (kind === 'sub') {
         place = { key: a, name: '', items: [] }; res.places.push(place);
         const h = paras(content).find(p => /^CITH[23]$/.test(styleOf(p)));

@@ -727,6 +727,30 @@ const DOCX = (() => {
     + `<w:lock w:val="${opt.lock || 'sdtLocked'}"/>${opt.placeholder ? '<w:showingPlcHdr/>' : ''}`
     + `</w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
 
+  /* A read-only box at the top of the document. It is what stands between a researcher
+     who has never seen this file and a mis-import, so it states the few rules that the
+     content controls cannot enforce by themselves. Tagged so the reader skips it, and
+     locked so it cannot be edited away. */
+  const noteBullet = (text) => para('CITNote', '\u2022  ' + text, '<w:ind w:left="300" w:hanging="300"/>');
+  function readmeBox(eco) {
+    const shade = '<w:shd w:val="clear" w:color="auto" w:fill="F2F6FA"/>';
+    const body = para('CITNoteHead', 'How to edit this document')
+      + para('CITNote', `This is a copy of the ${eco.name} thesis, version ${eco.version}. Every issue sits in its own bordered box, and each box carries a hidden label tying it back to the thesis \u2014 so edit **inside** the boxes rather than around them.`)
+      + noteBullet('**Change the wording** \u2014 type in any box. Bold is kept. Track Changes and comments are welcome.')
+      + noteBullet('**Add an issue** \u2014 use the dashed \u201cClick here and type a new issue\u201d box at the end of a section. Title on the first line, then one bullet per line. For signposts, add lines starting Baseline:, Upside: and Downside:.')
+      + noteBullet('**Retire an issue** \u2014 select everything inside its boxes and delete it. Leave the empty box where it is; do not delete the box itself.')
+      + noteBullet('**Reorder** \u2014 move the whole box, not just the text inside it.')
+      + noteBullet('**Signposts go in threes** \u2014 fill all three cells or leave all three showing their grey hint. One or two filled will be queried rather than imported.')
+      + noteBullet('**Paste as plain text** (Ctrl+Shift+V). An ordinary paste can destroy a box and lose the link back to the thesis.')
+      + noteBullet('**Leave alone**: the headings, and the investment implications table \u2014 those arrows are only ever set by clicking in the page.')
+      + para('CITNote', 'Nothing here changes the thesis until someone reviews every change in the page and applies it. When you are finished, save the file, keeping it as .docx, and send it back.');
+    return sdt('readme', 'How to edit this document \u2014 do not edit this box',
+      `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>`
+      + ['top', 'left', 'bottom', 'right'].map(x => `<w:${x} w:val="single" w:sz="6" w:space="0" w:color="C6D2E0"/>`).join('')
+      + `</w:tblBorders>${shade}<w:tblCellMar><w:top w:w="160" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tblCellMar></w:tblPr>`
+      + `<w:tr><w:tc><w:tcPr><w:tcW w:w="9000" w:type="dxa"/>${shade}</w:tcPr>${body}</w:tc></w:tr></w:tbl>`
+      + para('CITBody', ''), { lock: 'sdtContentLocked' });
+  }
   function issueBox(i) {
     const cell = (k) => {
       const filled = (i[k] || '').trim();
@@ -752,6 +776,7 @@ const DOCX = (() => {
     b += sdt('manifest', 'Do not edit — records what this file was exported from',
       `<w:p><w:pPr><w:pStyle w:val="CITMeta"/><w:rPr><w:vanish/></w:rPr></w:pPr><w:r><w:rPr><w:vanish/></w:rPr><w:t xml:space="preserve">${X(ids.join(' '))}</w:t></w:r></w:p>`,
       { lock: 'sdtContentLocked' });
+    b += readmeBox(eco);
     for (const d of eco.drivers) {
       // the four driver groups are fixed in the page, so the heading is read-only
       b += sdt(`group|${d.id}`, d.name, para('CITH1', d.name), { lock: 'sdtContentLocked' });
@@ -786,6 +811,8 @@ const DOCX = (() => {
     + STYLE('CITBody', 'CIT Body', '')
     + STYLE('CITTableHead', 'CIT Table Head', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
     + STYLE('CITPlaceholder', 'CIT Placeholder', '<w:rPr><w:i/><w:color w:val="8A8F96"/></w:rPr>')
+    + STYLE('CITNoteHead', 'CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CITNote', 'CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
     + `<w:style w:type="table" w:styleId="CITTable"><w:name w:val="CIT Table"/><w:tblPr><w:tblBorders>`
     + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>`).join('')
     + `</w:tblBorders><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`

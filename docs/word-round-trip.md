@@ -273,6 +273,14 @@ in the `CIT Issue Title` style starts another issue, so several can be added at
 once. Lines beginning `Baseline:`, `Upside:` and `Downside:` become the new
 issue's signpost cells, so an issue can arrive complete in one pass.
 
+**This is the one place the design depends on a convention**, and additions are
+the only operation that does. So the document carries its own instructions: a
+read-only, locked panel at the top (tagged `readme`, skipped by the reader)
+stating the slot rule, the paste-as-plain-text rule, retire-by-emptying,
+move-the-whole-box, and all-three-cells-or-none. It costs a third of a page and
+it is the only defence available against a researcher who has never seen the file
+before.
+
 **Adding signposts to an issue that has none** is the case the new schema
 creates, and it needs no new machinery. Every issue carries all three cells,
 whether or not it uses them; an unused cell shows an italic hint
