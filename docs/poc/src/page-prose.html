@@ -1,0 +1,36 @@
+  <section class="prose">
+    <h2>Why a rule is writable here</h2>
+    <p>Parsing an arbitrary Word file into a strict schema is not reliably possible. But we hand out the document, so it can be built from Word's own structures rather than from text conventions. Each issue is wrapped in a content control whose <code class="tag">w:tag</code> carries its stable <code class="tag">iss-…</code> id, locked so the frame cannot be deleted while its contents stay editable. Reading back is then a lookup, not an inference.</p>
+    <p>The tag carries <b>identity only, never placement</b>. Where an item sits comes from the container it is in and from document order — which is what makes dragging a box mean something.</p>
+
+    <h2 style="margin-top:32px">What each document state means</h2>
+    <div class="tbl"><table class="rules">
+      <thead><tr><th>What the document shows</th><th>Read as</th></tr></thead>
+      <tbody>
+        <tr><td>Text changed inside a box</td><td>An edit to that issue. Tracked insertions count as accepted; tracked deletions are dropped.</td></tr>
+        <tr><td>Something typed into an <em>add here</em> slot</td><td>A new issue. An untouched slot is never a phantom addition.</td></tr>
+        <tr><td>Title, view and all three cells empty</td><td><b>Retire the issue.</b> Confident.</td></tr>
+        <tr><td>Only the three cells empty</td><td>Drop the signposts, keep the issue.</td></tr>
+        <tr><td>The frame is gone entirely</td><td>Rebuilt from the style anchor and matched by title. If that fails: retire, flagged as possibly accidental.</td></tr>
+        <tr><td>Title empty, content still there</td><td>Neither — a question in the review.</td></tr>
+        <tr><td>One or two cells of three filled</td><td>Neither — a question. <code>validate()</code> would otherwise refuse the whole import.</td></tr>
+        <tr><td>An id on disk that the document never had</td><td>Added by someone else since export. Left exactly as it is.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 style="margin-top:32px">How it is wired into the editor</h2>
+    <p>One new <code class="tag">DOCX</code> module beside the existing <code class="tag">YAML</code> one, exposing <code class="tag">write(eco)</code> and <code class="tag">read(buffer)</code>. Everything after <em>Review changes</em> is the machinery that already exists.</p>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><span><b>Word copy</b>A per-economy button in the toolbar. It builds the bytes in memory and downloads them, so it needs no write permission and no <code class="tag">editors:</code> entry — a reviewer who never edits can still get one.</span></div>
+      <div class="step"><span class="n">2</span><span><b>Edit in Word</b>Track Changes and comments are fine. The file name carries the version: <code class="tag">united-states-v2.docx</code>.</span></div>
+      <div class="step"><span class="n">3</span><span><b>Import</b>The same button and dialog, with <code class="tag">.docx</code> added to the file input. It branches on the extension and reads the file as an array buffer.</span></div>
+      <div class="step"><span class="n">4</span><span><b>Review</b>The Word path clones what is on disk now and applies per-issue deltas, because the document is a projection — it omits the implications matrix and can go stale. That makes a stale Word file safer than a stale Ada file, which replaces everything.</span></div>
+      <div class="step"><span class="n">5</span><span><b>Apply</b>The normal save path: version + 1, the on-disk conflict check, one log entry with <code class="tag">source: word-import</code>, lock released.</span></div>
+    </div>
+
+    <h2 style="margin-top:32px">What is still unproven</h2>
+    <p>There is no copy of Microsoft Word in the environment this was built in. The file is well-formed OOXML and an independent reader opens it, but Word is the authority on three things: that it opens without a repair prompt, that it preserves the <code class="tag">w:tag</code> values on save, and that <code class="tag">sdtLocked</code> really stops a frame being deleted. That is one half-hour test, and it is step zero of any build.</p>
+  </section>
+
+  <p class="foot">Prototype for the Country Investment Thesis editor. The sample <code class="tag">.docx</code> and the full design note live on the <code class="tag">claude/compassionate-cray-oq0aqk</code> branch.</p>
+</div>

@@ -1,0 +1,175 @@
+<title>Word Round-Trip</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#F7F8FA; --panel:#FFFFFF; --panel-2:#F2F4F7; --rule:#DDE1E8; --rule-2:#EBEEF2;
+  --ink:#16191D; --ink-2:#4A535E; --ink-3:#77818D;
+  --accent:#2F5D8A; --accent-soft:#E6EDF5;
+  --add:#2F7A52; --add-soft:#E4F0E9; --retire:#B23A38; --retire-soft:#F7E6E5;
+  --ask:#A5761B; --ask-soft:#FAF0DC; --move:#5A4C8A; --move-soft:#ECE8F5;
+  --doc-ground:#FFFFFF; --doc-ink:#1B1B1B; --ctl:#B9C2CE; --ctl-tab:#EDF1F6;
+  --ui:"IBM Plex Sans",-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc:Aptos,Calibri,"Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#121519; --panel:#191D23; --panel-2:#1F242B; --rule:#2B323B; --rule-2:#232932;
+  --ink:#E7EAEE; --ink-2:#A8B2BD; --ink-3:#78828E;
+  --accent:#84AEDA; --accent-soft:#1D2B3A;
+  --add:#6BBF8E; --add-soft:#16271E; --retire:#E08C89; --retire-soft:#2C1A19;
+  --ask:#D9AE5E; --ask-soft:#2B2313; --move:#A796DC; --move-soft:#221D33;
+  --doc-ground:#1C2026; --doc-ink:#DEE2E7; --ctl:#3E4854; --ctl-tab:#242A32;
+}}
+:root[data-theme="dark"]{
+  --ground:#121519; --panel:#191D23; --panel-2:#1F242B; --rule:#2B323B; --rule-2:#232932;
+  --ink:#E7EAEE; --ink-2:#A8B2BD; --ink-3:#78828E;
+  --accent:#84AEDA; --accent-soft:#1D2B3A;
+  --add:#6BBF8E; --add-soft:#16271E; --retire:#E08C89; --retire-soft:#2C1A19;
+  --ask:#D9AE5E; --ask-soft:#2B2313; --move:#A796DC; --move-soft:#221D33;
+  --doc-ground:#1C2026; --doc-ink:#DEE2E7; --ctl:#3E4854; --ctl-tab:#242A32;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.55;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding-block:36px 64px;padding-left:20px;padding-right:20px}
+h1{font-size:clamp(23px,4.2vw,31px);line-height:1.15;margin:0 0 8px;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+.lede{margin:0;color:var(--ink-2);max-width:66ch;font-size:15px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+h2{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--ink-3);margin:2px 0 0}
+
+/* telemetry */
+.tele{display:flex;flex-wrap:wrap;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:26px 0 8px}
+.tele div{background:var(--panel);padding:11px 14px;flex:1 1 130px}
+.tele .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.tele .v{font-family:var(--mono);font-size:16px;font-variant-numeric:tabular-nums;margin-top:3px;font-weight:500}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
+.pill.ok{background:var(--add-soft);color:var(--add)} .pill.dirty{background:var(--accent-soft);color:var(--accent)}
+.note{font-size:12.5px;color:var(--ink-3);margin:0 0 26px}
+
+/* gestures */
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 20px}
+button{font:inherit;font-size:12.5px;padding:7px 12px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);border-radius:7px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{opacity:.9;color:#fff}
+.bar .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-right:2px}
+
+/* split */
+.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.pane{background:var(--panel);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.pane>header{padding:13px 16px;border-bottom:1px solid var(--rule);background:var(--panel-2);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.verdict{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+
+/* the document */
+.doc{background:var(--doc-ground);padding:18px 16px;font-family:var(--doc);color:var(--doc-ink);font-size:13.5px}
+.doc h3{font-size:16px;margin:22px 0 4px;font-weight:700;letter-spacing:-.01em}
+.doc h3:first-child{margin-top:0}
+.doc h4{font-size:13.5px;margin:16px 0 8px;font-weight:700;color:var(--accent)}
+.docmeta{font-size:11.5px;font-style:italic;color:var(--ink-3);margin:0 0 4px}
+.ctl{border:1px solid var(--ctl);border-radius:3px;margin:0 0 10px;position:relative;background:transparent}
+.ctl>.tab{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);background:var(--ctl-tab);padding:2px 7px;border-bottom:1px solid var(--ctl);display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl .acts{display:flex;gap:4px}
+.ctl .acts button{font-size:10px;padding:1px 6px;border-radius:4px;line-height:1.5}
+.fld{padding:7px 9px}
+[contenteditable]{outline:none}
+[contenteditable]:focus{background:var(--accent-soft);border-radius:3px}
+.f-title{font-weight:700;font-size:14px}
+.f-text div,.cell div{margin:0 0 3px;padding-left:14px;text-indent:-14px}
+.f-text div::before,.cell div::before{content:"• ";color:var(--ink-3)}
+.f-text div:empty::before,.cell div:empty::before{content:""}
+table.cells{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}
+table.cells th{font-family:var(--ui);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);text-align:left;font-weight:600;padding:4px 7px;border-top:1px solid var(--rule-2)}
+table.cells td{vertical-align:top;padding:5px 7px;border-top:1px solid var(--rule-2);font-size:12px}
+.hint{color:var(--ink-3);font-style:italic}
+.slot{border:1px dashed var(--ctl);border-radius:3px;padding:8px 10px;margin:0 0 14px;font-style:italic;color:var(--ink-3);font-size:12.5px}
+.slot:focus{font-style:normal;color:var(--doc-ink)}
+.broken{border-style:dashed;border-color:var(--retire)}
+
+/* verdict list */
+.vbody{padding:6px 0 10px;max-height:none}
+.grp{padding:9px 16px 3px;font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.row{display:flex;gap:9px;padding:6px 16px;align-items:flex-start}
+.chip{flex:none;font-family:var(--mono);font-size:9.5px;padding:2px 6px;border-radius:4px;margin-top:1px;font-weight:500;letter-spacing:.03em}
+.c-edit{background:var(--accent-soft);color:var(--accent)}
+.c-add{background:var(--add-soft);color:var(--add)}
+.c-ret{background:var(--retire-soft);color:var(--retire)}
+.c-ask{background:var(--ask-soft);color:var(--ask)}
+.c-move{background:var(--move-soft);color:var(--move)}
+.rt{min-width:0;font-size:12.5px}
+.rt b{font-weight:600}
+.rt em{display:block;font-style:normal;color:var(--ink-3);font-size:11.5px;margin-top:1px}
+.rt code{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.empty{padding:18px 16px;color:var(--ink-3);font-size:12.5px}
+.applybar{border-top:1px solid var(--rule);padding:11px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel-2);flex-wrap:wrap}
+.applybar .why{font-size:11.5px;color:var(--ink-3)}
+
+/* rules + prose */
+section.prose{margin-top:44px}
+section.prose h2{font-size:18px;letter-spacing:-.015em;margin-bottom:6px}
+section.prose p{color:var(--ink-2);max-width:66ch}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;margin-top:14px;background:var(--panel)}
+table.rules{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+table.rules th{text-align:left;font-size:10.5px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:10px 14px;border-bottom:1px solid var(--rule);font-weight:500}
+table.rules td{padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top;color:var(--ink-2)}
+table.rules tr:last-child td{border-bottom:0}
+table.rules td:first-child{color:var(--ink);width:44%}
+.steps{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin-top:14px}
+.step{background:var(--panel);padding:13px 16px;display:flex;gap:13px}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--accent);flex:none;width:18px;padding-top:2px}
+.step b{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.step span{color:var(--ink-2);font-size:12.5px}
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);color:var(--ink-3);font-size:12px}
+code.tag{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);border:1px solid var(--rule-2);padding:1px 5px;border-radius:4px;color:var(--accent)}
+#drop{border:1.5px dashed var(--rule);border-radius:12px;padding:20px 18px;background:var(--panel);margin:0 0 10px;text-align:center}
+ #drop.over{border-color:var(--accent);background:var(--accent-soft)}
+ #drop h2{margin:0 0 4px} #drop p{margin:0 auto 12px;max-width:56ch;font-size:13px}
+ #drop input[type=file]{font:inherit;font-size:12.5px}
+ table.diag{width:100%;border-collapse:collapse;margin:14px 0 0;font-size:12.5px;text-align:left}
+ table.diag th{width:190px;padding:6px 10px 6px 0;color:var(--ink-3);font-weight:500;vertical-align:top;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+ table.diag td{padding:6px 0;color:var(--ink-2);border-bottom:1px solid var(--rule-2)}
+ table.diag tr:last-child td{border-bottom:0}
+ .dnote{font-size:12.5px;color:var(--ink-3);margin:12px 0 0}
+ .bad{color:var(--retire)}
+ @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Country Investment Thesis</p>
+  <h1>Editing the thesis in Word, and getting it back</h1>
+  <p class="lede">A live prototype. This page builds a real <code class="tag">.docx</code> from the United States thesis, lets you edit it the way a researcher would, then reads it back and shows exactly what the editor would offer for review. Every keystroke re-zips and re-parses a genuine Word file — no libraries.</p>
+
+  <div id="drop">
+    <h2>Drop a .docx you have edited in Word</h2>
+    <p>Everything below runs on a file this page generates. Drop in one that has been through real Word and it will report what Word did to it, then show what the editor would import.</p>
+    <input type="file" id="docx-file" accept=".docx">
+    <div id="diag"></div>
+  </div>
+
+  <div class="tele" id="tele"></div>
+  <p class="note" id="telenote"></p>
+
+  <div class="bar">
+    <span class="lbl">Try</span>
+    <button id="g-add">Add an issue</button>
+    <button id="g-retire">Retire an issue</button>
+    <button id="g-clear">Drop signposts</button>
+    <button id="g-half">Half-clear a signpost</button>
+    <button id="g-move">Reorder two issues</button>
+    <button id="g-break">Destroy a control</button>
+    <button id="g-stale">Colleague edits on disk</button>
+    <button id="g-reset" class="primary">Reset</button>
+  </div>
+
+  <div class="split">
+    <div class="pane">
+      <header><div><h2>The Word document</h2><p class="sub">Type in any box. Grey frames are Word content controls.</p></div></header>
+      <div class="doc" id="doc"></div>
+    </div>
+    <div class="pane verdict">
+      <header><div><h2>What the editor would import</h2><p class="sub" id="vsub">Read back from the .docx</p></div></header>
+      <div class="vbody" id="verdict"></div>
+      <div class="applybar"><span class="why" id="applywhy"></span><button class="primary" id="applybtn" disabled>Apply import</button></div>
+    </div>
+  </div>
