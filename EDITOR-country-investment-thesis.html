@@ -187,10 +187,11 @@
   }
   details[open] > summary::before { transform: rotate(45deg); margin-bottom: 4px; }
   summary .count { color: var(--muted); font-weight: 400; font-size: 12.5px; margin-left: 4px; }
-  summary .tagline {
+  .tagline {
     font-family: var(--font); color: var(--muted); font-size: 13px; font-weight: 400;
     margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--rule);
   }
+  tr.group .tagline { font-size: 12px; }
   @media (max-width: 680px) {
     details.driver > summary { flex-wrap: wrap; }
     summary .tagline { margin-left: 0; padding-left: 0; border-left: 0; flex-basis: 100%; }
@@ -440,16 +441,24 @@ const DEFAULT_ECONOMIES = [
   { id: 'brazil', name: 'Brazil' },
 ];
 /* Each group carries the question it exists to answer, shown beside its name on the
-   Drivers and Signposts pages. {economy} is filled in with the selected economy. */
+   Drivers and Signposts pages and on the implications matrix. {economy} is filled in
+   with the selected economy.
+   The ids are frozen: history, the log and the implications keys are all keyed on them,
+   so a renamed group or subsection keeps the id it was created with. That is why the
+   Politics group is still `geopolitics` and the Financial subsection still `credit`. */
 const DRIVER_TEMPLATE = [
-  { id: 'regime', name: 'Regime', tagline: 'What could drive {economy} into a boom or a bust?',
-    subsections: [['trend-growth', 'Trend growth'], ['trend-inflation', 'Trend inflation']] },
-  { id: 'policy', name: 'Policy', tagline: 'How will monetary and fiscal policy respond, and what would change that?',
-    subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal']] },
-  { id: 'imbalances', name: 'Imbalances', tagline: 'Where is stress building, and what could break first?',
-    subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Credit']] },
-  { id: 'geopolitics', name: 'Geopolitics', tagline: 'What could politics, at home or abroad, do to the outlook?',
-    subsections: [['domestic', 'Domestic'], ['international', 'International']] },
+  { id: 'regime', name: 'Economic Regime',
+    tagline: 'What would drive growth or inflation in {economy} sustainably higher or lower?',
+    subsections: [['trend-growth', 'Growth'], ['trend-inflation', 'Inflation']] },
+  { id: 'policy', name: 'Policy',
+    tagline: 'How will policy changes drive investment returns?',
+    subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal'], ['reforms', 'Reforms']] },
+  { id: 'imbalances', name: 'Imbalances',
+    tagline: 'Where are the critical imbalances in {economy}?',
+    subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Financial']] },
+  { id: 'geopolitics', name: 'Politics',
+    tagline: 'What political events could meaningfully affect investment returns?',
+    subsections: [['domestic', 'Domestic'], ['international', 'Geopolitics']] },
 ];
 const SCENARIO_COLS = ['baseline', 'upside', 'downside'];
 /* Where the old top-level scenario categories land when a legacy file is read (see normalise). */
@@ -1025,15 +1034,21 @@ function normalise(eco, raw) {
   out.drivers.forEach((d, n) => {
     d.id = text(d.id) || 'driver-' + (n + 1);
     const t = DRIVER_TEMPLATE.find(x => x.id === d.id);
-    d.name = text(d.name) || (t ? t.name : d.id);
+    // the page owns the fixed structure: for a group or subsection it defines, its name wins
+    // over whatever the file says, so renaming one here renames it everywhere on next load
+    d.name = t ? t.name : text(d.name) || d.id;
     d.subsections = list(d.subsections);
     d.subsections.forEach((s, m) => {
-      s.id = text(s.id) || 'sub-' + (m + 1); s.name = text(s.name) || ((t && t.subsections.find(([id]) => id === s.id)) || [])[1] || '';
+      s.id = text(s.id) || 'sub-' + (m + 1);
+      const ts = t && t.subsections.find(([id]) => id === s.id);
+      s.name = ts ? ts[1] : text(s.name) || '';
       s.issues = list(s.issues); for (const i of s.issues) { i.id = text(i.id) || uid('iss'); i.title = text(i.title); i.text = text(i.text); for (const k of SCENARIO_COLS) i[k] = text(i[k]); }
       // an interim layout kept signposts as their own list under the subsection: each becomes an issue with cells and no view text
       for (const i of list(s.signposts)) s.issues.push({ id: text(i.id) || uid('iss'), title: text(i.title), text: '', baseline: text(i.baseline), upside: text(i.upside), downside: text(i.downside) });
       delete s.signposts;
     });
+    // a subsection the page defines but the file predates (a newly added one) is created empty
+    if (t) for (const [id, name] of t.subsections) if (!d.subsections.some(x => x.id === id)) d.subsections.push({ id, name, issues: [] });
   });
   // Legacy layout: signposts used to live in top-level scenario categories. Fold them into the
   // driver subsections so an old file (a restored version, an old Ada hand-back) still loads.
@@ -1057,7 +1072,7 @@ function normalise(eco, raw) {
 function rowKeys(eco) {
   const rows = [];
   const titles = (items) => items.map(i => i.title.trim() || 'Untitled');
-  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, name: s.name, items: titles(s.issues) });
+  for (const d of eco.drivers) for (const s of d.subsections) rows.push({ key: `drivers/${d.id}/${s.id}`, group: d.name, groupId: d.id, name: s.name, items: titles(s.issues) });
   return rows;
 }
 
@@ -1472,16 +1487,16 @@ function activeSub(d) {
 /* "the United States", "the Eurozone", but "China". Add a prefix here if a new economy
    in config.yaml needs the article. */
 const THE_NAME = /^(United|Euro|Netherlands|Philippines|Czech|Gulf|Baltic)/;
-const driverTagline = (d, eco) => {
-  const t = DRIVER_TEMPLATE.find(x => x.id === d.id);
-  if (!t || !t.tagline) return '';
+const driverTagline = (groupId, eco) => {
+  const t = DRIVER_TEMPLATE.find(x => x.id === groupId);
+  if (!t || !t.tagline || !eco) return '';
   return t.tagline.replace('{economy}', (THE_NAME.test(eco.name) ? 'the ' : '') + eco.name);
 };
 function renderDrivers(eco, lens = 'issues') {
   const ed = !!S.draft, sp = lens === 'signposts';
   return eco.drivers.map((d, di) => {
     const act = activeSub(d);
-    const tag = driverTagline(d, eco);
+    const tag = driverTagline(d.id, eco);
     return `<details class="driver" id="d-${di}" open>
       <summary>${esc(d.name)}${tag ? `<span class="tagline">${esc(tag)}</span>` : ''}</summary>
       <div class="stabs" role="tablist">
@@ -1535,17 +1550,25 @@ function selectTab(di, si) {
   const eco = S.draft || S.data[S.current]; const d = eco.drivers[di]; const s = d && d.subsections[si];
   if (s) S.subTab[S.current + '/' + d.id] = s.id;
 }
-/* Switch lens (Drivers <-> Scenarios & signposts) keeping the driver and tab in view. */
+/* Switch lens (Views <-> Signposts) without moving the page. The two lenses are different
+   heights, so rather than scrolling the card into view — which yanked it to the top — hold
+   the clicked panel at the same distance down the viewport across the re-render. */
 function switchLens(lens, di, si) {
+  const id = di != null ? `d-${di}-${si}` : null;
+  const before = id && document.getElementById(id) ? document.getElementById(id).getBoundingClientRect().top : null;
   S.section = lens === 'signposts' ? 'scenarios' : 'drivers';
   render();
-  if (di != null) { const el = document.getElementById(`d-${di}-${si}`); if (el) { selectTab(di, si); el.scrollIntoView({ block: 'start' }); } }
+  if (di != null) selectTab(di, si);
+  if (before != null) {
+    const el = document.getElementById(id);
+    if (el) window.scrollBy(0, el.getBoundingClientRect().top - before);
+  }
 }
 
 /* ---------- implications ---------- */
 function rowGroups(eco) {
   const groups = [];
-  for (const r of rowKeys(eco)) { let g = groups.find(x => x.name === r.group); if (!g) { g = { name: r.group, rows: [] }; groups.push(g); } g.rows.push(r); }
+  for (const r of rowKeys(eco)) { let g = groups.find(x => x.name === r.group); if (!g) { g = { name: r.group, id: r.groupId, rows: [] }; groups.push(g); } g.rows.push(r); }
   return groups;
 }
 function renderImplications(eco) {
@@ -1564,8 +1587,8 @@ function renderImplications(eco) {
       <tr>${FACTORS.map(f => `<th${f.id === 'sales_growth' || f.id === 'cash_rate' ? ' class="eq"' : ''}>${esc(f.name)}</th>`).join('')}</tr>
     </thead>
     <tbody>
-    ${groups.map((g, gi) => `<tr class="group" id="m-${gi}" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}</td></tr>` +
-      g.rows.map((r, ri) => `<tr class="leaf" id="m-${gi}-${ri}" data-g="${gi}"><td class="rowhead">${esc(r.name)}</td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join('')).join('')}
+    ${groups.map((g, gi) => { const tag = driverTagline(g.id, eco); return `<tr class="group" id="m-${gi}" data-g="${gi}"><td colspan="${FACTORS.length + 1}" class="rowhead">${esc(g.name)}${tag ? `<span class="tagline">${esc(tag)}</span>` : ''}</td></tr>` +
+      g.rows.map((r, ri) => `<tr class="leaf" id="m-${gi}-${ri}" data-g="${gi}"><td class="rowhead">${esc(r.name)}</td>${FACTORS.map(f => cellHtml(r.key, f)).join('')}</tr>`).join(''); }).join('')}
     </tbody></table></div>
     <div class="legend"><span class="item"><span class="arrow up">${ARROW.up}</span>Upside to the factor</span><span class="item"><span class="arrow down">${ARROW.down}</span>Downside to the factor</span><span class="item"><span class="arrow none">${ARROW.none}</span>Neutral / not relevant</span>${ed ? '<span class="item">Click a cell to cycle through the three states.</span>' : ''}</div>`;
 }

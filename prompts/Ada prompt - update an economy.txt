@@ -17,7 +17,7 @@ You also need the researcher's name for the change note. If they have not given 
 
 ## 1. What the document is
 
-One hierarchy runs through the whole economy: four fixed **drivers**, **Regime** (Trend growth, Trend inflation), **Policy** (Monetary, Fiscal), **Imbalances** (Domestic, External, Credit) and **Geopolitics** (Domestic, International), each split into the **subsections** in brackets. Each subsection holds a small number of **issues**, and each issue has two sides, shown on two pages of the web tool:
+One hierarchy runs through the whole economy: four fixed **drivers**, **Economic Regime** (Growth, Inflation), **Policy** (Monetary, Fiscal, Reforms), **Imbalances** (Domestic, External, Financial) and **Politics** (Domestic, Geopolitics), each split into the **subsections** in brackets. The ids in the file are frozen and do not always match the names — Politics is `geopolitics`, its Geopolitics subsection is `international`, and Financial is `credit` — so keep every id exactly as it is. Each subsection holds a small number of **issues**, and each issue has two sides, shown on two pages of the web tool:
 
 - **Drivers page: the view.** An issue's title and its `text`: three to four bullets that state the house view on that issue, what we assume, and what to watch. This page defines the structure and gives the driver its context.
 - **Scenarios & signposts page: the signposts.** The same issues, one row each with the title verbatim, and three cells: **baseline**, **upside**, **downside**. Each cell is one or two bullets describing that scenario for the issue; together they are what we track. An issue may have no signposts yet (all three cells empty); once any cell is filled, all three are required.
@@ -37,10 +37,10 @@ updated_at: "2026-09-13T12:00:00+08:00"   # never change
 updated_by: draft                # never change
 drivers:
   - id: regime
-    name: Regime
+    name: Economic Regime
     subsections:
       - id: trend-growth
-        name: Trend growth
+        name: Growth
         issues:
           - id: iss-us-tg1
             title: AI capex is now the growth engine, and the concentration risk
@@ -205,8 +205,8 @@ When nothing worthwhile is left: "I have nothing further worth reviewing on this
 Good, because each names one item and one concrete change to review:
 
 > 1. **Update** Policy › Monetary › "ECB has hiked twice and calls it a war-inflation response": add the 29 October meeting and the gap between market pricing and our path.
-> 2. **Strengthen** Imbalances › Credit › "Banks are the transmission channel and are in good shape": two bullets and no numbers; add loan growth by sector and a watch line.
-> 3. **Add** Regime › Trend growth › new issue on Chinese competition in autos, machinery and chemicals as a drag on potential growth.
+> 2. **Strengthen** Imbalances › Financial › "Banks are the transmission channel and are in good shape": two bullets and no numbers; add loan growth by sector and a watch line.
+> 3. **Add** Economic Regime › Growth › new issue on Chinese competition in autos, machinery and chemicals as a drag on potential growth.
 
 Not allowed, because none names an item to review:
 
@@ -331,8 +331,8 @@ change_note: |-
   Researched by Alex with Ada, 16 September 2026.
   Changes:
   - EDIT Policy › Monetary › "Warsh Fed facing a hike ...": updated for the September hike and new dots. Sources: FOMC statement 16 Sep 2026; internal "Fed watch" 10 Sep 2026.
-  - ADD Regime › Trend inflation › "Shelter disinflation has further to run" (new-1). Sources: ...
-  - RETIRE Imbalances › Credit › "Regional bank CRE exposure": resolved, no longer a driver. Old text is in the log.
+  - ADD Economic Regime › Inflation › "Shelter disinflation has further to run" (new-1). Sources: ...
+  - RETIRE Imbalances › Financial › "Regional bank CRE exposure": resolved, no longer a driver. Old text is in the log.
   Matrix suggestions (not applied; set in the page if agreed):
   - drivers/policy/monetary › cash_rate: up (was up); term_premium: up (was neutral), because ...
   Open questions:
