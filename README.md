@@ -27,9 +27,14 @@ economy-views/
 1. Put this whole folder in the team's SharePoint library. Everyone syncs the library with OneDrive ("Add shortcut to OneDrive" or "Sync").
 2. Each person opens `EDITOR-country-investment-thesis.html` from the synced folder in File Explorer (double-click; it opens in the default browser — make that Edge or Chrome). Bookmark the resulting `file:///...` address, or right-click the file and "Pin to Quick access".
 3. First time: click **Connect folder** and choose this folder. The browser asks for permission to *view* the folder once per session (one click on **Reconnect folder** on later visits). Write access is requested separately, and only when someone clicks **Edit** or **Import** (or exports a snapshot). Readers never grant it.
-4. Click **Set your name** so saves are attributed in the log.
+4. Click **Set your name** (top right) so saves are attributed in the log. Once set it shows your initials.
 
-On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the Ada prompt, Import and Export snapshot. Click **Guide** (top right) to replay it any time.
+On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the **Workflow** menu (Ada and .docx) and the **⋯** menu. Click **Guide** (in **⋯**, top right) to replay it any time.
+
+The top of the page carries three controls on the right: the **folder chip** (which is also
+the control — click it to connect, reconnect or reload), your **initials** (click to change
+the name saved to the log), and **⋯** for *Export snapshot* and *Guide*. Economies sit on
+their own row below, and scroll sideways if there are more than fit.
 
 ## How a save works
 
@@ -75,6 +80,29 @@ The researcher opens the page, selects the economy, clicks **Import**, and eithe
 
 If the change note lists matrix suggestions, click **Edit** afterwards and set the arrows on the Investment implications page.
 
+## Cloning the thesis into Word
+
+**Workflow → Get .docx** saves the selected economy as a Word document —
+`united-states-v2.docx` — to your downloads. It is a read-only operation: unlike *Export
+snapshot* it needs no write access to the folder and no entry in `editors:`, so anyone
+who can open the page can take a copy away to read, circulate or mark up, including from
+a snapshot.
+
+The document opens with a read-only **How to edit this document** panel: the few rules the
+boxes cannot enforce by themselves — add through the dashed slot, retire by emptying a box
+rather than deleting it, move the whole box to reorder, fill all three signpost cells or
+none, and paste as plain text so an ordinary paste does not destroy a box.
+
+Below it, each issue sits in its own bordered box (a Word content control) carrying its id,
+with its view bullets and its three signpost cells. Empty cells show a grey hint rather than
+nothing, so an issue that has no signposts still shows where they would go. The boxes are
+there so an edited document can be matched back up against the thesis.
+
+Reading an edited document back into the page is **not built yet**: *Workflow → Import .docx*
+is greyed out, and *Import Ada YAML* still takes only the YAML Ada hands back. `docs/word-round-trip.md` sets out how that would work
+and what remains to be tested; open `docs/poc/docx-round-trip.html` in Edge or Chrome to try
+the round-trip end to end.
+
 ## Who can write to the data folder
 
 The page itself is only ever one layer. Three layers together keep `data/` safe:
@@ -96,7 +124,7 @@ Never edit or move the files in `data/` by hand; hand edits are not logged and a
 
 ## How an economy is structured
 
-One hierarchy runs through all three pages. Four **drivers** (Regime, Policy, Imbalances, Geopolitics) each hold **subsections** (Trend growth, Trend inflation, Monetary, Fiscal, Domestic, External, Credit, International), and each subsection holds **issues**. Every issue has two sides. The **Drivers** page shows its view: the title and bullets. The **Scenarios & signposts** page shows the same issues, one row each with the title verbatim, and the three cells we track for it: baseline, upside and downside. The structure (subsections, issues) is defined on the Drivers page; the signposts page only fills in the cells. The **Investment implications** matrix has one row per subsection. The sidebar is the same tree on all three pages, and every driver card carries a Views | Signposts toggle that switches page keeping the driver and tab in view.
+One hierarchy runs through all three pages. Four **drivers** — Economic Regime (Growth, Inflation), Policy (Monetary, Fiscal, Reforms), Imbalances (Domestic, External, Financial) and Politics (Domestic, Geopolitics) — each hold those **subsections**, and each subsection holds **issues**. Each driver shows the question it exists to answer beside its name. The ids in the YAML are frozen so history survives a rename, so they do not always match the names: Politics is `geopolitics`, its Geopolitics subsection is `international`, and Financial is `credit`. Every issue has two sides. The **Drivers** page shows its view: the title and bullets. The **Scenarios & signposts** page shows the same issues, one row each with the title verbatim, and the three cells we track for it: baseline, upside and downside. The structure (subsections, issues) is defined on the Drivers page; the signposts page only fills in the cells. The **Investment implications** matrix has one row per subsection. The sidebar is the same tree on all three pages, and every driver card carries a Views | Signposts toggle that switches page keeping the driver and tab in view.
 
 In the YAML an issue is `{id, title, text, baseline, upside, downside}`; the three cells are omitted while an issue has no signposts, and once any is filled all three are required. There is no separate `scenarios` section. Files from before September 2026 that still carry one are folded in on load (each old signpost becomes an issue with cells and an empty view, under Trend growth / Trend inflation / Monetary or Fiscal by category) and the layout is kept on the next save; `tools/migrate-signposts.mjs` did the committed files properly, attaching each old signpost to the issue it tracks per `tools/signpost-migration.json`.
 
