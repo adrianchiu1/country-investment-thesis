@@ -187,6 +187,14 @@
   }
   details[open] > summary::before { transform: rotate(45deg); margin-bottom: 4px; }
   summary .count { color: var(--muted); font-weight: 400; font-size: 12.5px; margin-left: 4px; }
+  summary .tagline {
+    font-family: var(--font); color: var(--muted); font-size: 13px; font-weight: 400;
+    margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--rule);
+  }
+  @media (max-width: 680px) {
+    details.driver > summary { flex-wrap: wrap; }
+    summary .tagline { margin-left: 0; padding-left: 0; border-left: 0; flex-basis: 100%; }
+  }
   summary .spacer { flex: 1; }
 
   .rich ul { margin: 4px 0; padding-left: 20px; }
@@ -431,11 +439,17 @@ const DEFAULT_ECONOMIES = [
   { id: 'india', name: 'India' },
   { id: 'brazil', name: 'Brazil' },
 ];
+/* Each group carries the question it exists to answer, shown beside its name on the
+   Drivers and Signposts pages. {economy} is filled in with the selected economy. */
 const DRIVER_TEMPLATE = [
-  { id: 'regime', name: 'Regime', subsections: [['trend-growth', 'Trend growth'], ['trend-inflation', 'Trend inflation']] },
-  { id: 'policy', name: 'Policy', subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal']] },
-  { id: 'imbalances', name: 'Imbalances', subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Credit']] },
-  { id: 'geopolitics', name: 'Geopolitics', subsections: [['domestic', 'Domestic'], ['international', 'International']] },
+  { id: 'regime', name: 'Regime', tagline: 'What could drive {economy} into a boom or a bust?',
+    subsections: [['trend-growth', 'Trend growth'], ['trend-inflation', 'Trend inflation']] },
+  { id: 'policy', name: 'Policy', tagline: 'How will monetary and fiscal policy respond, and what would change that?',
+    subsections: [['monetary', 'Monetary'], ['fiscal', 'Fiscal']] },
+  { id: 'imbalances', name: 'Imbalances', tagline: 'Where is stress building, and what could break first?',
+    subsections: [['domestic', 'Domestic'], ['external', 'External'], ['credit', 'Credit']] },
+  { id: 'geopolitics', name: 'Geopolitics', tagline: 'What could politics, at home or abroad, do to the outlook?',
+    subsections: [['domestic', 'Domestic'], ['international', 'International']] },
 ];
 const SCENARIO_COLS = ['baseline', 'upside', 'downside'];
 /* Where the old top-level scenario categories land when a legacy file is read (see normalise). */
@@ -1455,14 +1469,21 @@ function activeSub(d) {
   const i = d.subsections.findIndex(s => s.id === want);
   return i >= 0 ? i : 0;
 }
-const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+/* "the United States", "the Eurozone", but "China". Add a prefix here if a new economy
+   in config.yaml needs the article. */
+const THE_NAME = /^(United|Euro|Netherlands|Philippines|Czech|Gulf|Baltic)/;
+const driverTagline = (d, eco) => {
+  const t = DRIVER_TEMPLATE.find(x => x.id === d.id);
+  if (!t || !t.tagline) return '';
+  return t.tagline.replace('{economy}', (THE_NAME.test(eco.name) ? 'the ' : '') + eco.name);
+};
 function renderDrivers(eco, lens = 'issues') {
   const ed = !!S.draft, sp = lens === 'signposts';
   return eco.drivers.map((d, di) => {
-    const nI = d.subsections.reduce((t, s) => t + s.issues.length, 0);
     const act = activeSub(d);
+    const tag = driverTagline(d, eco);
     return `<details class="driver" id="d-${di}" open>
-      <summary>${esc(d.name)}<span class="count">${plural(nI, 'issue')}</span></summary>
+      <summary>${esc(d.name)}${tag ? `<span class="tagline">${esc(tag)}</span>` : ''}</summary>
       <div class="stabs" role="tablist">
         ${d.subsections.map((s, si) => `<button type="button" class="stab" role="tab" data-d="${di}" data-s="${si}" aria-selected="${si === act}"><span class="lbl">${esc(s.name)}</span><span class="cnt">${s.issues.length}</span></button>`).join('')}
         ${ed && !sp ? `<button type="button" class="stab add" data-act="add-sub" data-d="${di}">+ Subsection</button>` : ''}
