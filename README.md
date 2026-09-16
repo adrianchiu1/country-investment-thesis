@@ -27,9 +27,14 @@ economy-views/
 1. Put this whole folder in the team's SharePoint library. Everyone syncs the library with OneDrive ("Add shortcut to OneDrive" or "Sync").
 2. Each person opens `EDITOR-country-investment-thesis.html` from the synced folder in File Explorer (double-click; it opens in the default browser — make that Edge or Chrome). Bookmark the resulting `file:///...` address, or right-click the file and "Pin to Quick access".
 3. First time: click **Connect folder** and choose this folder. The browser asks for permission to *view* the folder once per session (one click on **Reconnect folder** on later visits). Write access is requested separately, and only when someone clicks **Edit** or **Import** (or exports a snapshot). Readers never grant it.
-4. Click **Set your name** so saves are attributed in the log.
+4. Click **Set your name** (top right) so saves are attributed in the log. Once set it shows your initials.
 
-On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the Ada prompt, Import and Export snapshot. Click **Guide** (top right) to replay it any time.
+On the first visit the page runs a short walkthrough that dims the page and points out these steps, then Edit, the **Workflow** menu (Ada and .docx) and the **⋯** menu. Click **Guide** (in **⋯**, top right) to replay it any time.
+
+The top of the page carries three controls on the right: the **folder chip** (which is also
+the control — click it to connect, reconnect or reload), your **initials** (click to change
+the name saved to the log), and **⋯** for *Export snapshot* and *Guide*. Economies sit on
+their own row below, and scroll sideways if there are more than fit.
 
 ## How a save works
 
