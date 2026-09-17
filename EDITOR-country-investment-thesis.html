@@ -1281,6 +1281,7 @@ async function boot() {
     render(); return;
   }
   const r = await Store.reconnect();
+  if (r === true && !(await enforceOwnFolder())) { loadDemo(); render(); return; }
   if (r === true) await loadAll();
   else {
     loadDemo();
@@ -1305,11 +1306,10 @@ function setStatus(kind, text, tip) {
   const mi = $('mi-snapshot'); if (mi) mi.disabled = !Store.connected;
 }
 const connectedLabel = () => `Connected${Store.writable ? '' : ' \u00b7 read-only'}`;
-const statusConnected = () => Store.misplaced
-  ? setStatus('warn', `Connected: ${Store.name}`,
-      `This page sits in "${Store.ownFolder}" but is connected to "${Store.name}", so saves go there. Click to reload, or use Connect folder to change it.`)
-  : setStatus('ok', connectedLabel(),
-      `Connected to ${Store.name}${Store.writable ? '' : ' (read-only until you Edit or Import)'}. Click to reload from the folder.`);
+/* A folder that is not this page's own never gets this far: it is refused and
+   disconnected in enforceOwnFolder, so the connected state has only one form. */
+const statusConnected = () => setStatus('ok', connectedLabel(),
+  `Connected to ${Store.name}${Store.writable ? '' : ' (read-only until you Edit or Import)'}. Click to reload from the folder.`);
 /* Initials once a name is set: two words give their initials, one word its first two letters. */
 function setAuthorChip() {
   const b = $('btn-author'), n = (S.author || '').trim();
@@ -1325,20 +1325,37 @@ function canEditHere() {
 }
 const editorsHint = () => Array.isArray(S.config.editors) && S.config.editors.length ? `Editing is limited to: ${S.config.editors.join(', ')}. Set your name (top right) to match.` : '';
 
-/* Two copies of this folder on one PC share the browser's storage, and a folder picked by
-   hand may simply be the wrong one. Neither is worth guessing about: ask, and name both. */
-async function confirmFolder() {
-  if (!Store.misplaced) return true;
-  const go = await dialog('Is that the right folder?',
-    `<p>This page is in <strong>${esc(Store.ownFolder)}</strong>, but you connected <strong>${esc(Store.name)}</strong>.</p>`
-    + `<p>Everything saved from here \u2014 data files, change logs and locks \u2014 will be written to <strong>${esc(Store.name)}</strong>. `
-    + `If you meant to work on the folder this page came from, choose again.</p>`,
-    [['Choose again', 'quiet'], ['Use ' + esc(Store.name), 'primary']]);
-  if (go === 1) return true;
+/* The page writes to the folder it is sitting in, and to no other. Two copies of this
+   folder on one PC share the browser's storage, and a folder chosen by hand may simply be
+   the wrong one; neither is worth a judgement call, so a folder that is not this page's own
+   is refused and disconnected rather than used with a warning. */
+async function enforceOwnFolder() {
+  if (!Store.connected || !Store.misplaced) return true;
+  const chosen = Store.name, own = Store.ownFolder;
   Store.disconnect();
-  setStatus('warn', 'Connect folder', 'No folder connected \u2014 click to choose one.');
-  render();
+  S.savedFolder = false;
+  await dialog('That folder is not this one',
+    `<p>This page is in <strong>${esc(own)}</strong>, but <strong>${esc(chosen)}</strong> was chosen.</p>`
+    + `<p>To keep one copy of the thesis from writing into another, this page only ever reads and writes `
+    + `<strong>${esc(own)}</strong> \u2014 the folder it is sitting in. Nothing has been read or written, and the folder is disconnected.</p>`
+    + `<p>Open the page from inside the folder you want to work on, then click <strong>Connect folder</strong> and choose that same folder.</p>`,
+    [['Close', 'primary']]);
+  setStatus('warn', 'Connect folder', `Not connected. This page works only on its own folder, ${own}.`);
   return false;
+}
+/* Saving needs a second permission from the browser. Say plainly where it goes first. */
+async function requestWrite(what) {
+  if (!Store.connected) return true;
+  if (!(await enforceOwnFolder())) { render(); return false; }
+  if (Store.writable) return true;
+  const go = await dialog('Allow saving to this folder?',
+    `<p>${esc(what)} writes into <strong>${esc(Store.name)}</strong> \u2014 the data file, the change log and a lock while you work.</p>`
+    + `<p>The browser will ask next; the page cannot write anything until you allow it there.</p>`,
+    [['Cancel', 'quiet'], ['Allow saving', 'primary']]);
+  if (go !== 1) return false;
+  if (!(await Store.ensureWrite())) { toast('The browser did not grant write access, so nothing can be saved yet'); return false; }
+  statusConnected();
+  return true;
 }
 async function connectFolder() {
   if (Store.fallback) return fallbackOpen();
@@ -1346,7 +1363,7 @@ async function connectFolder() {
   try {
     if (S.savedFolder) { if (!(await Store.requestSaved())) await Store.pick(); }
     else await Store.pick();
-    if (!(await confirmFolder())) return;
+    if (!(await enforceOwnFolder())) { render(); return; }
     await loadAll(); render();
   } catch (e) {
     if (e && e.name === 'AbortError') return;
@@ -1378,7 +1395,7 @@ async function loadEconomy(eco) {
 }
 async function exportSnapshot() {
   if (!Store.connected) return;
-  if (!(await Store.ensureWrite())) { toast('Exporting a snapshot needs permission to write to the folder; allow it when the browser asks'); return; }
+  if (!(await requestWrite('Exporting a snapshot'))) return;
   statusConnected();
   try {
     let name = decodeURIComponent(location.pathname.split('/').pop());
@@ -1891,7 +1908,7 @@ async function writeLock(id) {
 async function acquireLock() {
   if (!S.author && !(await askAuthor())) { toast('Set your name first so the change log can record it'); return false; }
   if (!canEditHere()) { toast(editorsHint()); render(); return false; }
-  if (Store.connected && !(await Store.ensureWrite())) { toast('Editing needs permission to write to the folder; allow it when the browser asks, then try again'); return false; }
+  if (Store.connected && !(await requestWrite('Editing this economy'))) return false;
   if (Store.connected) statusConnected();
   const id = S.current;
   const lock = await readLock(id);
