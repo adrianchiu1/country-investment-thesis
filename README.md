@@ -130,6 +130,17 @@ Never edit or move the files in `data/` by hand; hand edits are not logged and a
 
 ## SharePoint / OneDrive behaviour to know about
 
+- **The page only ever works on its own folder.** Every page opened from a `file://`
+  address shares one pot of browser storage, whatever folder it sits in, so a second copy of
+  this folder (a test copy, an old copy, a colleague's) is indistinguishable to the browser
+  from the first — which is how one copy could once end up writing into another's data and
+  logs. Two things stop it now. The connected folder is remembered against the page's own
+  file path, so one copy never picks up another's. And a folder that is not the one the page
+  is sitting in is refused outright: the page says so, disconnects, and reads and writes
+  nothing. Open the page from inside the folder you want to work on.
+- **Saving asks twice, on purpose.** Connecting only grants permission to *read*. The first
+  time you click Edit or Import, the page names the folder it is about to write into and
+  asks; the browser then asks separately. Readers never grant write access at all.
 - **Sync is not instant.** Another person's save, or their lock, typically appears on your PC within seconds but can take a minute or two. The lock is therefore a courtesy signal; the version check on save is what actually prevents overwrites.
 - **Per-economy files** mean two people editing different economies never touch the same file, so OneDrive never has to merge anything.
 - **If OneDrive does detect a conflict** (two machines writing the same file before syncing), it keeps both copies and names one `united-states-<ComputerName>.yaml`. The page only reads the canonical name; look for such files if a save seems to have vanished, and merge by hand.
