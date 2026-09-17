@@ -88,20 +88,35 @@ snapshot* it needs no write access to the folder and no entry in `editors:`, so 
 who can open the page can take a copy away to read, circulate or mark up, including from
 a snapshot.
 
-The document opens with a read-only **How to edit this document** panel: the few rules the
-boxes cannot enforce by themselves — add through the dashed slot, retire by emptying a box
-rather than deleting it, move the whole box to reorder, fill all three signpost cells or
-none, and paste as plain text so an ordinary paste does not destroy a box.
+The document opens with a **How to edit this document** panel and a blank card to copy.
+Each driver group then starts on its own page, and every issue is a **card**: a small
+table with its title, its view bullets, and its three signpost cells, with a faint
+reference at the foot.
 
-Below it, each issue sits in its own bordered box (a Word content control) carrying its id,
-with its view bullets and its three signpost cells. Empty cells show a grey hint rather than
-nothing, so an issue that has no signposts still shows where they would go. The boxes are
-there so an edited document can be matched back up against the thesis.
+Nothing in the file is locked or hidden, so the ordinary Word gestures all work:
 
-Reading an edited document back into the page is **not built yet**: *Workflow → Import .docx*
-is greyed out, and *Import Ada YAML* still takes only the YAML Ada hands back. `docs/word-round-trip.md` sets out how that would work
-and what remains to be tested; open `docs/poc/docx-round-trip.html` in Edge or Chrome to try
-the round-trip end to end.
+- **Change the wording** — type in any cell.
+- **Add an issue** — copy the blank card from the first page, paste it where you want
+  it, fill it in, and leave its reference as `NEW`.
+- **Remove an issue** — delete the whole card.
+- **Reorder** — move the whole card.
+
+The reference at the foot of each card is what ties an edit back to the thesis, which is
+why the panel asks people to leave it alone. Rather than stopping anyone from breaking
+it, the import checks the document when it comes back and **refuses, naming the card, if
+anything does not add up** — a missing or duplicated reference, a card with no title,
+signposts filled in one or two cells instead of three.
+
+**Workflow → Import .docx** reads an edited document back. It goes through the same
+review screen as an Ada import: every change is listed, nothing is written until you
+click **Apply import**, and the log records it with `source: word-import`. If anything
+does not add up — a missing or duplicated reference, a card with no title, signposts
+filled in one or two cells instead of three — the import stops, names the card and
+changes nothing.
+
+`docs/word-round-trip.md` explains the design and what is still unverified;
+`node docs/poc/word-round-trip-tests.mjs` runs the round-trip tests against the page
+itself.
 
 ## Who can write to the data folder
 

@@ -672,9 +672,12 @@ const YAML = (() => {
 
 /* ====================================================================
    Word export. Builds a .docx (a zip of XML parts) in the page, with no
-   library: CompressionStream does the deflate, and every issue is wrapped
-   in a content control whose w:tag carries its stable id, so a document a
-   researcher has edited can be read back and matched up again.
+   library: CompressionStream does the deflate.
+   Every issue is a table — a card — with a faint reference in its last
+   row. Nothing is locked and nothing is hidden, so a person deletes, copies
+   and moves cards the way they would in any Word document; the checking is
+   done when the file comes back, and an import that cannot be trusted is
+   refused with the card named rather than guessed at.
    Write only for now — reading an edited file back is a separate step.
    ==================================================================== */
 const DOCX = (() => {
@@ -721,135 +724,290 @@ const DOCX = (() => {
   const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const WNS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
   const CELLS = ['baseline', 'upside', 'downside'];
-  const HINT = {
-    baseline: 'Baseline — what we expect. Leave all three empty if this issue has no signposts.',
-    upside: 'Upside — what would make it better.',
-    downside: 'Downside — what would make it worse.',
-  };
-  const SLOT_ISSUE = 'Click here and type a new issue: its title on the first line, then one bullet per line. To give it signposts, add lines beginning Baseline:, Upside: and Downside:.';
-  const SLOT_SUB = 'Click here and type the name of a new subsection, then its first issue title and bullets.';
-  let uid = 1000;
+  const NEW_REF = 'NEW';
 
   const runs = (text) => text === '' ? '' : String(text).split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
     const b = /^\*\*[^*]+\*\*$/.test(seg), t = b ? seg.slice(2, -2) : seg;
     return `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
   }).join('');
   const para = (style, text, extra = '') => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${runs(text)}</w:p>`;
-  function bullets(text) {
-    if (!text || !text.trim()) return para('CITBullet', '');
+  function bullets(text, style = 'CITBullet') {
+    if (!text || !text.trim()) return para(style, '');
     return text.split('\n').map(line => {
       const m = line.match(/^(\s*)-\s+(.*)$/);
       if (!m) return para('CITBody', line.trim());
       const lvl = Math.min(Math.floor(m[1].length / 2), 1);
-      return para(lvl ? 'CITBullet2' : 'CITBullet', m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
+      return para(lvl ? 'CITBullet2' : style, m[2], `<w:numPr><w:ilvl w:val="${lvl}"/><w:numId w:val="1"/></w:numPr>`);
     }).join('');
   }
-  /* sdtLocked locks the frame, not the contents: the box cannot be deleted, but it can be
-     emptied — which is how "retire this issue" is expressed when the file comes back. */
-  const sdt = (tag, alias, inner, opt = {}) =>
-    `<w:sdt><w:sdtPr><w:alias w:val="${X(alias)}"/><w:tag w:val="${X(tag)}"/><w:id w:val="${uid++}"/>`
-    + `<w:lock w:val="${opt.lock || 'sdtLocked'}"/>${opt.placeholder ? '<w:showingPlcHdr/>' : ''}`
-    + `</w:sdtPr><w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
 
-  /* A read-only box at the top of the document. It is what stands between a researcher
-     who has never seen this file and a mis-import, so it states the few rules that the
-     content controls cannot enforce by themselves. Tagged so the reader skips it, and
-     locked so it cannot be edited away. */
-  const noteBullet = (text) => para('CITNote', '\u2022  ' + text, '<w:ind w:left="300" w:hanging="300"/>');
-  function readmeBox(eco) {
+  /* ---- the card ------------------------------------------------------------
+     One issue is one table. Nothing is locked and nothing is hidden: delete the
+     card to retire the issue, copy it to add one, drag it to reorder. The only
+     machine-readable thing is the reference in the last row, and if that is lost
+     the importer says so rather than guessing. ------------------------------ */
+  const GRID = [1450, 2517, 2517, 2516];                      // label + three signpost columns
+  const cell = (w, body, opt = {}) =>
+    `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${opt.span ? `<w:gridSpan w:val="${opt.span}"/>` : ''}`
+    + `${opt.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${opt.fill}"/>` : ''}</w:tcPr>${body}</w:tc>`;
+  const label = (text) => cell(GRID[0], para('CITLabel', text), { fill: 'F4F6F9' });
+  const wide = (body) => cell(GRID[1] + GRID[2] + GRID[3], body, { span: 3 });
+
+  function card(i, ref) {
+    const hasCells = CELLS.some(k => (i[k] || '').trim());
+    const row = (inner) => `<w:tr>${inner}</w:tr>`;
+    return `<w:tbl><w:tblPr><w:tblStyle w:val="CITCard"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+      + `<w:tblGrid>${GRID.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`
+      + row(label('Title') + wide(para('CITCardTitle', i.title || '')))
+      + row(label('View') + wide(bullets(i.text)))
+      + row(label('Signposts') + CELLS.map((k, n) => cell(GRID[n + 1], para('CITCellHead', k[0].toUpperCase() + k.slice(1)))).join(''))
+      + row(label('') + CELLS.map((k, n) => cell(GRID[n + 1],
+          hasCells || !i.__hint ? bullets(i[k] || '', 'CITBulletSmall')
+            : para('CITPlaceholder', 'leave empty if none'))).join(''))
+      + row(cell(9000, para('CITRef', 'ref ' + ref), { span: 4 }))
+      + `</w:tbl>` + para('CITGap', '');
+  }
+
+  const LOREM = {
+    title: 'Lorem ipsum dolor sit amet, consectetur adipiscing',
+    text: '- Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor\n- Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris\n- Duis aute irure dolor in reprehenderit in voluptate velit esse',
+    baseline: '- Lorem ipsum dolor sit amet', upside: '- Consectetur adipiscing elit', downside: '- Sed do eiusmod tempor',
+  };
+
+  function instructions(eco, today) {
     const shade = '<w:shd w:val="clear" w:color="auto" w:fill="F2F6FA"/>';
+    const bullet = (t) => para('CITNote', '•  ' + t, '<w:ind w:left="300" w:hanging="300"/>');
     const body = para('CITNoteHead', 'How to edit this document')
-      + para('CITNote', `This is a copy of the ${eco.name} thesis, version ${eco.version}. Every issue sits in its own bordered box, and each box carries a hidden label tying it back to the thesis \u2014 so edit **inside** the boxes rather than around them.`)
-      + noteBullet('**Change the wording** \u2014 type in any box. Bold is kept. Track Changes and comments are welcome.')
-      + noteBullet('**Add an issue** \u2014 use the dashed \u201cClick here and type a new issue\u201d box at the end of a section. Title on the first line, then one bullet per line. For signposts, add lines starting Baseline:, Upside: and Downside:.')
-      + noteBullet('**Retire an issue** \u2014 select everything inside its boxes and delete it. Leave the empty box where it is; do not delete the box itself.')
-      + noteBullet('**Reorder** \u2014 move the whole box, not just the text inside it.')
-      + noteBullet('**Signposts go in threes** \u2014 fill all three cells or leave all three showing their grey hint. One or two filled will be queried rather than imported.')
-      + noteBullet('**Paste as plain text** (Ctrl+Shift+V). An ordinary paste can destroy a box and lose the link back to the thesis.')
-      + noteBullet('**Leave alone**: the headings, and the investment implications table \u2014 those arrows are only ever set by clicking in the page.')
-      + para('CITNote', 'Nothing here changes the thesis until someone reviews every change in the page and applies it. When you are finished, save the file, keeping it as .docx, and send it back.');
-    return sdt('readme', 'How to edit this document \u2014 do not edit this box',
-      `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>`
+      + para('CITNote', `${eco.name}, version ${eco.version}, exported ${today}. Every issue is a table — a card. Edit the cards; the page reads them back when you are done.`)
+      + bullet('**Change the wording** — type in any cell. Bold is kept. Track Changes and comments are welcome.')
+      + bullet('**Add an issue** — copy the blank card below, paste it where you want it, and fill it in. Leave its reference as NEW.')
+      + bullet('**Remove an issue** — delete the whole card. Click in it, then Table Layout › Delete › Delete Table.')
+      + bullet('**Reorder** — move the whole card.')
+      + bullet('**Signposts go in threes** — fill Baseline, Upside and Downside together, or leave all three empty.')
+      + bullet('**Leave the reference line alone.** The faint `ref` at the foot of each card is how your edit is matched back to the thesis. If it is missing or changed, the import stops and tells you which card.')
+      + bullet('**Leave the headings alone**, and paste as plain text (Ctrl+Shift+V) so pasted formatting does not travel.')
+      + para('CITNote', 'Nothing here changes the thesis until someone reviews every change in the page and applies it. If anything does not add up, the import refuses and names the card — it will not guess.')
+      + para('CITRef', `document: ${eco.id} v${eco.version}`);
+    return `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>`
       + ['top', 'left', 'bottom', 'right'].map(x => `<w:${x} w:val="single" w:sz="6" w:space="0" w:color="C6D2E0"/>`).join('')
       + `</w:tblBorders>${shade}<w:tblCellMar><w:top w:w="160" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tblCellMar></w:tblPr>`
       + `<w:tr><w:tc><w:tcPr><w:tcW w:w="9000" w:type="dxa"/>${shade}</w:tcPr>${body}</w:tc></w:tr></w:tbl>`
-      + para('CITBody', ''), { lock: 'sdtContentLocked' });
+      + para('CITGap', '');
   }
-  function issueBox(i) {
-    const cell = (k) => {
-      const filled = (i[k] || '').trim();
-      return `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>`
-        + sdt('field|' + k, k[0].toUpperCase() + k.slice(1), filled ? bullets(i[k]) : para('CITPlaceholder', HINT[k]), { placeholder: !filled })
-        + `</w:tc>`;
-    };
-    const head = ['Baseline', 'Upside', 'Downside'].map(h => `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para('CITTableHead', h)}</w:tc>`).join('');
-    return sdt(`issue|${i.id}`, i.title || 'Issue',
-      sdt('field|title', 'Title', para('CITIssueTitle', i.title))
-      + sdt('field|text', 'View', bullets(i.text))
-      + `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr><w:tr>${head}</w:tr><w:tr>${CELLS.map(cell).join('')}</w:tr></w:tbl>`
-      + para('CITBody', ''));
-  }
+
+  /* A section break, so each driver group starts on a new page. */
+  const sectionBreak = () =>
+    `<w:p><w:pPr><w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="11906" w:h="16838"/>`
+    + `<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567"/></w:sectPr></w:pPr></w:p>`;
+
   function documentXml(eco) {
-    uid = 1000;
+    const d = new Date(), MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const today = `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
     let b = para('CITTitle', eco.name);
-    b += sdt(`meta|${eco.id}|${eco.version}`, 'Do not edit',
-      para('CITMeta', `${eco.name} · version ${eco.version} · edit inside the boxes, then import this file back into the page`), { lock: 'sdtContentLocked' });
-    /* Which issues existed when this file was written. Without it, an issue a colleague adds
-       while the document is out would be absent here and read as a deletion. */
-    const ids = eco.drivers.flatMap(d => d.subsections.flatMap(s => s.issues.map(i => i.id)));
-    b += sdt('manifest', 'Do not edit — records what this file was exported from',
-      `<w:p><w:pPr><w:pStyle w:val="CITMeta"/><w:rPr><w:vanish/></w:rPr></w:pPr><w:r><w:rPr><w:vanish/></w:rPr><w:t xml:space="preserve">${X(ids.join(' '))}</w:t></w:r></w:p>`,
-      { lock: 'sdtContentLocked' });
-    b += readmeBox(eco);
-    for (const d of eco.drivers) {
-      // the four driver groups are fixed in the page, so the heading is read-only
-      b += sdt(`group|${d.id}`, d.name, para('CITH1', d.name), { lock: 'sdtContentLocked' });
-      for (const s of d.subsections) {
-        let inner = para('CITH3', s.name);
-        for (const i of s.issues) inner += issueBox(i);
-        inner += sdt('slot|issue', 'New issue in ' + s.name, para('CITPlaceholder', SLOT_ISSUE), { placeholder: true });
-        b += sdt(`sub|drivers/${d.id}/${s.id}`, s.name, inner);
+    b += instructions(eco, today);
+    b += para('CITHeading3', 'Blank card — copy this to add an issue');
+    b += card({ ...LOREM }, NEW_REF);
+    b += sectionBreak();
+    eco.drivers.forEach((g, n) => {
+      b += para('CITHeading1', g.name);
+      for (const s of g.subsections) {
+        b += para('CITHeading3', s.name);
+        if (!s.issues.length) b += para('CITPlaceholder', 'No issues here yet — copy the blank card from the first page to add one.');
+        for (const i of s.issues) b += card(i, i.id);
       }
-      b += sdt(`slot|sub|${d.id}`, 'New subsection under ' + d.name, para('CITPlaceholder', SLOT_SUB), { placeholder: true });
-    }
-    b += para('CITH1', 'Investment implications');
-    b += sdt('matrix', 'Set these by clicking in the page, not here',
-      `<w:tbl><w:tblPr><w:tblStyle w:val="CITTable"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
+      b += sectionBreak();
+    });
+    b += para('CITHeading1', 'Investment implications');
+    b += para('CITNote', 'Read-only. These arrows are set by clicking in the page, and anything changed here is ignored.');
+    b += `<w:tbl><w:tblPr><w:tblStyle w:val="CITCard"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
       + Object.entries(eco.implications || {}).map(([k, cells]) =>
-        `<w:tr><w:tc><w:tcPr><w:tcW w:w="3600" w:type="dxa"/></w:tcPr>${para('CITBody', k.replace(/^drivers\//, '').replace(/\//g, ' › '))}</w:tc>`
-        + `<w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/></w:tcPr>${para('CITBody', Object.entries(cells).map(([f, v]) => `${f.replace(/_/g, ' ')} ${v === 'up' ? '↑' : '↓'}`).join(', '))}</w:tc></w:tr>`).join('')
-      + `</w:tbl>`, { lock: 'sdtContentLocked' });
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${WNS}><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
+        `<w:tr>${cell(3600, para('CITBody', k.replace(/^drivers\//, '').replace(/\//g, ' › ')))}`
+        + `${cell(5400, para('CITBody', Object.entries(cells).map(([f, v]) => `${f.replace(/_/g, ' ')} ${v === 'up' ? '↑' : '↓'}`).join(', ')))}</w:tr>`).join('')
+      + `</w:tbl>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${WNS}><w:body>${b}`
+      + `<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567"/></w:sectPr></w:body></w:document>`;
   }
-  const STYLE = (id, name, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${def}</w:style>`;
+
+  /* Word regenerates a style's id from its NAME, with the spaces stripped, every time it
+     saves. So the id must already be that, or every reference in the document breaks on
+     the round trip — which is how the importer once stopped seeing the headings.
+     Deriving it here makes the two impossible to drift apart. */
+  const SID = (name) => name.replace(/\s+/g, '');
+  const STYLE = (name, def) => `<w:style w:type="paragraph" w:styleId="${SID(name)}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${def}</w:style>`;
   const stylesXml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${WNS}>`
     + `<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>`
-    + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="120"/></w:pPr></w:style>`
-    + STYLE('CITTitle', 'CIT Title', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
-    + STYLE('CITMeta', 'CIT Meta', '<w:rPr><w:i/><w:color w:val="767676"/></w:rPr>')
-    + STYLE('CITH1', 'CIT Heading 1', '<w:pPr><w:spacing w:before="320" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/></w:rPr>')
-    + STYLE('CITH3', 'CIT Heading 3', '<w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="24"/></w:rPr>')
-    + STYLE('CITIssueTitle', 'CIT Issue Title', '<w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITBullet', 'CIT Bullet', '<w:pPr><w:ind w:left="360" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
-    + STYLE('CITBullet2', 'CIT Bullet 2', '<w:pPr><w:ind w:left="720" w:hanging="360"/><w:spacing w:after="60"/></w:pPr>')
-    + STYLE('CITBody', 'CIT Body', '')
-    + STYLE('CITTableHead', 'CIT Table Head', '<w:rPr><w:b/><w:color w:val="767676"/></w:rPr>')
-    + STYLE('CITPlaceholder', 'CIT Placeholder', '<w:rPr><w:i/><w:color w:val="8A8F96"/></w:rPr>')
-    + STYLE('CITNoteHead', 'CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITNote', 'CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
-    + `<w:style w:type="table" w:styleId="CITTable"><w:name w:val="CIT Table"/><w:tblPr><w:tblBorders>`
-    + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>`).join('')
-    + `</w:tblBorders><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
+    + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="100"/></w:pPr></w:style>`
+    + STYLE('CIT Title', '<w:pPr><w:spacing w:after="140"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
+    + STYLE('CIT Heading 1', '<w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="1F3864"/></w:rPr>')
+    + STYLE('CIT Heading 3', '<w:pPr><w:spacing w:before="240" w:after="100"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="24"/></w:rPr>')
+    + STYLE('CIT Card Title', '<w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CIT Label', '<w:rPr><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
+    + STYLE('CIT Cell Head', '<w:rPr><w:b/><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
+    + STYLE('CIT Ref', '<w:pPr><w:jc w:val="right"/><w:spacing w:after="0"/></w:pPr><w:rPr><w:color w:val="B4BECB"/><w:sz w:val="14"/></w:rPr>')
+    + STYLE('CIT Bullet', '<w:pPr><w:ind w:left="300" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
+    + STYLE('CIT Bullet Small', '<w:pPr><w:ind w:left="240" w:hanging="240"/><w:spacing w:after="50"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr>')
+    + STYLE('CIT Bullet 2', '<w:pPr><w:ind w:left="640" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
+    + STYLE('CIT Body', '')
+    + STYLE('CIT Gap', '<w:pPr><w:spacing w:after="0"/></w:pPr><w:rPr><w:sz w:val="12"/></w:rPr>')
+    + STYLE('CIT Placeholder', '<w:rPr><w:i/><w:color w:val="9AA6B4"/></w:rPr>')
+    + STYLE('CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
+    + `<w:style w:type="table" w:styleId="CITCard"><w:name w:val="CIT Card"/><w:tblPr><w:tblBorders>`
+    + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D3DAE3"/>`).join('')
+    + `</w:tblBorders><w:tblCellMar><w:top w:w="70" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
     + `</w:styles>`;
   const numberingXml = () => {
-    const lvl = (i, ch, ind) => `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${ch}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${ind}" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl>`;
+    const lvl = (i, ch, ind) => `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${ch}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${ind}" w:hanging="260"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl>`;
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering ${WNS}>`
-      + `<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${lvl(0, '', 360)}${lvl(1, 'o', 720)}</w:abstractNum>`
+      + `<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${lvl(0, '', 300)}${lvl(1, 'o', 640)}</w:abstractNum>`
       + `<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
   };
   const CT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>`;
   const RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
   const DRELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>`;
+
+
+  /* ==== reading a .docx back ================================================
+     The document carries no hidden structure, so this reads exactly what a
+     person can see: the headings say where they are, each table is a card, and
+     the faint line at its foot is the reference. Anything that does not add up
+     is reported with the card named — never guessed at. ==================== */
+  const dec = new TextDecoder();
+  async function inflate(bytes) {
+    const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  async function unzip(bytes) {
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let eo = -1;
+    for (let i = bytes.length - 22; i >= 0 && i > bytes.length - 65558; i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+    if (eo < 0) throw new Error('This is not a .docx file (no zip directory found).');
+    const n = dv.getUint16(eo + 10, true);
+    let p = dv.getUint32(eo + 16, true);
+    const out = {};
+    for (let k = 0; k < n; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('This .docx file looks damaged (bad zip directory).');
+      const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+      const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+      const lho = dv.getUint32(p + 42, true);
+      const name = dec.decode(bytes.subarray(p + 46, p + 46 + nlen));
+      const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      const raw = bytes.subarray(start, start + csize);
+      out[name] = dec.decode(method === 0 ? raw : await inflate(raw));
+      p += 46 + nlen + elen + clen;
+    }
+    return out;
+  }
+
+  const kids = (el, ln) => [...el.children].filter(c => c.localName === ln);
+  /* Word's autocorrect quietly changes what people type; straightening it here keeps the
+     review screen free of diffs nobody made. */
+  const NORM = (s) => s.replace(/ /g, ' ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+    .replace(/…/g, '...').replace(/\s+$/g, '');
+  /* Word may rewrite style ids, but it keeps their names. Resolving the id through
+     styles.xml and comparing on the name survives that; with no styles.xml the id is used
+     as-is, which works because the ids are the names with the spaces taken out. */
+  let STYLE_NAMES = {};
+  const styleOf = (p) => {
+    const pr = kids(p, 'pPr')[0], st = pr && kids(pr, 'pStyle')[0];
+    const id = st ? st.getAttribute('w:val') : 'Normal';
+    return (STYLE_NAMES[id] || id).replace(/\s+/g, '');
+  };
+  function paraText(p) {
+    let out = '';
+    (function walk(n) {
+      for (const c of n.children) {
+        if (c.localName === 'del') continue;                       // a tracked deletion reads as accepted
+        if (c.localName === 'r') {
+          const rPr = kids(c, 'rPr')[0];
+          const bold = rPr && kids(rPr, 'b').length && kids(rPr, 'b')[0].getAttribute('w:val') !== '0';
+          let t = '';
+          for (const x of c.children) { if (x.localName === 't') t += x.textContent; else if (x.localName === 'tab') t += ' '; else if (x.localName === 'br') t += '\n'; }
+          out += bold && t.trim() ? '**' + t + '**' : t;
+        } else walk(c);                                            // w:ins, hyperlinks, smart tags
+      }
+    })(p);
+    return out;
+  }
+  const paras = (node) => { const o = []; (function w(n) { for (const c of n.children) { if (c.localName === 'p') o.push(c); else w(c); } })(node); return o; };
+  function blockText(node) {
+    const lines = [];
+    for (const p of paras(node)) {
+      const t = NORM(paraText(p)).trim(); if (!t) continue;
+      const pr = kids(p, 'pPr')[0], numPr = pr && kids(pr, 'numPr')[0];
+      const il = numPr && kids(numPr, 'ilvl')[0];
+      const lvl = styleOf(p) === 'CITBullet2' ? 1 : il ? Math.min(+il.getAttribute('w:val'), 1) : 0;
+      lines.push((lvl > 0 ? '  - ' : '- ') + t.replace(/^\s*[•○▪ o·]\s+/, '').replace(/^-\s+/, ''));
+    }
+    return lines.join('\n');
+  }
+  const cellText = (tc) => NORM(paras(tc).map(paraText).join(' ')).trim();
+
+  /* A card is a table whose rows are labelled in their first cell. Reading by label
+     rather than by position survives a row being added, removed or moved. */
+  function readCard(tbl) {
+    const rows = kids(tbl, 'tr');
+    const card = { ref: null, title: null, text: null, baseline: null, upside: null, downside: null };
+    let signpostRow = -1;
+    rows.forEach((tr, n) => {
+      const cells = kids(tr, 'tc');
+      if (!cells.length) return;
+      const first = cellText(cells[0]).toLowerCase().replace(/[:\s]+$/, '');
+      const refM = cells.length === 1 && cellText(cells[0]).match(/^ref\s+(\S+)$/i);
+      if (refM) { card.ref = refM[1]; return; }
+      if (first === 'title' && cells[1]) card.title = cellText(cells[1]);
+      else if (first === 'view' && cells[1]) card.text = blockText(cells[1]);
+      else if (first === 'signposts') signpostRow = n;
+      else if (signpostRow >= 0 && n === signpostRow + 1 && cells.length >= 4)
+        ['baseline', 'upside', 'downside'].forEach((k, i) => { card[k] = blockText(cells[i + 1]); });
+    });
+    /* the signpost header row may itself carry the three cells when a row was merged away */
+    if (card.baseline === null && signpostRow >= 0) {
+      const cells = kids(rows[signpostRow], 'tc');
+      if (cells.length >= 4 && !/^(baseline)$/i.test(cellText(cells[1])))
+        ['baseline', 'upside', 'downside'].forEach((k, i) => { card[k] = blockText(cells[i + 1]); });
+    }
+    return card;
+  }
+
+  async function read(bytes) {
+    const files = await unzip(bytes);
+    if (!files['word/document.xml']) throw new Error('This is not a Word document — it has no word/document.xml inside.');
+    STYLE_NAMES = {};
+    if (files['word/styles.xml']) {
+      const sd = new DOMParser().parseFromString(files['word/styles.xml'], 'application/xml');
+      for (const st of sd.getElementsByTagName('w:style')) {
+        const nm = st.getElementsByTagName('w:name')[0];
+        if (nm) STYLE_NAMES[st.getAttribute('w:styleId')] = nm.getAttribute('w:val');
+      }
+    }
+    const doc = new DOMParser().parseFromString(files['word/document.xml'], 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw new Error('Word’s own contents could not be read; the file may be damaged.');
+    const body = doc.getElementsByTagName('w:body')[0];
+    if (!body) throw new Error('This Word document is empty.');
+
+    let meta = null, group = null, sub = null;
+    const cards = [];
+    (function walk(node) {
+      for (const c of node.children) {
+        if (c.localName === 'p') {
+          const st = styleOf(c), t = NORM(paraText(c)).trim();
+          if (st === 'CITRef') { const m = t.match(/^document:\s*([A-Za-z0-9_-]+)\s+v(\d+)$/i); if (m) meta = { economy: m[1], version: +m[2] }; }
+          else if (st === 'CITHeading1') { group = t; sub = null; }
+          else if (st === 'CITHeading3') sub = t;
+          continue;
+        }
+        if (c.localName === 'tbl') {
+          const card = readCard(c);
+          if (card.ref !== null) { cards.push({ ...card, group, sub, n: cards.length + 1 }); continue; }
+          walk(c);                                                 // the instructions panel holds the document reference
+          continue;
+        }
+        walk(c);
+      }
+    })(body);
+    return { meta, cards };
+  }
 
   const write = (eco) => zip([
     { name: '[Content_Types].xml', text: CT },
@@ -859,7 +1017,7 @@ const DOCX = (() => {
     { name: 'word/styles.xml', text: stylesXml() },
     { name: 'word/numbering.xml', text: numberingXml() },
   ]);
-  return { write };
+  return { write, read };
 })();
 
 /* ====================================================================
@@ -1451,10 +1609,10 @@ function renderToolbar() {
           <div class="menu-sep" role="separator"></div>
           <div class="menu-group" role="presentation">Docx</div>
           ${item('docx-get', 'Get .docx', hasEco, 'Save this economy as a Word document to edit and circulate')}
-          ${item('docx-import', 'Import .docx', false, 'Not built yet — the page still imports only the YAML Ada hands back')}
+          ${item('docx-import', 'Import .docx', can && !snap, snap ? 'Not available in a snapshot' : !allowed ? editorsHint() : 'Import a Word document you edited')}
         </div>
       </div>` + (snap ? '' : `<button type="button" class="btn primary" id="btn-edit" ${can ? '' : 'disabled'}${why}>Edit</button>`);
-    const acts = { 'ada-prompt': showAdaPrompt, 'ada-import': startImport, 'docx-get': exportWord };
+    const acts = { 'ada-prompt': showAdaPrompt, 'ada-import': startImport, 'docx-get': exportWord, 'docx-import': startImport };
     $('menu-workflow').addEventListener('click', (e) => {
       const b = e.target.closest('button[role="menuitem"]');
       if (!b || b.disabled) return;
@@ -1785,14 +1943,119 @@ async function copyText(text) {
 /* ====================================================================
    Import: a file handed back by Ada
    ==================================================================== */
+/* ====================================================================
+   Import a Word document. The file carries no hidden structure, so
+   everything is checked here: a document that does not add up is refused
+   with the card named, rather than guessed at and half-applied.
+   ==================================================================== */
+const plural2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+function reviewWordFile(parsed, ecoMeta, cur) {
+  const problems = [];
+  const where = (c) => `${c.group || '?'} › ${c.sub || '?'}, card ${c.n}${c.title ? ` (“${esc(c.title.slice(0, 40))}”)` : ''}`;
+  if (!parsed.cards.length) problems.push('No issue cards were found. Is this the document that came out of Workflow › Get .docx?');
+  if (!parsed.meta) problems.push('The <code>document:</code> reference on the first page is missing, so there is no way to tell which economy and version this file came from. Export a fresh copy.');
+  else if (parsed.meta.economy !== ecoMeta.id) {
+    const other = S.config.economies.find(e => e.id === parsed.meta.economy);
+    problems.push(`This document is for <strong>${esc(other ? other.name : parsed.meta.economy)}</strong>, but <strong>${esc(ecoMeta.name)}</strong> is selected.`);
+  } else if (parsed.meta.version !== cur.version) {
+    problems.push(`This document was exported from v${parsed.meta.version}, but ${esc(ecoMeta.name)} is now at v${cur.version}. Anything saved in between is not in your copy, so importing it would undo that work. Export a fresh document and redo your edits.`);
+  }
+
+  /* where every issue currently lives, and which heading pair names each subsection */
+  const byId = {}, subKey = {};
+  for (const d of cur.drivers) for (const s of d.subsections) {
+    subKey[d.name + ' >> ' + s.name] = `drivers/${d.id}/${s.id}`;
+    for (const i of s.issues) byId[i.id] = i;
+  }
+  /* The blank card on the first page sits before any group heading. It is there to be
+     copied, so it is not an issue and must not fail the import; exactly one is expected. */
+  const template = parsed.cards.filter(c => !c.group);
+  const cards = parsed.cards.filter(c => c.group);
+  if (cards.length === 0 && parsed.cards.length > 1) {
+    /* every card adrift means the headings went, not that everyone pasted onto page one */
+    problems.push(`None of the ${parsed.cards.length} cards sit under a group heading, so there is no way to tell which driver they belong to. The headings have probably been deleted or restyled. Export a fresh document and redo your edits in it.`);
+  } else if (template.length > 1) {
+    problems.push(`${template.length} cards are on the first page, before the first group heading. The blank card there is a template to copy \u2014 paste your new card under a subsection heading instead.`);
+  }
+
+  const seen = new Set();
+  for (const c of cards) {
+    if (c.ref == null) { problems.push(`${where(c)}: the reference line at the foot of the card is missing, so there is no way to tell which issue it is. Undo the deletion, or delete the whole card if you meant to remove the issue.`); continue; }
+    const isNew = /^new$/i.test(c.ref);
+    if (!isNew && !byId[c.ref]) problems.push(`${where(c)}: reference <code>${esc(c.ref)}</code> is not an issue in this economy. If this is a new issue, change the reference to NEW.`);
+    if (!isNew && seen.has(c.ref)) problems.push(`${where(c)}: reference <code>${esc(c.ref)}</code> is used by more than one card. Copying an existing card copies its reference — change this one to NEW if it is a new issue.`);
+    if (!isNew) seen.add(c.ref);
+    if (c.title == null) problems.push(`${where(c)}: no Title row. A card needs rows labelled Title, View and Signposts.`);
+    else if (!c.title.trim()) problems.push(`${where(c)}: the title is empty.`);
+    if (!c.sub || !subKey[c.group + ' >> ' + c.sub]) problems.push(`${where(c)}: this card is not under a subsection heading the page recognises. Move it back under one of the headings.`);
+    const filled = SCENARIO_COLS.filter(k => (c[k] || '').trim());
+    if (filled.length && filled.length < 3) problems.push(`${where(c)}: signposts are half filled — ${SCENARIO_COLS.filter(k => !(c[k] || '').trim()).join(' and ')} empty. Fill them in, or clear all three.`);
+  }
+  if (problems.length) return { problems };
+
+  /* Build the new state from what is on disk, so anything the document does not carry
+     (the implications matrix, the order of the groups) survives untouched. */
+  const imp = clone(cur), byPlace = {};
+  for (const c of cards) {
+    const k = subKey[c.group + ' >> ' + c.sub];
+    (byPlace[k] = byPlace[k] || []).push(c);
+  }
+  for (const d of imp.drivers) for (const s of d.subsections) {
+    s.issues = (byPlace[`drivers/${d.id}/${s.id}`] || []).map(c => {
+      const was = /^new$/i.test(c.ref) ? null : byId[c.ref];
+      return {
+        id: was ? was.id : uid('iss'), title: c.title.trim(), text: c.text || '',
+        baseline: c.baseline || '', upside: c.upside || '', downside: c.downside || '',
+      };
+    });
+  }
+  return { imp, retired: Object.keys(byId).filter(x => !seen.has(x)).map(x => byId[x].title || 'Untitled') };
+}
+
+async function importWordFile(file) {
+  const id = S.current, ecoMeta = S.config.economies.find(e => e.id === id), cur = S.data[id];
+  let parsed;
+  try { parsed = await DOCX.read(new Uint8Array(await file.arrayBuffer())); }
+  catch (e) { dialog('The Word file could not be read', `<p>${esc(e.message || e)}</p>`, [['Close']]); return; }
+
+  const out = reviewWordFile(parsed, ecoMeta, cur);
+  const refuse = (list) => dialog('This document cannot be imported yet',
+    '<p>Fix these in Word and import again. Nothing has been changed.</p><ul>' + list.map(x => '<li>' + x + '</li>').join('') + '</ul>', [['Close']]);
+  if (out.problems) { refuse(out.problems); return; }
+
+  const imp = out.imp;
+  tidy(imp);
+  const bad = validate(imp);
+  if (bad.length) { refuse(bad.map(esc)); return; }
+  const changes = diff(cur, imp);
+  if (!changes.length) { toast('This document matches the current version; nothing to import'); return; }
+
+  if (!(await acquireLock())) return;
+  S.draft = imp;
+  S.review = {
+    note: `Imported from ${file.name}.` + (out.retired.length ? ` Cards deleted in Word: ${out.retired.join('; ')}.` : ''),
+    warnings: out.retired.length ? [`${plural2(out.retired.length, 'issue')} will be retired because ${out.retired.length === 1 ? 'its card was' : 'their cards were'} deleted from the document. The old text stays in the log.`] : [],
+    changes, source: 'word-import',
+  };
+  render();
+  window.scrollTo(0, 0);
+}
 async function startImport() {
   const id = S.current, ecoMeta = S.config.economies.find(e => e.id === id), cur = S.data[id];
-  const p = dialog(`Import ${ecoMeta.name} from Ada`, `<p>Paste the YAML that Ada handed back, or choose the file you saved. The page shows every change for review before anything is written.</p>
+  const p = dialog(`Import ${ecoMeta.name} from Ada`, `<p>Paste the YAML that Ada handed back, or choose a file: Ada’s <code>.yaml</code>, or a <code>.docx</code> you edited in Word. The page shows every change for review before anything is written.</p>
     <div class="field"><textarea id="imp-text" spellcheck="false" placeholder="change_note: |-\n  ...\nid: ${esc(id)}\n..."></textarea></div>
-    <div class="filerow"><input type="file" id="imp-file" accept=".yaml,.yml,.txt"></div>`, [['Cancel', 'quiet'], ['Review changes', 'primary']]);
-  $('imp-file').addEventListener('change', async () => { const f = $('imp-file').files[0]; if (f) $('imp-text').value = await f.text(); });
+    <div class="filerow"><input type="file" id="imp-file" accept=".yaml,.yml,.txt,.docx"></div>
+    <p class="hint" id="imp-note"></p>`, [['Cancel', 'quiet'], ['Review changes', 'primary']]);
+  let docxFile = null;
+  // a .docx is binary: keep it as a file, never read it into the textarea
+  $('imp-file').addEventListener('change', async () => {
+    const f = $('imp-file').files[0]; if (!f) return;
+    if (/\.docx$/i.test(f.name)) { docxFile = f; $('imp-text').value = ''; $('imp-text').disabled = true; $('imp-note').textContent = `Word document chosen: ${f.name}`; }
+    else { docxFile = null; $('imp-text').disabled = false; $('imp-note').textContent = ''; $('imp-text').value = await f.text(); }
+  });
   const text = $('imp-text');
   if (await p !== 1) return;
+  if (docxFile) return importWordFile(docxFile);
   const src = text.value;
   if (!src.trim()) { toast('Nothing to import'); return; }
 
@@ -1945,7 +2208,7 @@ async function saveDraft() {
   const header = `# Country Investment Thesis — ${D.name}\n# Written by EDITOR-country-investment-thesis.html. Edit through the page so changes are logged.\n\n`;
   const dataText = header + YAML.dump({ id: D.id, name: D.name, version: D.version, updated_at: D.updated_at, updated_by: D.updated_by, drivers: D.drivers, implications: D.implications });
   const entry = { at: D.updated_at, by: D.updated_by, economy: id, version: D.version, from_version: prev.version || 0 };
-  if (S.review) { entry.source = 'import'; if (S.review.note) entry.note = S.review.note; }
+  if (S.review) { entry.source = S.review.source || 'import'; if (S.review.note) entry.note = S.review.note; }
   entry.change_count = changes.length; entry.changes = changes;
   const logText = '---\n' + YAML.dump(entry);
 
