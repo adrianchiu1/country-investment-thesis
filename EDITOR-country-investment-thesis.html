@@ -1029,7 +1029,15 @@ const Store = (() => {
   let writable = false;   // the folder is opened read-only; write permission is requested only when someone edits or imports
   const hasFS = typeof window.showDirectoryPicker === 'function';
 
-  async function idb(op, val) {
+  /* Every file:// page in the browser shares one origin, so two copies of this folder on the
+     same PC also share one IndexedDB. Storing the folder handle under a fixed key therefore
+     let the second copy silently pick up the first copy's folder and write into it. The key
+     is the page's own path, so each copy remembers only the folder it was connected to. */
+  const OWN_PATH = decodeURIComponent(location.pathname);
+  const OWN_FOLDER = OWN_PATH.replace(/\/[^/]*$/, '').split('/').pop() || '';
+  const KEY = 'dir:' + OWN_PATH;
+
+  async function idb(op, val, key = KEY) {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open('economy-views', 1);
       req.onupgradeneeded = () => req.result.createObjectStore('kv');
@@ -1038,7 +1046,7 @@ const Store = (() => {
         try {
           const tx = req.result.transaction('kv', 'readwrite');
           const st = tx.objectStore('kv');
-          const r = op === 'get' ? st.get('dir') : st.put(val, 'dir');
+          const r = op === 'get' ? st.get(key) : op === 'del' ? st.delete(key) : st.put(val, key);
           r.onsuccess = () => resolve(r.result);
           r.onerror = () => reject(r.error);
         } catch (e) { reject(e); } // e.g. a value that cannot be stored; never leave the caller hanging
@@ -1048,7 +1056,13 @@ const Store = (() => {
   async function reconnect() {
     if (!hasFS) return false;
     try {
-      const h = await idb('get');
+      let h = await idb('get');
+      if (!h) {
+        /* a folder remembered before this page keyed them by path: adopt it only when its
+           name matches the folder this copy of the page sits in, never blindly */
+        const legacy = await idb('get', null, 'dir');
+        if (legacy && OWN_FOLDER && legacy.name === OWN_FOLDER) { h = legacy; await idb('put', legacy); await idb('del', null, 'dir'); }
+      }
       if (!h) return false;
       if (await h.queryPermission({ mode: 'read' }) === 'granted') { dir = h; writable = await h.queryPermission({ mode: 'readwrite' }) === 'granted'; return true; }
       return 'prompt';
@@ -1114,6 +1128,10 @@ const Store = (() => {
     get connected() { return !!dir; },
     get writable() { return !!dir && writable; },
     get name() { return dir ? dir.name : ''; },
+    /* true when the connected folder is not the one this page is sitting in */
+    get misplaced() { return !!dir && !!OWN_FOLDER && dir.name !== OWN_FOLDER; },
+    get ownFolder() { return OWN_FOLDER; },
+    disconnect() { dir = null; writable = false; idb('del', null, KEY).catch(() => {}); },
     get fallback() { return fallback; }, set fallback(v) { fallback = v; },
   };
 })();
@@ -1287,8 +1305,11 @@ function setStatus(kind, text, tip) {
   const mi = $('mi-snapshot'); if (mi) mi.disabled = !Store.connected;
 }
 const connectedLabel = () => `Connected${Store.writable ? '' : ' \u00b7 read-only'}`;
-const statusConnected = () => setStatus('ok', connectedLabel(),
-  `Connected to ${Store.name}${Store.writable ? '' : ' (read-only until you Edit or Import)'}. Click to reload from the folder.`);
+const statusConnected = () => Store.misplaced
+  ? setStatus('warn', `Connected: ${Store.name}`,
+      `This page sits in "${Store.ownFolder}" but is connected to "${Store.name}", so saves go there. Click to reload, or use Connect folder to change it.`)
+  : setStatus('ok', connectedLabel(),
+      `Connected to ${Store.name}${Store.writable ? '' : ' (read-only until you Edit or Import)'}. Click to reload from the folder.`);
 /* Initials once a name is set: two words give their initials, one word its first two letters. */
 function setAuthorChip() {
   const b = $('btn-author'), n = (S.author || '').trim();
@@ -1304,12 +1325,28 @@ function canEditHere() {
 }
 const editorsHint = () => Array.isArray(S.config.editors) && S.config.editors.length ? `Editing is limited to: ${S.config.editors.join(', ')}. Set your name (top right) to match.` : '';
 
+/* Two copies of this folder on one PC share the browser's storage, and a folder picked by
+   hand may simply be the wrong one. Neither is worth guessing about: ask, and name both. */
+async function confirmFolder() {
+  if (!Store.misplaced) return true;
+  const go = await dialog('Is that the right folder?',
+    `<p>This page is in <strong>${esc(Store.ownFolder)}</strong>, but you connected <strong>${esc(Store.name)}</strong>.</p>`
+    + `<p>Everything saved from here \u2014 data files, change logs and locks \u2014 will be written to <strong>${esc(Store.name)}</strong>. `
+    + `If you meant to work on the folder this page came from, choose again.</p>`,
+    [['Choose again', 'quiet'], ['Use ' + esc(Store.name), 'primary']]);
+  if (go === 1) return true;
+  Store.disconnect();
+  setStatus('warn', 'Connect folder', 'No folder connected \u2014 click to choose one.');
+  render();
+  return false;
+}
 async function connectFolder() {
   if (Store.fallback) return fallbackOpen();
   if (Store.connected) { if (S.draft) { toast('Save or cancel your edits before reloading'); return; } await loadAll(); render(); toast('Reloaded from folder'); return; }
   try {
     if (S.savedFolder) { if (!(await Store.requestSaved())) await Store.pick(); }
     else await Store.pick();
+    if (!(await confirmFolder())) return;
     await loadAll(); render();
   } catch (e) {
     if (e && e.name === 'AbortError') return;

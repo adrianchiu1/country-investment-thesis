@@ -130,6 +130,13 @@ Never edit or move the files in `data/` by hand; hand edits are not logged and a
 
 ## SharePoint / OneDrive behaviour to know about
 
+- **Two copies of the folder on one PC.** Every page opened from a `file://` address shares
+  one pot of browser storage, whatever folder it sits in, so a second copy of this folder
+  (a test copy, an old copy, a colleague's) is indistinguishable to the browser from the
+  first. The page therefore remembers the connected folder against its own file path, and
+  will not adopt a folder that another copy connected. If you do connect a folder other than
+  the one the page is sitting in, it asks first and then shows the folder's name in amber in
+  the top right, because everything it saves goes there.
 - **Sync is not instant.** Another person's save, or their lock, typically appears on your PC within seconds but can take a minute or two. The lock is therefore a courtesy signal; the version check on save is what actually prevents overwrites.
 - **Per-economy files** mean two people editing different economies never touch the same file, so OneDrive never has to merge anything.
 - **If OneDrive does detect a conflict** (two machines writing the same file before syncing), it keeps both copies and names one `united-states-<ComputerName>.yaml`. The page only reads the canonical name; look for such files if a save seems to have vanished, and merge by hand.
