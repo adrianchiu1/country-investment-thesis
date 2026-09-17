@@ -122,11 +122,35 @@ headless browser, so the export and import under test are the ones the tool
 ships — there is no second copy to drift. Each test edits the exported
 `document.xml` the way Word would, re-zips it, and feeds it back.
 
-Nineteen checks cover: a clean round-trip producing no changes at all; ordinary
+Twenty-two checks cover: a clean round-trip producing no changes at all; ordinary
 editing; deleting a card; copying the blank card to add an issue; copying an
 *existing* card by mistake; clearing one signpost cell of three; deleting a
-reference line; a document for the wrong economy; a stale document; and a file
-that is not a `.docx`.
+reference line; a document for the wrong economy; a stale document; **Word
+rewriting every style id**; and a file that is not a `.docx`.
+
+## One trap worth knowing about
+
+**Word regenerates every style's `w:styleId` from its `w:name`, with the spaces stripped,
+each time it saves.** A style named "CIT Heading 1" comes back with the id `CITHeading1`,
+whatever id it was written with, and every `pStyle` reference in the document is rewritten
+to match.
+
+The first real import hit this. Three ids did not already have that form — `CITH1`,
+`CITH3` and `CITBulletSm` — so after one save in Word the reader stopped recognising the
+group and subsection headings. Every card then looked as if it sat on the first page, and
+the import refused with a message describing the symptom rather than the cause. `CITRef`
+happened to already match its name, which is why the `document:` line still read and the
+failure looked so strange.
+
+It is guarded two ways now:
+
+- the writer derives each id from the name (`SID(name)`), so the two cannot drift apart
+  and Word's rewrite is a no-op;
+- the reader resolves ids through `styles.xml` and matches on the **name**, which Word
+  preserves, so even a wholesale renaming leaves it working.
+
+`TEST 10` renames every style to `Style20`, `Style21` … and checks the document still
+imports with no changes.
 
 ## What is still unverified
 

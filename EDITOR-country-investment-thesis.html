@@ -762,7 +762,7 @@ const DOCX = (() => {
       + row(label('View') + wide(bullets(i.text)))
       + row(label('Signposts') + CELLS.map((k, n) => cell(GRID[n + 1], para('CITCellHead', k[0].toUpperCase() + k.slice(1)))).join(''))
       + row(label('') + CELLS.map((k, n) => cell(GRID[n + 1],
-          hasCells || !i.__hint ? bullets(i[k] || '', 'CITBulletSm')
+          hasCells || !i.__hint ? bullets(i[k] || '', 'CITBulletSmall')
             : para('CITPlaceholder', 'leave empty if none'))).join(''))
       + row(cell(9000, para('CITRef', 'ref ' + ref), { span: 4 }))
       + `</w:tbl>` + para('CITGap', '');
@@ -805,19 +805,19 @@ const DOCX = (() => {
     const today = `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
     let b = para('CITTitle', eco.name);
     b += instructions(eco, today);
-    b += para('CITH3', 'Blank card — copy this to add an issue');
+    b += para('CITHeading3', 'Blank card — copy this to add an issue');
     b += card({ ...LOREM }, NEW_REF);
     b += sectionBreak();
     eco.drivers.forEach((g, n) => {
-      b += para('CITH1', g.name);
+      b += para('CITHeading1', g.name);
       for (const s of g.subsections) {
-        b += para('CITH3', s.name);
+        b += para('CITHeading3', s.name);
         if (!s.issues.length) b += para('CITPlaceholder', 'No issues here yet — copy the blank card from the first page to add one.');
         for (const i of s.issues) b += card(i, i.id);
       }
       b += sectionBreak();
     });
-    b += para('CITH1', 'Investment implications');
+    b += para('CITHeading1', 'Investment implications');
     b += para('CITNote', 'Read-only. These arrows are set by clicking in the page, and anything changed here is ignored.');
     b += `<w:tbl><w:tblPr><w:tblStyle w:val="CITCard"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>`
       + Object.entries(eco.implications || {}).map(([k, cells]) =>
@@ -828,25 +828,30 @@ const DOCX = (() => {
       + `<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567"/></w:sectPr></w:body></w:document>`;
   }
 
-  const STYLE = (id, name, def) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${def}</w:style>`;
+  /* Word regenerates a style's id from its NAME, with the spaces stripped, every time it
+     saves. So the id must already be that, or every reference in the document breaks on
+     the round trip — which is how the importer once stopped seeing the headings.
+     Deriving it here makes the two impossible to drift apart. */
+  const SID = (name) => name.replace(/\s+/g, '');
+  const STYLE = (name, def) => `<w:style w:type="paragraph" w:styleId="${SID(name)}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${def}</w:style>`;
   const stylesXml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${WNS}>`
     + `<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>`
     + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="100"/></w:pPr></w:style>`
-    + STYLE('CITTitle', 'CIT Title', '<w:pPr><w:spacing w:after="140"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
-    + STYLE('CITH1', 'CIT Heading 1', '<w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="1F3864"/></w:rPr>')
-    + STYLE('CITH3', 'CIT Heading 3', '<w:pPr><w:spacing w:before="240" w:after="100"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="24"/></w:rPr>')
-    + STYLE('CITCardTitle', 'CIT Card Title', '<w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITLabel', 'CIT Label', '<w:rPr><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
-    + STYLE('CITCellHead', 'CIT Cell Head', '<w:rPr><w:b/><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
-    + STYLE('CITRef', 'CIT Ref', '<w:pPr><w:jc w:val="right"/><w:spacing w:after="0"/></w:pPr><w:rPr><w:color w:val="B4BECB"/><w:sz w:val="14"/></w:rPr>')
-    + STYLE('CITBullet', 'CIT Bullet', '<w:pPr><w:ind w:left="300" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
-    + STYLE('CITBulletSm', 'CIT Bullet Small', '<w:pPr><w:ind w:left="240" w:hanging="240"/><w:spacing w:after="50"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr>')
-    + STYLE('CITBullet2', 'CIT Bullet 2', '<w:pPr><w:ind w:left="640" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
-    + STYLE('CITBody', 'CIT Body', '')
-    + STYLE('CITGap', 'CIT Gap', '<w:pPr><w:spacing w:after="0"/></w:pPr><w:rPr><w:sz w:val="12"/></w:rPr>')
-    + STYLE('CITPlaceholder', 'CIT Placeholder', '<w:rPr><w:i/><w:color w:val="9AA6B4"/></w:rPr>')
-    + STYLE('CITNoteHead', 'CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
-    + STYLE('CITNote', 'CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
+    + STYLE('CIT Title', '<w:pPr><w:spacing w:after="140"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr>')
+    + STYLE('CIT Heading 1', '<w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="1F3864"/></w:rPr>')
+    + STYLE('CIT Heading 3', '<w:pPr><w:spacing w:before="240" w:after="100"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="24"/></w:rPr>')
+    + STYLE('CIT Card Title', '<w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CIT Label', '<w:rPr><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
+    + STYLE('CIT Cell Head', '<w:rPr><w:b/><w:caps/><w:color w:val="7A8899"/><w:sz w:val="15"/></w:rPr>')
+    + STYLE('CIT Ref', '<w:pPr><w:jc w:val="right"/><w:spacing w:after="0"/></w:pPr><w:rPr><w:color w:val="B4BECB"/><w:sz w:val="14"/></w:rPr>')
+    + STYLE('CIT Bullet', '<w:pPr><w:ind w:left="300" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
+    + STYLE('CIT Bullet Small', '<w:pPr><w:ind w:left="240" w:hanging="240"/><w:spacing w:after="50"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr>')
+    + STYLE('CIT Bullet 2', '<w:pPr><w:ind w:left="640" w:hanging="300"/><w:spacing w:after="50"/></w:pPr>')
+    + STYLE('CIT Body', '')
+    + STYLE('CIT Gap', '<w:pPr><w:spacing w:after="0"/></w:pPr><w:rPr><w:sz w:val="12"/></w:rPr>')
+    + STYLE('CIT Placeholder', '<w:rPr><w:i/><w:color w:val="9AA6B4"/></w:rPr>')
+    + STYLE('CIT Note Head', '<w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="22"/></w:rPr>')
+    + STYLE('CIT Note', '<w:pPr><w:spacing w:after="70"/></w:pPr><w:rPr><w:color w:val="33414F"/><w:sz w:val="19"/></w:rPr>')
     + `<w:style w:type="table" w:styleId="CITCard"><w:name w:val="CIT Card"/><w:tblPr><w:tblBorders>`
     + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D3DAE3"/>`).join('')
     + `</w:tblBorders><w:tblCellMar><w:top w:w="70" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
@@ -899,7 +904,15 @@ const DOCX = (() => {
      review screen free of diffs nobody made. */
   const NORM = (s) => s.replace(/ /g, ' ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
     .replace(/…/g, '...').replace(/\s+$/g, '');
-  const styleOf = (p) => { const pr = kids(p, 'pPr')[0], st = pr && kids(pr, 'pStyle')[0]; return st ? st.getAttribute('w:val') : 'Normal'; };
+  /* Word may rewrite style ids, but it keeps their names. Resolving the id through
+     styles.xml and comparing on the name survives that; with no styles.xml the id is used
+     as-is, which works because the ids are the names with the spaces taken out. */
+  let STYLE_NAMES = {};
+  const styleOf = (p) => {
+    const pr = kids(p, 'pPr')[0], st = pr && kids(pr, 'pStyle')[0];
+    const id = st ? st.getAttribute('w:val') : 'Normal';
+    return (STYLE_NAMES[id] || id).replace(/\s+/g, '');
+  };
   function paraText(p) {
     let out = '';
     (function walk(n) {
@@ -960,6 +973,14 @@ const DOCX = (() => {
   async function read(bytes) {
     const files = await unzip(bytes);
     if (!files['word/document.xml']) throw new Error('This is not a Word document — it has no word/document.xml inside.');
+    STYLE_NAMES = {};
+    if (files['word/styles.xml']) {
+      const sd = new DOMParser().parseFromString(files['word/styles.xml'], 'application/xml');
+      for (const st of sd.getElementsByTagName('w:style')) {
+        const nm = st.getElementsByTagName('w:name')[0];
+        if (nm) STYLE_NAMES[st.getAttribute('w:styleId')] = nm.getAttribute('w:val');
+      }
+    }
     const doc = new DOMParser().parseFromString(files['word/document.xml'], 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('Word’s own contents could not be read; the file may be damaged.');
     const body = doc.getElementsByTagName('w:body')[0];
@@ -972,8 +993,8 @@ const DOCX = (() => {
         if (c.localName === 'p') {
           const st = styleOf(c), t = NORM(paraText(c)).trim();
           if (st === 'CITRef') { const m = t.match(/^document:\s*([A-Za-z0-9_-]+)\s+v(\d+)$/i); if (m) meta = { economy: m[1], version: +m[2] }; }
-          else if (st === 'CITH1') { group = t; sub = null; }
-          else if (st === 'CITH3') sub = t;
+          else if (st === 'CITHeading1') { group = t; sub = null; }
+          else if (st === 'CITHeading3') sub = t;
           continue;
         }
         if (c.localName === 'tbl') {
@@ -1950,7 +1971,12 @@ function reviewWordFile(parsed, ecoMeta, cur) {
      copied, so it is not an issue and must not fail the import; exactly one is expected. */
   const template = parsed.cards.filter(c => !c.group);
   const cards = parsed.cards.filter(c => c.group);
-  if (template.length > 1) problems.push(`${template.length} cards are on the first page, outside the thesis. The blank card there is a template to copy \u2014 paste your new card under a subsection heading instead.`);
+  if (cards.length === 0 && parsed.cards.length > 1) {
+    /* every card adrift means the headings went, not that everyone pasted onto page one */
+    problems.push(`None of the ${parsed.cards.length} cards sit under a group heading, so there is no way to tell which driver they belong to. The headings have probably been deleted or restyled. Export a fresh document and redo your edits in it.`);
+  } else if (template.length > 1) {
+    problems.push(`${template.length} cards are on the first page, before the first group heading. The blank card there is a template to copy \u2014 paste your new card under a subsection heading instead.`);
+  }
 
   const seen = new Set();
   for (const c of cards) {

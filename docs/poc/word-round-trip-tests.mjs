@@ -142,9 +142,35 @@ const ZIP = readFileSync(join(here, 'src', 'zip.js'), 'utf8');
     ok('a document for another economy is refused', !!r8.problems && r8.problems.some(x => /Japan/.test(x)), JSON.stringify((r8.problems || []).slice(0, 2)));
     ok('a stale document is refused, naming both versions', !!r9.problems && r9.problems.some(x => /v99/.test(x) && /now at v/.test(x)), JSON.stringify((r9.problems || []).slice(0, 2)));
 
+    /* ---- 10. Word rewrites style ids when it saves -------------------------------
+       It regenerates each id from the style's NAME with the spaces stripped, and keeps
+       the name. This is what broke the first real import: the headings became invisible
+       and every card looked like it was on the first page. */
+    const renamed = await (async () => {
+      const ids = {};
+      const sd = new DOMParser().parseFromString(files['word/styles.xml'], 'application/xml');
+      [...sd.getElementsByTagName('w:style')].forEach((st, i) => {
+        const id = st.getAttribute('w:styleId');
+        if (!/^CIT/.test(id)) return;
+        ids[id] = 'Style' + (20 + i);                       // nothing like the original
+        st.setAttribute('w:styleId', ids[id]);
+      });
+      let xml = XML;
+      for (const [from, to] of Object.entries(ids)) xml = xml.split(`w:val="${from}"`).join(`w:val="${to}"`);
+      const f2 = { ...files, 'word/styles.xml': new XMLSerializer().serializeToString(sd), 'word/document.xml': xml };
+      return DOCX.read(await zipWrite(Object.entries(f2).map(([name, text]) => ({ name, text }))));
+    })();
+    log.push('TEST 10  Word rewrites the style ids on save:');
+    ok('the document reference still reads', renamed.meta && renamed.meta.economy === 'united-states');
+    ok('the headings are still found', renamed.cards.filter(c => c.group).length === 13,
+       renamed.cards.filter(c => c.group).length + ' cards under a heading');
+    const r10 = review(renamed);
+    ok('and it still imports with no changes', !r10.problems && (tidy(r10.imp), diff(eco, r10.imp).length === 0),
+       JSON.stringify((r10.problems || []).slice(0, 2)));
+
     let notWord = 'accepted (BAD)';
     try { await DOCX.read(new Uint8Array([1, 2, 3, 4])); } catch (e) { notWord = 'refused — ' + e.message; }
-    log.push('TEST 9  not a .docx at all: ' + notWord);
+    log.push('TEST 11  not a .docx at all: ' + notWord);
     return log.join('\n');
   });
   console.log(out);
